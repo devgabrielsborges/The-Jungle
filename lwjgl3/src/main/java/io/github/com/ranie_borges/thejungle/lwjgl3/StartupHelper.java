@@ -14,7 +14,7 @@
  */
 //Note, the above license and copyright applies to this file only.
 
-package io.github.com.ranie_borges.theforestrpg.lwjgl3;
+package io.github.com.ranie_borges.thejungle.lwjgl3;
 
 import org.lwjgl.system.macosx.LibC;
 
