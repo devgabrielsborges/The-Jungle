@@ -52,7 +52,7 @@ public class MainMenuScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.log("MainMenuScreen", "Play button clicked!");
-                // Exemplo: game.setScreen(new GameScreen(game)); para trocar para a tela de jogo
+                game.setScreen(new GameScreen(game));
             }
         });
 
