@@ -1,40 +1,39 @@
 package io.github.com.ranie_borges.thejungle.model;
 
+import io.github.com.ranie_borges.thejungle.model.enums.AmbientAttribute;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 import io.github.com.ranie_borges.thejungle.model.interfaces.IAmbients;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class Ambient implements IAmbients {
     private String name;
     private String description;
     private float difficult;
-    private List<Item> resources;
-    private List<Event> possibleEvents;
-    private float eventChance;
 
-    public List<Event> getPossibleEvents() {
-        return possibleEvents;
+    private Set<AmbientAttribute> attributes;
+    private Set<Item> resources;
+    private Map<Event, Double> possibleEvents;
+    private Set<Clime> climes;
+
+    protected Ambient(String name, String description, float difficult, Set<AmbientAttribute> attributes) {
+        setName(name);
+        setDescription(description);
+        setDifficult(difficult);
+        setAttributes(attributes != null ? new HashSet<>(attributes) : new HashSet<>());
+        this.resources = new HashSet<>();
+        this.possibleEvents = new HashMap<>();
+        this.climes = new HashSet<>();
     }
-
-    public void setPossibleEvents(List<Event> possibleEvents) {
-        this.possibleEvents = possibleEvents;
-    }
-
-    private List<Clime> climes;
 
     protected Ambient(String name, String description, float difficult) {
-        this.name = name;
-        this.description = description;
-        this.difficult = difficult;
-        this.resources = new ArrayList<>();
-        this.climes = new ArrayList<>();
-        this.eventChance = 0.0f;
+        this(name, description, difficult, new HashSet<>());
     }
 
-    // Getters and setters
     public String getName() {
         return name;
     }
@@ -59,35 +58,43 @@ public abstract class Ambient implements IAmbients {
         this.difficult = difficult;
     }
 
-    public List<Item> getResources() {
-        return Collections.unmodifiableList(resources);
+    public Set<Item> getResources() {
+        return Collections.unmodifiableSet(resources);
     }
 
     public void addResource(Item resource) {
         this.resources.add(resource);
     }
 
-    public void setResources(List<Item> resources) {
-        this.resources = new ArrayList<>(resources);
+    public void setResources(Set<Item> resources) {
+        this.resources = new HashSet<>(resources);
     }
 
-    public float getEventChance() {
-        return this.eventChance;
+    public Map<Event, Double> getPossibleEvents() {
+        return Collections.unmodifiableMap(possibleEvents);
     }
 
-    public void setEventChance(float eventChance) {
-        this.eventChance = Math.max(0, Math.min(1, eventChance)); // Ensure between 0 and 1
+    public void setPossibleEvents(Map<Event, Double> possibleEvents) {
+        this.possibleEvents = possibleEvents;
     }
 
-    public List<Clime> getClimes() {
-        return Collections.unmodifiableList(climes);
+    public Set<Clime> getClimes() {
+        return Collections.unmodifiableSet(climes);
     }
 
     public void addClime(Clime clime) {
         this.climes.add(clime);
     }
 
-    public void setClimes(List<Clime> climes) {
-        this.climes = new ArrayList<>(climes);
+    public void setClimes(Set<Clime> climes) {
+        this.climes = new HashSet<>(climes);
+    }
+
+    public Set<AmbientAttribute> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Set<AmbientAttribute> attributes) {
+        this.attributes = attributes;
     }
 }
