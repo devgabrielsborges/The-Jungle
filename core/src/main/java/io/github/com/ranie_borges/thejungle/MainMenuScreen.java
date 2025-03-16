@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle;
 
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -19,6 +20,8 @@ public class MainMenuScreen implements Screen {
     private Stage stage;
     private Skin skin;
     private Texture backgroundTexture;
+    private Music backgroundMusic;
+
 
     public MainMenuScreen(Main game) {
         this.game = game;
@@ -38,6 +41,12 @@ public class MainMenuScreen implements Screen {
         // Adiciona o fundo ao stage e garante que ele fique atrás dos outros atores
         stage.addActor(backgroundImage);
         backgroundImage.toBack();
+
+        // Carrega a música de fundo
+        backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("mainMenu/mainMenubackgroundMusic.mp3"));
+        backgroundMusic.setLooping(true); // Define a música para tocar em loop
+        backgroundMusic.play(); // Inicia a reprodução da música
+
 
         // Cria um Table para organizar os elementos da UI e alinha-o no canto superior direito
         Table table = new Table();
