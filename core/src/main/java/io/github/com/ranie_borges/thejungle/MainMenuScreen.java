@@ -18,7 +18,6 @@ public class MainMenuScreen implements Screen {
     private final Main game;
     private Stage stage;
     private Skin skin;
-    // Declara a textura do fundo para poder descartá-la depois
     private Texture backgroundTexture;
 
     public MainMenuScreen(Main game) {
@@ -29,21 +28,21 @@ public class MainMenuScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         // Carrega a skin
-        skin = new Skin(Gdx.files.internal("mainMenu/uiskin.json"));
+        skin = new Skin(Gdx.files.internal("mainMenu/lgdxs-ui.json"));
 
         // Carrega a textura do fundo e cria o Image
         backgroundTexture = new Texture(Gdx.files.internal("mainMenu/telaMenu.png"));
         Image backgroundImage = new Image(backgroundTexture);
-        backgroundImage.setFillParent(true); // Faz com que a imagem preencha toda a tela
+        backgroundImage.setFillParent(true);
 
-        // Adiciona o fundo ao stage antes dos outros atores
+        // Adiciona o fundo ao stage e garante que ele fique atrás dos outros atores
         stage.addActor(backgroundImage);
-        // Opcional: se necessário, garanta que o fundo fique atrás dos outros atores
         backgroundImage.toBack();
 
-        // Cria um Table para organizar os elementos da UI
+        // Cria um Table para organizar os elementos da UI e alinha-o no canto superior direito
         Table table = new Table();
         table.setFillParent(true);
+        table.center(); // Alinha os elementos no topo e à direita
         stage.addActor(table);
 
         // Cria os componentes do menu
@@ -54,8 +53,7 @@ public class MainMenuScreen implements Screen {
         playButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Gdx.app.log("MainMenuScreen", "Play button clicked!");
-                //game.setScreen(new GameScreen(game)); //Add a tela do jogo
+                game.setScreen(new GameScreen(game)); // Adicione a tela do jogo aqui
             }
         });
 
@@ -67,10 +65,10 @@ public class MainMenuScreen implements Screen {
             }
         });
 
-        // Organiza os elementos no Table
-        table.add(playButton).width(200f).height(60f).pad(10);
+        // Adiciona o botão PLAY na tabela alinhado à direita
+        table.add(playButton).width(200f).height(60f).padTop(500).pad(10);
         table.row();
-        table.add(exitButton).pad(10);
+        table.add(exitButton).padTop(200).pad(10);
     }
 
     @Override
@@ -105,7 +103,6 @@ public class MainMenuScreen implements Screen {
     public void dispose() {
         stage.dispose();
         skin.dispose();
-        // Libera a textura do fundo para evitar vazamento de memória
         backgroundTexture.dispose();
     }
 }
