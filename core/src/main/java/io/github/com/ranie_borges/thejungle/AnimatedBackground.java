@@ -38,18 +38,6 @@ public class AnimatedBackground extends Actor {
             }
         }
 
-        // Seleciona os 3 últimos frames da segunda linha (índice 1), se disponíveis
-//        if (tmp.length > 1) {
-//            int totalColumnsRow1 = tmp[1].length;
-//            int startIndex = Math.max(0, totalColumnsRow1 - 3);
-//            for (int j = startIndex; j < totalColumnsRow1; j++) {
-//                frames.add(tmp[1][j]);
-//            }
-//        }
-
-        // Depuração: Imprime o total de frames adicionados (deve ser 8 se a spritesheet tiver frames suficientes)
-        System.out.println("Total frames na animação: " + frames.size);
-
         // Cria a animação com os frames selecionados, definindo o modo de loop
         animation = new Animation<TextureRegion>(frameDuration, frames, Animation.PlayMode.LOOP);
         stateTime = 0f;
@@ -75,3 +63,4 @@ public class AnimatedBackground extends Actor {
         spriteSheet.dispose();
     }
 }
+
