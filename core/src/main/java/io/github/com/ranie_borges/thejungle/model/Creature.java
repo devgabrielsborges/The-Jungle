@@ -2,6 +2,8 @@ package io.github.com.ranie_borges.thejungle.model;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
+import io.github.com.ranie_borges.thejungle.model.interfaces.ICharacter;
+import io.github.com.ranie_borges.thejungle.model.interfaces.ICreature;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,7 +11,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class Criature {
+public abstract class Creature implements ICreature {
     private String name;
     private String description;
     private float probability;
@@ -19,7 +21,7 @@ public abstract class Criature {
     private Set<Item> drops;
     private Map<String, Sprite> sprites;
 
-    protected Criature(
+    protected Creature(
         String name,
         String description,
         float probability,
