@@ -58,7 +58,7 @@ public class MainMenuScreen implements Screen {
         Image titleImage = new Image(new Texture(Gdx.files.internal("mainMenu/titulo.png")));
         // Define a opacidade inicial como 0 para que o fade in funcione
         titleImage.getColor().a = 0f;
-        // Adiciona uma ação: após um delay de 5 segundos, a imagem faz fade in em 2 segundos
+        // Adiciona uma ação: após um delay de 3 segundos, a imagem faz fade in em 2 segundos
         titleImage.addAction(sequence(delay(3f), fadeIn(2f)));
         // Adiciona a imagem do título à tabela, centralizada, com um espaçamento inferior
         table.add(titleImage).center().padBottom(20);
@@ -71,13 +71,16 @@ public class MainMenuScreen implements Screen {
         playButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                game.setScreen(new GameScreen(game));
+                // Para a música antes de mudar de tela
+                backgroundMusic.stop();
+                game.setScreen(new LoadingScreen(game));
             }
         });
 
         exitButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                backgroundMusic.stop();
                 Gdx.app.exit();
             }
         });
@@ -116,7 +119,10 @@ public class MainMenuScreen implements Screen {
     public void resume() { }
 
     @Override
-    public void hide() { }
+    public void hide() {
+        // Para a música ao sair da tela
+        backgroundMusic.stop();
+    }
 
     @Override
     public void dispose() {
