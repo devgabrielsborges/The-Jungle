@@ -31,7 +31,7 @@ public class GameScreen implements Screen {
         skin = new Skin(Gdx.files.internal("mainMenu/lgdxs-ui.json"));
 
         // Carrega a textura do fundo e cria o Image
-        backgroundTexture = new Texture(Gdx.files.internal("MainScreen/telaTest.svg"));
+        backgroundTexture = new Texture(Gdx.files.internal("MainScreen/telaTest.png"));
         Image backgroundImage = new Image(backgroundTexture);
         backgroundImage.setFillParent(true);
 
