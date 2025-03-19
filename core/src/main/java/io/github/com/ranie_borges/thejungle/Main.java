@@ -2,6 +2,7 @@ package io.github.com.ranie_borges.thejungle;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import io.github.com.ranie_borges.thejungle.view.MainMenuScreen;
 
 public class Main extends Game {
     public SpriteBatch batch;
