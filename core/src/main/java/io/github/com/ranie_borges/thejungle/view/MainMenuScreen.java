@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle;
+package io.github.com.ranie_borges.thejungle.view;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.delay;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeIn;
@@ -17,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import io.github.com.ranie_borges.thejungle.Main;
 
 public class MainMenuScreen implements Screen {
 

@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle;
+package io.github.com.ranie_borges.thejungle.view;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;

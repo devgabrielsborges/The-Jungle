@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle;
+package io.github.com.ranie_borges.thejungle.view;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.delay;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeIn;
@@ -9,23 +9,22 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import io.github.com.ranie_borges.thejungle.Main;
 
-public class LetterScreen implements Screen {
+public class LoadingScreen implements Screen {
 
     private final Main game;
     private Stage stage;
-    private Texture backgroundTexture;
+    private AnimatedBackground animatedBackground;
     private Music backgroundMusic;
     private Skin skin;
 
-    public LetterScreen(Main game) {
+    public LoadingScreen(Main game) {
         this.game = game;
 
         // Cria o Stage com um viewport responsivo e define o input processor
@@ -35,18 +34,20 @@ public class LetterScreen implements Screen {
         // Carrega a skin (verifique se o caminho está correto)
         skin = new Skin(Gdx.files.internal("mainMenu/lgdxs-ui.json"));
 
-        // Configura o background utilizando uma imagem estática
-        backgroundTexture = new Texture(Gdx.files.internal("letter/letterScreen.png"));
-        Image backgroundImage = new Image(backgroundTexture);
-        backgroundImage.setFillParent(true);
-        stage.addActor(backgroundImage);
+        // Configura o fundo animado utilizando a spritesheet
+        animatedBackground = new AnimatedBackground("LoadingScreen/airplane.png", 0.1f, 1600, 900);
+        animatedBackground.setSize(stage.getWidth(), stage.getHeight());
+        // O fundo é exibido imediatamente
+        animatedBackground.getColor().a = 1f;
+        stage.addActor(animatedBackground);
+        animatedBackground.toBack();
 
         // Configura e inicia a música de fundo
-        backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("letter/waves.mp3"));
+        backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("LoadingScreen/planecrashsound.mp3"));
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
-        // Cria um Label que exibirá o texto "press backspace to skip..."
+        // Cria um Label que exibirá o texto "Carregando..."
         Label infoLabel = new Label("press backspace to skip...", skin);
         infoLabel.getColor().a = 0f; // Inicia invisível
         // Após 5 segundos, o Label aparece com fade in em 2 segundos
@@ -76,13 +77,14 @@ public class LetterScreen implements Screen {
         // Se o player pressionar a tecla espaço, muda para GameScreen
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             backgroundMusic.stop();
-            game.setScreen(new GameScreen(game));
+            game.setScreen(new LetterScreen(game));
         }
     }
 
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        animatedBackground.setSize(stage.getWidth(), stage.getHeight());
     }
 
     @Override
@@ -97,7 +99,7 @@ public class LetterScreen implements Screen {
     @Override
     public void dispose() {
         stage.dispose();
-        backgroundTexture.dispose();
+        animatedBackground.dispose();
         backgroundMusic.dispose();
         skin.dispose();
     }
