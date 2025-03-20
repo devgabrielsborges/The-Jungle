@@ -1,0 +1,52 @@
+package io.github.com.ranie_borges.thejungle.game.events;
+
+import io.github.com.ranie_borges.thejungle.model.Character;
+import io.github.com.ranie_borges.thejungle.model.Event;
+import io.github.com.ranie_borges.thejungle.model.enums.Clime;
+
+import java.util.Random;
+import java.util.Set;
+
+public class Climate extends Event {
+    private Clime clime;
+    private double duration;
+    private Set<String> effects;
+    private final Random rand = new Random();
+
+    protected Climate(String name, String description, float probability) {
+        super(name, description, probability);
+        this.clime = setRandomClime();
+    }
+
+    public Clime getClime() {
+        return clime;
+    }
+
+    public void setClime(Clime clime) {
+        this.clime = clime;
+    }
+
+    public double getDuration() {
+        return duration;
+    }
+
+    public void setDuration(double duration) {
+        this.duration = duration;
+    }
+
+    public Set<String> getEffects() { return effects; }
+
+    public void setEffects(Set<String> effects) { this.effects = effects; }
+
+    public Clime setRandomClime() {
+        return Clime.values()[rand.nextInt() * Clime.values().length];
+    }
+
+    /**
+     *
+     */
+    @Override
+    public <T extends Character> void execute(T character) {
+        //TODO to implement
+    }
+}
