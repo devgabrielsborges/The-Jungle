@@ -1,13 +1,11 @@
 package io.github.com.ranie_borges.thejungle.game.itens;
 
 import io.github.com.ranie_borges.thejungle.model.Item;
-import io.github.com.ranie_borges.thejungle.model.enums.ItemType;
 
 /**
  * Represents a weapon that can be used for combat
  */
 public class Weapon extends Item {
-    public ItemType itemType = ItemType.WEAPON;
     private float damage;
     private float attackSpeed;
     private final int durabilityLoss;
@@ -15,16 +13,15 @@ public class Weapon extends Item {
     /**
      * Creates a new weapon
      *
-     * @param type The type of weapon (should be a weapon type)
      * @param name The name of the weapon
      * @param weight The weight of the weapon
      * @param durability The initial durability of the weapon
      * @param damage The base damage inflicted by this weapon
      * @param attackSpeed The attack speed of this weapon
      */
-    public Weapon(ItemType type, String name, float weight, float durability,
+    public Weapon(String name, float weight, float durability,
                   float damage, float attackSpeed) {
-        super(type, name, weight, durability);
+        super(name, weight, durability);
         this.damage = Math.max(0, damage);
         this.attackSpeed = Math.max(0, attackSpeed);
         this.durabilityLoss = 1;
@@ -64,4 +61,11 @@ public class Weapon extends Item {
         // Implementation for dropping a weapon
     }
 
+    public float getAttackSpeed() {
+        return attackSpeed;
+    }
+
+    public void setAttackSpeed(float attackSpeed) {
+        this.attackSpeed = attackSpeed;
+    }
 }

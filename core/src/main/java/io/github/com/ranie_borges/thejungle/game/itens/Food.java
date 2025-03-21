@@ -1,19 +1,11 @@
 package io.github.com.ranie_borges.thejungle.game.itens;
 
 import io.github.com.ranie_borges.thejungle.model.Item;
-import io.github.com.ranie_borges.thejungle.model.enums.ItemType;
 
 public class Food extends Item {
-    protected Food(ItemType type, String name, float weight, float durability) {
-        super(type, name, weight, durability);
-    }
 
-    /**
-     *
-     */
-    @Override
-    public void dropItem() {
-        super.dropItem();
+    protected Food(String name, float weight, float durability) {
+        super(name, weight, durability);
     }
 
     /**
@@ -21,6 +13,14 @@ public class Food extends Item {
      */
     @Override
     public void useItem() {
-        super.useItem();
+
+    }
+
+    /**
+     *
+     */
+    @Override
+    public void dropItem() {
+
     }
 }
