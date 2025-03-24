@@ -1,13 +1,13 @@
-package io.github.com.ranie_borges.thejungle.game.characters;
+package io.github.com.ranie_borges.thejungle.model.entity.characters;
 
-import io.github.com.ranie_borges.thejungle.model.Character;
-import io.github.com.ranie_borges.thejungle.model.Item;
-import io.github.com.ranie_borges.thejungle.model.NonPlayerCharacter;
+import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
+import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
 
 //TODO
-public class Hunter extends Character {
+public class Survivor extends Character {
 
-    protected Hunter(String name) {
+    protected Survivor(String name) {
         super(name);
     }
 

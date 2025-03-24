@@ -1,17 +1,13 @@
-package io.github.com.ranie_borges.thejungle.game.characters;
+package io.github.com.ranie_borges.thejungle.model.entity.characters;
 
-import io.github.com.ranie_borges.thejungle.model.Character;
-import io.github.com.ranie_borges.thejungle.model.Item;
-import io.github.com.ranie_borges.thejungle.model.NonPlayerCharacter;
-import io.github.com.ranie_borges.thejungle.model.enums.Trait;
+import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
+import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 //TODO
-public class Doctor extends Character {
+public class Lumberjack extends Character {
 
-    protected Doctor(String name) {
+    protected Lumberjack(String name) {
         super(name);
     }
 

@@ -1,9 +1,8 @@
-package io.github.com.ranie_borges.thejungle.model;
+package io.github.com.ranie_borges.thejungle.model.entity;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
-import io.github.com.ranie_borges.thejungle.model.interfaces.ICharacter;
-import io.github.com.ranie_borges.thejungle.model.interfaces.ICreature;
+import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICreature;
 
 import java.util.Collections;
 import java.util.HashMap;
