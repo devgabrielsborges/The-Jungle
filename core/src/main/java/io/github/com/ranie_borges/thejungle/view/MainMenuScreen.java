@@ -17,7 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import io.github.com.ranie_borges.thejungle.Main;
+import io.github.com.ranie_borges.thejungle.core.Main;
 
 public class MainMenuScreen implements Screen {
 

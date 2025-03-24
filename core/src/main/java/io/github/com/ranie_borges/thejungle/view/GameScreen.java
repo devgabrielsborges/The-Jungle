@@ -9,7 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import io.github.com.ranie_borges.thejungle.Main;
+import io.github.com.ranie_borges.thejungle.core.Main;
 
 public class GameScreen implements Screen {
 
