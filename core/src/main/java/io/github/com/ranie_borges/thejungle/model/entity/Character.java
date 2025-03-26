@@ -1,38 +1,56 @@
 package io.github.com.ranie_borges.thejungle.model.entity;
 
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public abstract class Character implements ICharacter {
+    // Fields to be serialized
+    @Expose
     private String name;
+    @Expose
     private float life;
+    @Expose
     private float hunger;
+    @Expose
     private float thirsty;
+    @Expose
     private float energy;
+    @Expose
     private float sanity;
+    @Expose
     private double[] localization;
+    @Expose
     private List<Item> inventory;
+    @Expose
     private double attackDamage;
+    @Expose
     private double defenseStatus;
+    @Expose
     private List<Trait> traits;
+    @Expose
+    private String characterType; // For proper deserialization of subtypes
+
+    protected Character() {
+        this.inventory = new ArrayList<>();
+        this.traits = new ArrayList<>();
+        this.localization = new double[]{0.0, 0.0};
+    }
 
     protected Character(String name) {
+        this();
         this.name = name;
         this.life = 100.0f;
         this.hunger = 0.0f;
         this.thirsty = 0.0f;
         this.energy = 100.0f;
         this.sanity = 100.0f;
-        this.localization = new double[]{0.0, 0.0};
-        this.inventory = new ArrayList<>();
         this.attackDamage = 0.0;
         this.defenseStatus = 0.0;
-        this.traits = new ArrayList<>();
+        this.characterType = this.getClass().getSimpleName();
     }
 
     public String getName() {
@@ -48,7 +66,7 @@ public abstract class Character implements ICharacter {
     }
 
     public void setLife(float life) {
-        this.life = Math.max(0, Math.min(100, life));
+        this.life = life;
     }
 
     public float getHunger() {
@@ -56,7 +74,7 @@ public abstract class Character implements ICharacter {
     }
 
     public void setHunger(float hunger) {
-        this.hunger = Math.max(0, Math.min(100, hunger));
+        this.hunger = hunger;
     }
 
     public float getThirsty() {
@@ -64,7 +82,7 @@ public abstract class Character implements ICharacter {
     }
 
     public void setThirsty(float thirsty) {
-        this.thirsty = Math.max(0, Math.min(100, thirsty));
+        this.thirsty = thirsty;
     }
 
     public float getEnergy() {
@@ -72,7 +90,7 @@ public abstract class Character implements ICharacter {
     }
 
     public void setEnergy(float energy) {
-        this.energy = Math.max(0, Math.min(100, energy));
+        this.energy = energy;
     }
 
     public float getSanity() {
@@ -80,31 +98,23 @@ public abstract class Character implements ICharacter {
     }
 
     public void setSanity(float sanity) {
-        this.sanity = Math.max(0, Math.min(100, sanity));
+        this.sanity = sanity;
     }
 
     public double[] getLocalization() {
-        return Arrays.copyOf(localization, localization.length);
+        return localization;
     }
 
     public void setLocalization(double[] localization) {
-        this.localization = Arrays.copyOf(localization, localization.length);
+        this.localization = localization;
     }
 
     public List<Item> getInventory() {
-        return Collections.unmodifiableList(inventory);
-    }
-
-    public void addItem(Item item) {
-        this.inventory.add(item);
-    }
-
-    public void removeItem(Item item) {
-        this.inventory.remove(item);
+        return inventory;
     }
 
     public void setInventory(List<Item> inventory) {
-        this.inventory = new ArrayList<>(inventory);
+        this.inventory = inventory;
     }
 
     public double getAttackDamage() {
@@ -112,7 +122,7 @@ public abstract class Character implements ICharacter {
     }
 
     public void setAttackDamage(double attackDamage) {
-        this.attackDamage = Math.max(0, attackDamage);
+        this.attackDamage = attackDamage;
     }
 
     public double getDefenseStatus() {
@@ -120,22 +130,22 @@ public abstract class Character implements ICharacter {
     }
 
     public void setDefenseStatus(double defenseStatus) {
-        this.defenseStatus = Math.max(0, defenseStatus);
+        this.defenseStatus = defenseStatus;
     }
 
     public List<Trait> getTraits() {
-        return Collections.unmodifiableList(traits);
-    }
-
-    public void addTrait(Trait trait) {
-        this.traits.add(trait);
-    }
-
-    public void removeTrait(Trait trait) {
-        this.traits.remove(trait);
+        return traits;
     }
 
     public void setTraits(List<Trait> traits) {
-        this.traits = new ArrayList<>(traits);
+        this.traits = traits;
+    }
+
+    public String getCharacterType() {
+        return characterType;
+    }
+
+    public void setCharacterType(String characterType) {
+        this.characterType = characterType;
     }
 }
