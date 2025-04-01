@@ -131,6 +131,7 @@ public class NonPlayerCharacterTest {
             super(name);
         }
 
+
         @Override
         public boolean attack(double attackDamage, Character<?> character) {
             if (character == null || !this.isAlive()) {
@@ -141,6 +142,7 @@ public class NonPlayerCharacterTest {
                 character.setLife(character.getLife() - (float) damageDealt);
             }
             return true;
+          
         }
 
         @Override
@@ -188,21 +190,25 @@ public class NonPlayerCharacterTest {
             // Implementation left empty for testing
         }
 
+      
         @Override
         public boolean attack(double attackDamage, NonPlayerCharacter npc) {
             return false;
         }
 
+      
         @Override
         public boolean avoidFight(boolean hasTraitLucky) {
             return false;
         }
 
+      
         @Override
         public void collectItem(boolean hasItemNear, boolean isInventoryFull) {
 
         }
 
+      
         @Override
         public void drink(boolean hasDrinkableItem) {
 
