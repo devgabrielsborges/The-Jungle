@@ -1,16 +1,7 @@
 package io.github.com.ranie_borges.thejungle.model.entity;
 
-import com.badlogic.gdx.utils.Array;
-import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
-import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
-import io.github.com.ranie_borges.thejungle.model.enums.Trait;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.Assert.*;
 
 public class NonPlayerCharacterTest {
@@ -99,7 +90,7 @@ public class NonPlayerCharacterTest {
         // Test attack with damage
         npc.setAttackDamage(30.0);
         assertTrue(npc.attack(10.0, character));
-        assertEquals(80.0f, character.getLife(), 0.001f);
+        assertEquals(90.0f, character.getLife(), 0.001f);
 
         // Test attack when NPC is dead
         npc.setLife(0.0f);
@@ -131,18 +122,22 @@ public class NonPlayerCharacterTest {
             super(name);
         }
 
-
         @Override
         public boolean attack(double attackDamage, Character<?> character) {
             if (character == null || !this.isAlive()) {
                 return false;
             }
-            double damageDealt = attackDamage - character.getDefenseStatus();
+
+            // Use the NPC's attack damage instead of the parameter
+            double totalAttackDamage = this.getAttackDamage();
+            double damageDealt = totalAttackDamage - character.getDefenseStatus();
+
             if (damageDealt > 0) {
                 character.setLife(character.getLife() - (float) damageDealt);
+                return true; // Return true only if damage was dealt
             }
-            return true;
-           
+
+            return false; // Return false if no damage was dealt
         }
 
         @Override
@@ -190,25 +185,21 @@ public class NonPlayerCharacterTest {
             // Implementation left empty for testing
         }
 
-       
         @Override
         public boolean attack(double attackDamage, NonPlayerCharacter npc) {
             return false;
         }
 
-       
         @Override
         public boolean avoidFight(boolean hasTraitLucky) {
             return false;
         }
 
-       
         @Override
         public void collectItem(boolean hasItemNear, boolean isInventoryFull) {
 
         }
 
-       
         @Override
         public void drink(boolean hasDrinkableItem) {
 

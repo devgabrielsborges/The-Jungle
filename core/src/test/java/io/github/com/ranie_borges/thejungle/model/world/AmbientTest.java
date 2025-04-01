@@ -42,6 +42,27 @@ public class AmbientTest {
     }
 
     @Test
+    public void testConstructorWithAttributes() {
+        Set<AmbientAttribute> attributes = new HashSet<>();
+        attributes.add(AmbientAttribute.DENSE_VEGETATION);
+        attributes.add(AmbientAttribute.HUMID_CLIMATE);
+
+        TestAmbient ambientWithAttributes = new TestAmbient(
+            "Jungle with Attributes",
+            "A jungle with predefined attributes",
+            3.0f,
+            attributes
+        );
+
+        assertEquals("Jungle with Attributes", ambientWithAttributes.getName());
+        assertEquals("A jungle with predefined attributes", ambientWithAttributes.getDescription());
+        assertEquals(3.0f, ambientWithAttributes.getDifficult(), 0.001);
+        assertEquals(2, ambientWithAttributes.getAttributes().size());
+        assertTrue(ambientWithAttributes.getAttributes().contains(AmbientAttribute.DENSE_VEGETATION));
+        assertTrue(ambientWithAttributes.getAttributes().contains(AmbientAttribute.HUMID_CLIMATE));
+    }
+
+    @Test
     public void testSetName() {
         String newName = "New Ambient Name";
         ambient.setName(newName);
@@ -120,41 +141,87 @@ public class AmbientTest {
     }
 
     @Test
+    public void testPossibleEventsUnmodifiableView() {
+        Map<Event, Double> events = new HashMap<>();
+        events.put(new TestEvent("Test Event", 0.5f), 0.5);
+        ambient.setPossibleEvents(events);
+
+        Map<Event, Double> possibleEvents = ambient.getPossibleEvents();
+        try {
+            possibleEvents.put(new TestEvent("New Event", 0.3f), 0.3);
+            fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected exception
+        }
+    }
+
+    @Test
     public void testSetAttributes() {
-        // Use dummy implementation instead of mocking the enum
         Set<AmbientAttribute> attributes = new HashSet<>();
-        // Add actual enum values instead of mocks - replace with your actual enum values
-        // For example: attributes.add(AmbientAttribute.HUMID);
+        // Use all available enum values
+        attributes.add(AmbientAttribute.DENSE_VEGETATION);
+        attributes.add(AmbientAttribute.ABUNDANT_FAUNA);
+        attributes.add(AmbientAttribute.HUMID_CLIMATE);
 
         ambient.setAttributes(attributes);
-        assertEquals(attributes, ambient.getAttributes());
+
+        assertEquals(3, ambient.getAttributes().size());
+        assertTrue(ambient.getAttributes().contains(AmbientAttribute.DENSE_VEGETATION));
+        assertTrue(ambient.getAttributes().contains(AmbientAttribute.ABUNDANT_FAUNA));
+        assertTrue(ambient.getAttributes().contains(AmbientAttribute.HUMID_CLIMATE));
+    }
+
+    @Test
+    public void testAttributesModifiable() {
+        // Since attributes should be directly modifiable, verify this behavior
+        Set<AmbientAttribute> initialAttributes = new HashSet<>();
+        initialAttributes.add(AmbientAttribute.DENSE_VEGETATION);
+        ambient.setAttributes(initialAttributes);
+
+        // Get and modify the attributes directly
+        Set<AmbientAttribute> attributes = ambient.getAttributes();
+        attributes.add(AmbientAttribute.HUMID_CLIMATE);
+
+        // Verify the changes reflect in ambient
+        assertEquals(2, ambient.getAttributes().size());
+        assertTrue(ambient.getAttributes().contains(AmbientAttribute.HUMID_CLIMATE));
     }
 
     @Test
     public void testAddClime() {
-        // Use dummy implementation instead of mocking the enum
-        // Replace TROPICAL with an actual enum value from your Clime enum
-        // Clime testClime = Clime.TROPICAL;
-
-        // ambient.addClime(testClime);
-        // assertTrue(ambient.getClimes().contains(testClime));
-
-        // Skip this test if enum values aren't available
-        assertTrue(true);
+        Clime testClime = mock(Clime.class);
+        ambient.addClime(testClime);
+        assertTrue(ambient.getClimes().contains(testClime));
     }
 
     @Test
     public void testSetClimes() {
-        // Use dummy implementation instead of mocking the enum
         Set<Clime> climes = new HashSet<>();
-        // Add actual enum values instead of mocks
-        // For example: climes.add(Clime.TROPICAL); climes.add(Clime.DESERT);
+        Clime testClime1 = mock(Clime.class);
+        Clime testClime2 = mock(Clime.class);
 
-        // ambient.setClimes(climes);
-        // assertEquals(2, ambient.getClimes().size());
+        climes.add(testClime1);
+        climes.add(testClime2);
 
-        // Skip this test if enum values aren't available
-        assertTrue(true);
+        ambient.setClimes(climes);
+
+        assertEquals(2, ambient.getClimes().size());
+        assertTrue(ambient.getClimes().contains(testClime1));
+        assertTrue(ambient.getClimes().contains(testClime2));
+    }
+
+    @Test
+    public void testClimesUnmodifiableView() {
+        Clime testClime = mock(Clime.class);
+        ambient.addClime(testClime);
+
+        Set<Clime> climes = ambient.getClimes();
+        try {
+            climes.add(mock(Clime.class));
+            fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected exception
+        }
     }
 
     @Test
@@ -166,10 +233,25 @@ public class AmbientTest {
         verify(spyAmbient).generateEvent();
     }
 
+    @Test
+    public void testModifiesClimeAndDisableEvent() {
+        TestAmbient spyAmbient = spy(ambient);
+
+        spyAmbient.modifiesClime();
+        verify(spyAmbient).modifiesClime();
+
+        spyAmbient.disableEvent();
+        verify(spyAmbient).disableEvent();
+    }
+
     // Test implementations
     private static class TestAmbient extends Ambient {
         public TestAmbient(String name) {
             super(name, "Test description", 1.0f);
+        }
+
+        public TestAmbient(String name, String description, float difficult, Set<AmbientAttribute> attributes) {
+            super(name, description, difficult, attributes);
         }
 
         @Override
@@ -177,14 +259,17 @@ public class AmbientTest {
             // Implementation for testing
         }
 
+        @Override
         public void explore() {
             generateEvent();
         }
 
+        @Override
         public void generateEvent() {
             // Test implementation
         }
 
+        @Override
         public void modifiesClime() {
             // Test implementation
         }
@@ -207,16 +292,9 @@ public class AmbientTest {
             super(name, "Test description", probability);
         }
 
-
-        public <T> void execute(T character) {}
-
-        /**
-         * @param character
-         * @param <T>
-         */
         @Override
         public <T extends Character> void execute(T character) {
-
+            // Test implementation
         }
     }
 }
