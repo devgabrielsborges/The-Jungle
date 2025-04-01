@@ -236,4 +236,7 @@ public abstract class Character <T extends Item> implements ICharacter {
     public void setCharacterType(String characterType) {
         this.characterType = characterType;
     }
+
+    public abstract void dropItem(Item item);
+    public abstract void defend();
 }
