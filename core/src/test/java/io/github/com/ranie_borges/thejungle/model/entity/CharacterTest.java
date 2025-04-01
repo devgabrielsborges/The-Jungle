@@ -1,8 +1,5 @@
-package io.github.com.ranie_borges.thejungle.model.stats.events.entity;
+package io.github.com.ranie_borges.thejungle.model.entity;
 
-import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
-import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
 import org.junit.Before;
 import org.junit.Test;

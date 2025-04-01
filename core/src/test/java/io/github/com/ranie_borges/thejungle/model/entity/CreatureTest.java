@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle.model.stats.events.entity;
+package io.github.com.ranie_borges.thejungle.model.entity;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
