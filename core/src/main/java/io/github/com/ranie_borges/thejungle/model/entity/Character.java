@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle.model.entity;
 
+import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
@@ -7,7 +8,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Character implements ICharacter {
+public abstract class Character <T extends Item> implements ICharacter {
     // Fields to be serialized
     @Expose
     private String name;
@@ -24,7 +25,13 @@ public abstract class Character implements ICharacter {
     @Expose
     private double[] localization;
     @Expose
-    private List<Item> inventory;
+    private Array<T> inventory;
+
+    @Expose
+    private int inventoryInitialCapacity = 15;
+
+    @Expose
+    private int maxInventoryCapacity = 100;
     @Expose
     private double attackDamage;
     @Expose
@@ -35,7 +42,7 @@ public abstract class Character implements ICharacter {
     private String characterType; // For proper deserialization of subtypes
 
     protected Character() {
-        this.inventory = new ArrayList<>();
+        this.inventory = new Array<>(inventoryInitialCapacity);
         this.traits = new ArrayList<>();
         this.localization = new double[]{0.0, 0.0};
     }
@@ -109,12 +116,93 @@ public abstract class Character implements ICharacter {
         this.localization = localization;
     }
 
-    public List<Item> getInventory() {
+    public Array<T> getInventory() {
         return inventory;
     }
 
-    public void setInventory(List<Item> inventory) {
+    public void setInventory(Array<T> inventory) {
         this.inventory = inventory;
+    }
+
+    public int getInventoryInitialCapacity() {
+        return inventoryInitialCapacity;
+    }
+
+    public void setInventoryInitialCapacity(int inventoryInitialCapacity) {
+        this.inventoryInitialCapacity = inventoryInitialCapacity;
+    }
+
+    public void insertItemInInventory(T item) {
+        if (!isInventoryFull()) {
+            inventory.add(item);
+        }
+    }
+
+    public void insertItemInInventory(T item, int index) {
+        if (index >= 0 && index < inventoryInitialCapacity) {
+            // Ensure array is large enough for the index
+            while (inventory.size <= index) {
+                inventory.add(null);
+            }
+            inventory.set(index, item);
+        }
+    }
+
+    public T getItem(int index) {
+        if (index >= 0 && index < inventory.size) {
+            return inventory.get(index);
+        }
+        return null;
+    }
+
+    public void dropItem(int index) {
+        if (isInventoryIndexOk(index) && inventory.get(index) != null) {
+            inventory.set(index, null);
+        }
+    }
+
+    public void emptyInventory() {
+        inventory.clear();
+    }
+
+    public void increaseInventoryCapacity(int newCapacity) {
+        if (isNewInventoryCapacityOk(newCapacity)) {
+            this.inventoryInitialCapacity = newCapacity;
+            // Resize array if needed
+            if (inventory.size < newCapacity) {
+                inventory.ensureCapacity(newCapacity);
+            }
+        }
+    }
+
+    public boolean isNewInventoryCapacityOk(int newCapacity) {
+        return newCapacity > 0 && newCapacity <= maxInventoryCapacity;
+    }
+
+    public boolean isInventoryFull() {
+        return inventory.size >= inventoryInitialCapacity;
+    }
+
+    public boolean isInventoryIndexOk(int index) {
+        return index >= 0 && index < inventory.size;
+    }
+
+    public boolean isInventoryIndexFree(int index) {
+        return isInventoryIndexOk(index) && inventory.get(index) == null;
+    }
+
+    public boolean isInventoryEmpty() {
+        // Check if size is 0 or all elements are null
+        if (inventory.size == 0) return true;
+
+        for (T item : inventory) {
+            if (item != null) return false;
+        }
+        return true;
+    }
+
+    public int getInventorySize() {
+        return inventory.size;
     }
 
     public double getAttackDamage() {
