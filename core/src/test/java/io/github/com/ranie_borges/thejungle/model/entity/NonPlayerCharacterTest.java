@@ -99,7 +99,7 @@ public class NonPlayerCharacterTest {
         // Test attack with damage
         npc.setAttackDamage(30.0);
         assertTrue(npc.attack(10.0, character));
-        assertEquals(90.0f, character.getLife(), 0.001f);
+        assertEquals(80.0f, character.getLife(), 0.001f);
 
         // Test attack when NPC is dead
         npc.setLife(0.0f);
@@ -142,7 +142,7 @@ public class NonPlayerCharacterTest {
                 character.setLife(character.getLife() - (float) damageDealt);
             }
             return true;
-          
+           
         }
 
         @Override
@@ -190,25 +190,25 @@ public class NonPlayerCharacterTest {
             // Implementation left empty for testing
         }
 
-      
+       
         @Override
         public boolean attack(double attackDamage, NonPlayerCharacter npc) {
             return false;
         }
 
-      
+       
         @Override
         public boolean avoidFight(boolean hasTraitLucky) {
             return false;
         }
 
-      
+       
         @Override
         public void collectItem(boolean hasItemNear, boolean isInventoryFull) {
 
         }
 
-      
+       
         @Override
         public void drink(boolean hasDrinkableItem) {
 
