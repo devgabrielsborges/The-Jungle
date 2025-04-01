@@ -12,6 +12,22 @@ public class Survivor extends Character {
     }
 
     /**
+     * @param item
+     */
+    @Override
+    public void dropItem(Item item) {
+
+    }
+
+    /**
+     *
+     */
+    @Override
+    public void defend() {
+
+    }
+
+    /**
      * @param attackDamage The amount of damage to inflict
      * @param npc          The non-player character target
      * @return
