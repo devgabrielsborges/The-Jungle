@@ -97,8 +97,9 @@ public class NonPlayerCharacterTest {
         assertEquals(100.0f, character.getLife(), 0.001f);
 
         // Test attack with damage
+        npc.setAttackDamage(30.0);
         assertTrue(npc.attack(10.0, character));
-        assertTrue(character.getLife() < 100.0f);
+        assertEquals(90.0f, character.getLife(), 0.001f);
 
         // Test attack when NPC is dead
         npc.setLife(0.0f);
@@ -130,14 +131,18 @@ public class NonPlayerCharacterTest {
             super(name);
         }
 
-        /**
-         * @param attackDamage The amount of damage to inflict
-         * @param character    The character to attack
-         * @return
-         */
+
         @Override
         public boolean attack(double attackDamage, Character<?> character) {
-            return false;
+            if (character == null || !this.isAlive()) {
+                return false;
+            }
+            double damageDealt = attackDamage - character.getDefenseStatus();
+            if (damageDealt > 0) {
+                character.setLife(character.getLife() - (float) damageDealt);
+            }
+            return true;
+          
         }
 
         @Override
@@ -185,37 +190,25 @@ public class NonPlayerCharacterTest {
             // Implementation left empty for testing
         }
 
-        /**
-         * @param attackDamage The amount of damage to inflict
-         * @param npc          The non-player character target
-         * @return
-         */
+      
         @Override
         public boolean attack(double attackDamage, NonPlayerCharacter npc) {
             return false;
         }
 
-        /**
-         * @param hasTraitLucky Whether the character has the lucky trait
-         * @return
-         */
+      
         @Override
         public boolean avoidFight(boolean hasTraitLucky) {
             return false;
         }
 
-        /**
-         * @param hasItemNear     Whether an item is available nearby
-         * @param isInventoryFull Whether the character's inventory is full
-         */
+      
         @Override
         public void collectItem(boolean hasItemNear, boolean isInventoryFull) {
 
         }
 
-        /**
-         * @param hasDrinkableItem Whether the character has a drinkable item
-         */
+      
         @Override
         public void drink(boolean hasDrinkableItem) {
 
