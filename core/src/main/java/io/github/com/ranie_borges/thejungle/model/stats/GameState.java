@@ -60,4 +60,23 @@ public class GameState {
         this.offsetDateTime = offsetDateTime;
     }
 
+    private EventController eventController;
+
+    public GameState() {
+        this.activeEvents = new ArrayList<>();
+        this.offsetDateTime = OffsetDateTime.now();
+        this.eventController = new EventController();
+    }
+
+    public EventController getEventController() {
+        return eventController;
+    }
+
+    public void setEventController(EventController eventController) {
+        this.eventController = eventController;
+    }
+
+    public AmbientController getAmbientController() {
+        return new AmbientController(this, eventController);
+    }
 }
