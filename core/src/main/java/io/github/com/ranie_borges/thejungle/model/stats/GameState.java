@@ -77,6 +77,6 @@ public class GameState {
     }
 
     public AmbientController getAmbientController() {
-        return new AmbientController(this, eventController);
+        return ambientController;
     }
 }
