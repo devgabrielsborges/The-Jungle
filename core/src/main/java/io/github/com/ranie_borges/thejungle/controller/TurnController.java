@@ -185,7 +185,7 @@ public class TurnController<C extends Character<?>, A extends Ambient> {
         if (currentTurn % 3 == 0) {
             logger.info("Resources in {} are regenerating", currentAmbient.getName());
 
-            AmbientController<A> ambientController = gameState.getAmbientController();
+            AmbientController<A, C> ambientController = gameState.getAmbientController();
             if (ambientController != null) {
                 Set<Clime> currentClimes = currentAmbient.getClimes();
                 boolean hasHarshClimate = currentClimes.stream()
