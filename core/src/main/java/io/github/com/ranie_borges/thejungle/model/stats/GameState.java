@@ -17,7 +17,7 @@ public class GameState<C extends Character<?>, A extends Ambient> {
     private int daysSurvived;
     private OffsetDateTime offsetDateTime;
     private EventController<C> eventController;
-    private AmbientController<A> ambientController;
+    private AmbientController<A, C> ambientController;
 
     public GameState() {
         this.activeEvents = new ArrayList<>();
@@ -73,11 +73,11 @@ public class GameState<C extends Character<?>, A extends Ambient> {
         this.eventController = eventController;
     }
 
-    public AmbientController<A> getAmbientController() {
+    public AmbientController<A, C> getAmbientController() {
         return ambientController;
     }
 
-    public void setAmbientController(AmbientController<A> ambientController) {
+    public void setAmbientController(AmbientController<A, C> ambientController) {
         this.ambientController = ambientController;
     }
 }
