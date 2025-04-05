@@ -14,8 +14,7 @@ public class EventController<C extends Character<?>> {
     private final Map<String, Event> possibleEvents;
     private final List<Event> eventHistory;
     private final Random random;
-    private GameState gameState;
-
+    private G gameState;
     private static final int MAX_HISTORY_SIZE = 15;
 
     public EventController(GameState gameState) {
