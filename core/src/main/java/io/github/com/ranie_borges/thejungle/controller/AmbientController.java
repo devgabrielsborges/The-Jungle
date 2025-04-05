@@ -131,6 +131,6 @@ public class AmbientController<T extends Ambient> {
     }
 
     public void regenerateResources(T currentAmbient, int resourceCount, boolean isDaytime) {
-        //TODO
+        throw new UnsupportedOperationException("Resource regeneration not yet implemented");
     }
 }
