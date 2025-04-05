@@ -9,28 +9,31 @@ import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-public class AmbientController<T extends Ambient> {
+public class AmbientController<A extends Ambient, C extends Character<?>> {
     private static final Logger logger = LoggerFactory.getLogger(AmbientController.class);
-    private Set<T> ambients;
+    private final EventController<C> eventController;
     private Clime globalClime;
-    private List<T> visitedAmbients;
-    private final EventController eventController;
-    private GameState gameState;
+    private Set<A> ambients;
+    private List<A> visitedAmbients;
+    private GameState<C, A> gameState;
 
-    public AmbientController(GameState gameState, EventController eventController) {
+    public AmbientController(GameState<C, A> gameState, EventController<C> eventController) {
         this.ambients = new HashSet<>();
         this.visitedAmbients = new ArrayList<>();
         this.eventController = eventController;
         this.gameState = gameState;
     }
 
-    public Set<T> getAmbients() {
+    public Set<A> getAmbients() {
         return ambients;
     }
 
-    public void setAmbients(Set<T> ambients) {
+    public void setAmbients(Set<A> ambients) {
         this.ambients = ambients;
     }
 
@@ -41,39 +44,31 @@ public class AmbientController<T extends Ambient> {
     public void setGlobalClime(Clime globalClime) {
         this.globalClime = globalClime;
 
-        // Apply global climate to all environments that don't override it
-        for (T ambient : ambients) {
+        for (A ambient : ambients) {
             if (ambient.getClimes().isEmpty()) {
                 ambient.addClime(globalClime);
             }
         }
     }
 
-    public List<T> getVisitedAmbients() {
+    public List<A> getVisitedAmbients() {
         return visitedAmbients;
     }
 
-    public void setVisitedAmbients(List<T> visitedAmbients) {
+    public void setVisitedAmbients(List<A> visitedAmbients) {
         this.visitedAmbients = visitedAmbients;
     }
 
-    public GameState getGameState() {
+    public GameState<C, A> getGameState() {
         return gameState;
     }
 
-    public void setGameState(GameState gameState) {
+    public void setGameState(GameState<C, A> gameState) {
         this.gameState = gameState;
     }
 
-    /**
-     * Moves the player character to a new environment
-     * @param character The player character
-     * @param newAmbient The target environment
-     * @return True if the move was successful, false otherwise
-     */
-    public boolean changeAmbient(Character character, T newAmbient) {
+    public boolean changeAmbient(C character, A newAmbient) {
         if (character == null || newAmbient == null || !ambients.contains(newAmbient)) {
-            logger.warn("Invalid character or environment in changeAmbient");
             return false;
         }
 
@@ -89,12 +84,7 @@ public class AmbientController<T extends Ambient> {
         return true;
     }
 
-    /**
-     * Generates a random event based on the current environment
-     *
-     * @param ambient The current environment
-     */
-    public void generateEvent(T ambient) {
+    public void generateEvent(A ambient) {
         if (ambient == null) {
             return;
         }
@@ -102,18 +92,10 @@ public class AmbientController<T extends Ambient> {
         Event event = eventController.drawEvent(ambient);
         if (event != null) {
             eventController.applyEvent(event, gameState.getPlayerCharacter());
-            logger.info("Event generated in {}: {}", ambient.getName(), event.getName());
         }
-
     }
 
-    /**
-     * Updates available resources as they're collected
-     * @param ambient The environment to modify
-     * @param item The item being collected
-     * @return True if resource was successfully modified
-     */
-    public boolean modifyResources(T ambient, Item item) {
+    public boolean modifyResources(A ambient, Item item) {
         if (ambient == null || item == null) {
             return false;
         }
@@ -123,14 +105,13 @@ public class AmbientController<T extends Ambient> {
 
         if (removed) {
             ambient.setResources(currentResources);
-            logger.info("Resource {} collected from {}", item.getName(), ambient.getName());
             return true;
         }
 
         return false;
     }
 
-    public void regenerateResources(T currentAmbient, int resourceCount, boolean isDaytime) {
+    public void regenerateResources(A currentAmbient, int resourceCount, boolean isDaytime) {
         throw new UnsupportedOperationException("Resource regeneration not yet implemented");
     }
 }
