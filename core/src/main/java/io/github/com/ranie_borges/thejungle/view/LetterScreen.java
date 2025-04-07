@@ -1,8 +1,6 @@
 package io.github.com.ranie_borges.thejungle.view;
 
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.delay;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.fadeIn;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -26,44 +24,42 @@ public class LetterScreen implements Screen {
     private Music backgroundMusic;
     private Skin skin;
 
+    private boolean transitioning = false; // evita múltiplas transições
+
     public LetterScreen(Main game) {
         this.game = game;
 
-        // Cria o Stage com um viewport responsivo e define o input processor
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
-        // Carrega a skin (verifique se o caminho está correto)
         skin = new Skin(Gdx.files.internal("mainMenu/lgdxs-ui.json"));
 
-        // Configura o background utilizando uma imagem estática
         backgroundTexture = new Texture(Gdx.files.internal("letter/letterScreen.png"));
         Image backgroundImage = new Image(backgroundTexture);
         backgroundImage.setFillParent(true);
         stage.addActor(backgroundImage);
 
-        // Configura e inicia a música de fundo
         backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("letter/waves.mp3"));
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
-        // Cria um Label que exibirá o texto "press backspace to skip..."
         Label infoLabel = new Label("press backspace to skip...", skin);
         infoLabel.getColor().a = 0f; // Inicia invisível
-        // Após 5 segundos, o Label aparece com fade in em 2 segundos
         infoLabel.addAction(sequence(delay(5f), fadeIn(2f)));
 
-        // Cria uma Table para posicionar o Label no canto inferior direito
         Table table = new Table();
         table.setFillParent(true);
-        table.bottom().right().pad(10); // margem de 10 pixels
+        table.bottom().right().pad(10);
         table.add(infoLabel);
         stage.addActor(table);
+
+        // Faz o Stage começar com fade-in do preto
+        stage.getRoot().getColor().a = 0f;
+        stage.getRoot().addAction(fadeIn(1f));
     }
 
     @Override
     public void show() {
-        // Garante que o stage esteja totalmente visível
         stage.getRoot().getColor().a = 1f;
     }
 
@@ -74,10 +70,18 @@ public class LetterScreen implements Screen {
         stage.act(delta);
         stage.draw();
 
-        // Se o player pressionar a tecla espaço, muda para GameScreen
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            backgroundMusic.stop();
-            game.setScreen(new GameScreen(game));
+        // Se apertar Backspace e não estiver em transição
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && !transitioning) {
+            transitioning = true;
+
+            // Adiciona fade-out antes de mudar para a GameScreen
+            stage.getRoot().addAction(sequence(
+                fadeOut(1f),
+                run(() -> {
+                    backgroundMusic.stop();
+                    game.setScreen(new StatsScreen(game));
+                })
+            ));
         }
     }
 
