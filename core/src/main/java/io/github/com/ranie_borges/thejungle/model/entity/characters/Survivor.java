@@ -4,7 +4,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
 
-//TODO
+//TODO implement default attributes for Survivor
 public class Survivor extends Character {
 
     protected Survivor(String name) {

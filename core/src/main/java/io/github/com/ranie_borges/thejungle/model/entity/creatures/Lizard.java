@@ -7,7 +7,8 @@ import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 
 import java.util.Map;
 import java.util.Set;
-
+//TODO implement default attributes for Lizard
+//TODO implement default methods for Lizard
 public class Lizard extends Creature {
 
     protected Lizard(

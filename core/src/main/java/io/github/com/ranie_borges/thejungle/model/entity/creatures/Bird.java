@@ -7,7 +7,8 @@ import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 
 import java.util.Map;
 import java.util.Set;
-
+//TODO implement default attributes for Bird
+//TODO implement default methods for Bird
 public class Bird extends Creature {
 
     protected Bird(
