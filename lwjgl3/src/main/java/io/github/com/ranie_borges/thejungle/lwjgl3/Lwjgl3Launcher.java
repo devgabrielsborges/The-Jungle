@@ -1,3 +1,4 @@
+
 package io.github.com.ranie_borges.thejungle.lwjgl3;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
