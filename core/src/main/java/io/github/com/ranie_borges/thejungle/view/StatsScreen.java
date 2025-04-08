@@ -80,8 +80,7 @@ public class StatsScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 String nome = nomeTextField.getText();
                 if (!nome.isEmpty() && !profissaoSelecionada.isEmpty()) {
-                    System.out.println("Nome: " + nome);
-                    System.out.println("Profissão: " + profissaoSelecionada);
+                    game.setScreen(new ProceduralMapScreen());
                 } else {
                     System.out.println("Escolha um nome e uma profissão.");
                 }
@@ -99,15 +98,15 @@ public class StatsScreen implements Screen {
 
         formulario.add(tituloLabel).colspan(4).padBottom(30);
         formulario.row();
-        formulario.add(desempregadoBtn).size(100).pad(5);
-        formulario.add(cacadorBtn).size(100).pad(5);
-        formulario.add(lenhadorBtn).size(100).pad(5);
-        formulario.add(medicoBtn).size(100).pad(5);
+        formulario.add(desempregadoBtn).size(100).pad(6);
+        formulario.add(cacadorBtn).size(100).pad(6);
+        formulario.add(lenhadorBtn).size(100).pad(6);
+        formulario.add(medicoBtn).size(100).pad(6);
         formulario.row();
-        formulario.add(desempregadoLabel).pad(10);
-        formulario.add(cacadorLabel).pad(10);
-        formulario.add(lenhadorLabel).pad(10);
-        formulario.add(medicoLabel).pad(10);
+        formulario.add(desempregadoLabel).pad(11);
+        formulario.add(cacadorLabel).pad(11);
+        formulario.add(lenhadorLabel).pad(11);
+        formulario.add(medicoLabel).pad(11);
         formulario.row();
         formulario.add().colspan(4).padBottom(20).row();
         formulario.add(nomeLabel).colspan(4).padBottom(10);
@@ -147,7 +146,7 @@ public class StatsScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 profissaoSelecionada = nome;
-                somCliqueClasse.play(); // 🔊 Som ao clicar na classe
+                somCliqueClasse.play(); // 🔊 Som ao clicar
                 atualizarSelecaoVisual();
                 atualizarDescricao(nome);
                 atualizarImagemPersonagem(nome);
@@ -227,8 +226,7 @@ public class StatsScreen implements Screen {
         }
     }
 
-    @Override
-    public void render(float delta) {
+    @Override public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(delta);
         stage.draw();
@@ -237,9 +235,11 @@ public class StatsScreen implements Screen {
     @Override public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
     }
+
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}
+
     @Override public void dispose() {
         stage.dispose();
         skin.dispose();
