@@ -3,6 +3,12 @@
 ## Sobre o Jogo
 The Jungle é um jogo de sobrevivência onde você acorda após um acidente de avião na selva e precisa explorar, encontrar recursos e sobreviver. Desenvolvido em Java com [libGDX](https://libgdx.com/), o jogo apresenta geração procedural de mapas e diferentes classes de personagens para escolher.
 
+### Menu Principal  
+![Menu principal](.github/images/main-menu.jpeg "Optional title")
+
+### Seleção de Personagem
+![Seleção de personagem](.github/images/class-selection.jpeg "Optional title")
+
 ## Como Jogar
 1. Na tela inicial, clique em "PLAY" para iniciar
 2. Assista à sequência de introdução (tecle ESPAÇO para pular)
