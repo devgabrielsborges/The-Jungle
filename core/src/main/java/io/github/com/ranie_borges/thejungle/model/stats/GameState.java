@@ -80,4 +80,12 @@ public class GameState<C extends Character<?>, A extends Ambient> {
     public void setAmbientController(AmbientController<A, C> ambientController) {
         this.ambientController = ambientController;
     }
+
+    public void copyFrom(GameState<C, A> other) {
+        this.playerCharacter = other.getPlayerCharacter();
+        this.currentAmbient = other.getCurrentAmbient();
+        this.daysSurvived = other.getDaysSurvived();
+        this.offsetDateTime = other.getOffsetDateTime();
+        this.activeEvents = new ArrayList<>(other.getActiveEvents());
+    }
 }
