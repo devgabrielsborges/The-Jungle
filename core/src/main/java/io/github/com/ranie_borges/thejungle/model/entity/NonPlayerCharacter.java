@@ -148,4 +148,8 @@ public abstract class NonPlayerCharacter<T extends Item> implements INonPlayerCh
 
     @Override
     public abstract void roam();
+
+    public boolean takeDamage(double attackDamage) {
+        return false;
+    }
 }

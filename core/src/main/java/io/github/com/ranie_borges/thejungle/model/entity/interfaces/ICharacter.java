@@ -22,10 +22,10 @@ public interface ICharacter {
     /**
      * Collects an item from the environment if conditions allow
      *
-     * @param hasItemNear Whether an item is available nearby
+     * @param nearbyItem Whether an item is available nearby
      * @param isInventoryFull Whether the character's inventory is full
      */
-    void collectItem(boolean hasItemNear, boolean isInventoryFull);
+    void collectItem(Item nearbyItem, boolean isInventoryFull);
     /**
      * Consumes a drinkable item to replenish thirst
      *
