@@ -132,9 +132,9 @@ public abstract class Character <T extends Item> implements ICharacter {
         this.inventoryInitialCapacity = inventoryInitialCapacity;
     }
 
-    public void insertItemInInventory(T item) {
-        if (!isInventoryFull()) {
-            inventory.add(item);
+    public void insertItemInInventory(Item item) {
+        if (item != null && !isInventoryFull()) {
+            inventory.add((T) item);
         }
     }
 
