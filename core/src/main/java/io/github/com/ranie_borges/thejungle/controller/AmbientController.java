@@ -114,4 +114,12 @@ public class AmbientController<A extends Ambient, C extends Character<?>> {
     public void regenerateResources(A currentAmbient, int resourceCount, boolean isDaytime) {
         throw new UnsupportedOperationException("Resource regeneration not yet implemented");
     }
+
+    public boolean removeResource(A ambient, Item resource) {
+        if (ambient == null || resource == null) {
+            return false;
+        }
+
+        return ambient.getResources().remove(resource);
+    }
 }
