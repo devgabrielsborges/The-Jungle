@@ -4,7 +4,7 @@ import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.enums.AmbientAttribute;
 
 import java.util.Set;
-
+// TODO implement methods and base attributes for Mountain
 public class Mountain extends Ambient {
 
     protected Mountain(String name, String description, float difficult, Set<AmbientAttribute> attributes) {
