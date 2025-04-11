@@ -7,7 +7,7 @@ public abstract class Item implements IItem {
     private float weight;
     private float durability;
 
-    protected Item( String name, float weight, float durability) {
+    protected Item(String name, String weight, float durability) {
         this.name = name;
         this.weight = Math.max(0, weight);
         this.durability = Math.max(0, Math.min(100, durability));
