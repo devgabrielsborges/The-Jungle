@@ -49,7 +49,7 @@ public class SaveManager {
         try {
             if (gameState == null) {
                 logger.error("Cannot save game: game state is null");
-                throw new SaveManagerException("Failed to save game", e);
+                throw new SaveManagerException("Failed to save game");
             }
 
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
