@@ -48,7 +48,7 @@ public class Lizard extends Creature {
 
     private static Set<Item> createDrops() {
         Set<Item> drops = new HashSet<>();
-        drops.add(new Item("Carne Crua de Lagarto", "Carne de lagarto que pode ser consumida", 8) {
+        drops.add(new Item("Carne Crua de Lagarto", 7, 8) {
             @Override
             public void useItem() {
 

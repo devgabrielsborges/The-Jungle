@@ -1,76 +1,73 @@
 package io.github.com.ranie_borges.thejungle.model.entity.characters;
 
-import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
-import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
+            import io.github.com.ranie_borges.thejungle.model.entity.Character;
+            import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+            import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
-import java.util.ArrayList;
-import java.util.List;
+            public class Survivor extends Character<Item> {
 
-public class Survivor extends Character {
+                protected Survivor(String name) {
+                    super(name);
+                    setLife(100);
+                    setAttackDamage(8.0);
+                    setInventoryInitialCapacity(6);
+                }
 
-    private int health;
-    private int maxInventorySize;
-    private double attackPower;
-    private List<Item> inventory;
+                @Override
+                public void dropItem(Item item) {
+                    getInventory().removeValue(item, true);
+                    System.out.println(getName() + " dropped item: " + item.getName());
+                }
 
-    protected Survivor(String name) {
-        super(name);
-        this.health = 100;
-        this.attackPower = 8.0;
-        this.maxInventorySize = 6;
-        this.inventory = new ArrayList<>();
-    }
+                @Override
+                public boolean attack(double attackDamage, Creature creature) {
+                    if (creature == null) return false;
+                    double totalDamage = attackDamage + getAttackDamage();
+                    System.out.println(getName() + " attacks " + creature.getName() + " causing " + totalDamage + " damage.");
 
-    @Override
-    public void dropItem(Item item) {
-        inventory.remove(item);
-        System.out.println(getName() + " dropped item: " + item.getName());
-    }
+                    // Reduzir a vida da criatura baseado no dano
+                    float creatureLife = creature.getLifeRatio();
+                    creatureLife -= totalDamage;
+                    creature.setLifeRatio(Math.max(0, creatureLife));
 
-    @Override
-    public boolean attack(double attackDamage, NonPlayerCharacter npc) {
-        if (npc == null) return false;
-        double totalDamage = attackDamage + this.attackPower;
-        System.out.println(getName() + " attacks " + npc.getName() + " causing " + totalDamage + " damage.");
-        return npc.takeDamage(totalDamage);
-    }
+                    return creatureLife <= 0; // Retorna true se a criatura foi derrotada
+                }
 
-    @Override
-    public boolean avoidFight(boolean hasTraitLucky) {
-        boolean avoided = hasTraitLucky && Math.random() > 0.4;
-        System.out.println(getName() + (avoided ? " avoided" : " couldn't avoid") + " the fight.");
-        return avoided;
-    }
+                @Override
+                public boolean avoidFight(boolean hasTraitLucky) {
+                    boolean avoided = hasTraitLucky && Math.random() > 0.4;
+                    System.out.println(getName() + (avoided ? " avoided" : " couldn't avoid") + " the fight.");
+                    return avoided;
+                }
 
-    @Override
-    public void collectItem(Item nearbyItem, boolean isInventoryFull) {
-        if (nearbyItem != null && !isInventoryFull && inventory.size() < maxInventorySize) {
-            inventory.add(nearbyItem);
-            System.out.println(getName() + " collected: " + nearbyItem.getName());
-        } else {
-            System.out.println(getName() + " couldn't collect the item.");
-        }
-    }
+                @Override
+                public void collectItem(Item nearbyItem, boolean isInventoryFull) {
+                    if (nearbyItem != null && !isInventoryFull && getInventory().size < getInventoryInitialCapacity()) {
+                        getInventory().add(nearbyItem);
+                        System.out.println(getName() + " collected: " + nearbyItem.getName());
+                    } else {
+                        System.out.println(getName() + " couldn't collect the item.");
+                    }
+                }
 
-    @Override
-    public void drink(boolean hasDrinkableItem) {
-        if (hasDrinkableItem) {
-            health = Math.min(health + 6, 100);
-            System.out.println(getName() + " drank and recovered health. Current health: " + health);
-        } else {
-            System.out.println(getName() + " has nothing to drink.");
-        }
-    }
+                @Override
+                public void drink(boolean Drinkable) {
+                    if (Drinkable) {
+                        setLife(Math.min(getLife() + 6, 100));
+                        System.out.println(getName() + " drank and recovered health. Current health: " + getLife());
+                    } else {
+                        System.out.println(getName() + " has nothing to drink.");
+                    }
+                }
 
-    @Override
-    public void useItem(Item item) {
-        if (item != null && inventory.contains(item)) {
-            System.out.println(getName() + " used: " + item.getName());
-            inventory.remove(item);
-            // Aplicar efeito do item se necessário
-        } else {
-            System.out.println(getName() + " doesn't have the item: " + (item != null ? item.getName() : "null"));
-        }
-    }
-}
+                @Override
+                public void useItem(Item item) {
+                    if (item != null && getInventory().contains(item, true)) {
+                        item.useItem();
+                        System.out.println(getName() + " used: " + item.getName());
+                        getInventory().removeValue(item, true);
+                    } else {
+                        System.out.println(getName() + " doesn't have the item: " + (item != null ? item.getName() : "null"));
+                    }
+                }
+            }

@@ -1,41 +1,45 @@
 package io.github.com.ranie_borges.thejungle.model.entity.interfaces;
 
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
-import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
+     import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+     import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
-public interface ICharacter {
-    /**
-     * Attacks a non-player character with the specified damage
-     *
-     * @param attackDamage The amount of damage to inflict
-     * @param npc The non-player character target
-     * @return true if attack was successful, false otherwise
-     */
-    boolean attack(double attackDamage, NonPlayerCharacter npc);    // returns if the attack was succeeded of failed
-    /**
-     * Attempts to avoid a fight based on luck and other factors
-     *
-     * @param hasTraitLucky Whether the character has the lucky trait
-     * @return true if fight was successfully avoided, false otherwise
-     */
-    boolean avoidFight(boolean hasTraitLucky);   // if the player has Trait.LUCKY, he can avoid the fight
-    /**
-     * Collects an item from the environment if conditions allow
-     *
-     * @param nearbyItem Whether an item is available nearby
-     * @param isInventoryFull Whether the character's inventory is full
-     */
-    void collectItem(Item nearbyItem, boolean isInventoryFull);
-    /**
-     * Consumes a drinkable item to replenish thirst
-     *
-     * @param hasDrinkableItem Whether the character has a drinkable item
-     */
-    void drink(boolean hasDrinkableItem);
-    /**
-     * Uses an item from the inventory
-     *
-     * @param item The item to use
-     */
-    void useItem(Item item);
-}
+     public interface ICharacter {
+         /**
+          * Ataca uma criatura com o dano especificado
+          *
+          * @param attackDamage A quantidade de dano a ser infligida
+          * @param creature A criatura alvo
+          * @return true se o ataque foi bem-sucedido, false caso contrário
+          */
+         boolean attack(double attackDamage, Creature creature);  // retorna se o ataque foi bem-sucedido ou falhou
+
+         /**
+          * Tenta evitar uma luta com base na sorte e outros fatores
+          *
+          * @param hasTraitLucky Se o personagem tem o traço de sorte
+          * @return true se a luta foi evitada com sucesso, false caso contrário
+          */
+         boolean avoidFight(boolean hasTraitLucky);   // se o jogador tem Trait.LUCKY, ele pode evitar a luta
+
+         /**
+          * Coleta um item do ambiente se as condições permitirem
+          *
+          * @param nearbyItem O item disponível nas proximidades
+          * @param isInventoryFull Se o inventário do personagem está cheio
+          */
+         void collectItem(Item nearbyItem, boolean isInventoryFull);
+
+         /**
+          * Consome um item bebível para repor a sede
+          *
+          * @param hasDrinkableItem Se o personagem tem um item bebível
+          */
+         void drink(boolean hasDrinkableItem);
+
+         /**
+          * Usa um item do inventário
+          *
+          * @param item O item a ser usado
+          */
+         void useItem(Item item);
+     }

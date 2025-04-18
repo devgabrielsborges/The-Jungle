@@ -48,7 +48,7 @@ public class Fish extends Creature {
 
     private static Set<Item> createDrops() {
         Set<Item> drops = new HashSet<>();
-        drops.add(new Item("Carne Crua de Peixe", "Carne de peixe que pode ser consumida", 12) {
+        drops.add(new Item("Carne Crua de Peixe", 7, 12) {
             @Override
             public void useItem() {
 

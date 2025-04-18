@@ -48,7 +48,7 @@ public class Deer extends Creature {
 
     private static Set<Item> createDrops() {
         Set<Item> drops = new HashSet<>();
-        drops.add(new Item("Carne Crua de Veado", "Carne de veado que pode ser consumida", 25) {
+        drops.add(new Item("Carne Crua de Veado", 15, 25) {
             @Override
             public void useItem() {
 

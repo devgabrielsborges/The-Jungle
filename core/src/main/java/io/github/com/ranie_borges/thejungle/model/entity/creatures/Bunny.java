@@ -48,7 +48,7 @@ public class Bunny extends Creature {
 
     private static Set<Item> createDrops() {
         Set<Item> drops = new HashSet<>();
-        drops.add(new Item("Carne Crua de Coelho", "Carne de coelho que pode ser consumida", 10) {
+        drops.add(new Item("Carne Crua de Coelho", 7, 10) {
             @Override
             public void useItem() {
 
@@ -59,7 +59,7 @@ public class Bunny extends Creature {
 
             }
         });
-        drops.add(new Item("Pele de Coelho", "Pele macia que pode ser usada para crafting", 0) {
+        drops.add(new Item("Pele de Coelho", 3, 0) {
             @Override
             public void useItem() {
 

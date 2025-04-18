@@ -48,18 +48,19 @@ public class Bird extends Creature {
 
     private static Set<Item> createDrops() {
         Set<Item> drops = new HashSet<>();
-        drops.add(new Item("Carne Crua de Ave", "Carne de ave que pode ser consumida", 15) {
+        drops.add(new Item("Carne Crua de Ave", 5, 15) {
             @Override
             public void useItem() {
 
             }
 
             @Override
+
             public void dropItem() {
 
             }
         });
-        drops.add(new Item("Pena", "Pena de pássaro que pode ser usada para crafting", 0) {
+        drops.add(new Item("Pena", 1, 0) {
             @Override
             public void useItem() {
 
