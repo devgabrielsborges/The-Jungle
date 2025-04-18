@@ -1,5 +1,7 @@
 package io.github.com.ranie_borges.thejungle.controller;
 
+import io.github.com.ranie_borges.thejungle.controller.exceptions.event.EventControllerException;
+import io.github.com.ranie_borges.thejungle.controller.exceptions.event.InvalidEventException;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
@@ -29,8 +31,16 @@ public class EventController<C extends Character<?>> {
     }
 
     public void addPossibleEvent(Event event) {
-        if (event != null) {
+        try {
+            if (event == null) {
+                logger.error("Cannot add event: event is null");
+                throw new InvalidEventException("Event cannot be null");
+            }
             possibleEvents.put(event.getName(), event);
+            logger.info("Added event: {}", event.getName());
+        } catch (Exception e) {
+            logger.error("Failed to add event: {}", e.getMessage());
+            throw new EventControllerException("Failed to add event", e);
         }
     }
 
@@ -43,7 +53,17 @@ public class EventController<C extends Character<?>> {
     }
 
     public void setGameState(GameState gameState) {
-        this.gameState = gameState;
+        try {
+            if (gameState == null) {
+                logger.error("Cannot set game state: game state is null");
+                throw new IllegalArgumentException("Game state cannot be null");
+            }
+            this.gameState = gameState;
+            logger.debug("Game state set");
+        } catch (Exception e) {
+            logger.error("Failed to set game state: {}", e.getMessage());
+            throw new EventControllerException("Failed to set game state", e);
+        }
     }
 
     /**
@@ -52,42 +72,56 @@ public class EventController<C extends Character<?>> {
      * @return The selected event or null if no event occurs
      */
     public Event drawEvent(Ambient ambient) {
-        if (ambient == null || ambient.getPossibleEvents().isEmpty()) {
-            return null;
-        }
-
-        Map<Event, Double> environmentEvents = ambient.getPossibleEvents();
-
-        // Filter out recently occurred events to prevent repetition
-        List<Event> candidateEvents = new ArrayList<>();
-        for (Event event : environmentEvents.keySet()) {
-            if (event.isPossible() && !recentlyOccurred(event)) {
-                candidateEvents.add(event);
+        try {
+            if (ambient == null) {
+                logger.debug("Cannot draw event: ambient is null");
+                return null;
             }
-        }
-
-        if (candidateEvents.isEmpty()) {
-            return null;
-        }
-
-        // Weighted random selection based on probabilities
-        double totalProbability = 0;
-        for (Event event : candidateEvents) {
-            totalProbability += environmentEvents.get(event);
-        }
-
-        double randomValue = random.nextDouble() * totalProbability;
-        double cumulativeProbability = 0;
-
-        for (Event event : candidateEvents) {
-            cumulativeProbability += environmentEvents.get(event);
-            if (randomValue <= cumulativeProbability) {
-                return event;
+            if (ambient.getPossibleEvents().isEmpty()) {
+                logger.debug("No possible events for ambient: {}", ambient.getName());
+                return null;
             }
-        }
 
-        // Fallback to random selection if weighted selection fails
-        return candidateEvents.get(random.nextInt(candidateEvents.size()));
+            Map<Event, Double> environmentEvents = ambient.getPossibleEvents();
+
+            // Filter out recently occurred events to prevent repetition
+            List<Event> candidateEvents = new ArrayList<>();
+            for (Event event : environmentEvents.keySet()) {
+                if (event.isPossible() && !recentlyOccurred(event)) {
+                    candidateEvents.add(event);
+                }
+            }
+
+            if (candidateEvents.isEmpty()) {
+                logger.debug("No candidate events available for ambient: {}", ambient.getName());
+                return null;
+            }
+
+            // Weighted random selection based on probabilities
+            double totalProbability = 0;
+            for (Event event : candidateEvents) {
+                totalProbability += environmentEvents.get(event);
+            }
+
+            double randomValue = random.nextDouble() * totalProbability;
+            double cumulativeProbability = 0;
+
+            for (Event event : candidateEvents) {
+                cumulativeProbability += environmentEvents.get(event);
+                if (randomValue <= cumulativeProbability) {
+                    logger.debug("Selected event: {} for ambient: {}", event.getName(), ambient.getName());
+                    return event;
+                }
+            }
+
+            // Fallback to random selection if weighted selection fails
+            Event selectedEvent = candidateEvents.get(random.nextInt(candidateEvents.size()));
+            logger.debug("Fallback selection - event: {} for ambient: {}", selectedEvent.getName(), ambient.getName());
+            return selectedEvent;
+        } catch (Exception e) {
+            logger.error("Error drawing event: {}", e.getMessage());
+            throw new EventControllerException("Error drawing event", e);
+        }
     }
 
     /**
@@ -97,18 +131,36 @@ public class EventController<C extends Character<?>> {
      * @param character The character affected by the event
      */
     public void applyEvent(Event event, Character<?> character) {
-        if (event == null || character == null) {
-            return;
+        try {
+            validateEvent(event);
+            validateCharacter(character);
+
+            event.execute(character);
+
+            addToHistory(event);
+            if (!gameState.getActiveEvents().contains(event)) {
+                gameState.getActiveEvents().add(event);
+            }
+
+            logger.info("Event {} applied to character {}", event.getName(), character.getName());
+        } catch (Exception e) {
+            logger.error("Failed to apply event: {}", e.getMessage());
+            throw new EventControllerException("Failed to apply event", e);
         }
+    }
 
-        event.execute(character);
-
-        addToHistory(event);
-        if (!gameState.getActiveEvents().contains(event)) {
-            gameState.getActiveEvents().add(event);
+    private void validateEvent(Event event) {
+        if (event == null) {
+            logger.error("Cannot apply event: event is null");
+            throw new InvalidEventException("Event cannot be null");
         }
+    }
 
-        logger.info("Event {} applied to character {}", event.getName(), character.getName());
+    private void validateCharacter(Character<?> character) {
+        if (character == null) {
+            logger.error("Cannot apply event: character is null");
+            throw new IllegalArgumentException("Character cannot be null");
+        }
     }
 
     /**
@@ -117,17 +169,25 @@ public class EventController<C extends Character<?>> {
      * @return True if event was successfully removed
      */
     public boolean removeEvent(Event event) {
-        if (event == null) {
+        try {
+            if (event == null) {
+                logger.error("Cannot remove event: event is null");
+                return false;
+            }
+
+            boolean removed = gameState.getActiveEvents().remove(event);
+
+            if (removed) {
+                logger.info("Event {} has ended", event.getName());
+            } else {
+                logger.debug("Event {} not found in active events", event.getName());
+            }
+
+            return removed;
+        } catch (Exception e) {
+            logger.error("Failed to remove event: {}", e.getMessage());
             return false;
         }
-
-        boolean removed = gameState.getActiveEvents().remove(event);
-
-        if (removed) {
-            logger.info("Event {} has ended", event.getName());
-        }
-
-        return removed;
     }
 
     /**
@@ -136,13 +196,22 @@ public class EventController<C extends Character<?>> {
      * @return True if the event occurred recently
      */
     private boolean recentlyOccurred(Event event) {
-        int recentThreshold = Math.min(MAX_HISTORY_SIZE, eventHistory.size());
-        for (int i = 0; i < recentThreshold; i++) {
-            if (eventHistory.get(eventHistory.size() - 1 - i).getName().equals(event.getName())) {
-                return true;
+        try {
+            if (event == null) {
+                return false;
             }
+
+            int recentThreshold = Math.min(MAX_HISTORY_SIZE, eventHistory.size());
+            for (int i = 0; i < recentThreshold; i++) {
+                if (eventHistory.get(eventHistory.size() - 1 - i).getName().equals(event.getName())) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            logger.error("Error checking recent events: {}", e.getMessage());
+            return false;
         }
-        return false;
     }
 
     /**
@@ -150,10 +219,21 @@ public class EventController<C extends Character<?>> {
      * @param event The event to add
      */
     private void addToHistory(Event event) {
-        eventHistory.add(event);
+        try {
+            if (event == null) {
+                logger.error("Cannot add to history: event is null");
+                return;
+            }
 
-        if (eventHistory.size() > MAX_HISTORY_SIZE) {
-            eventHistory.remove(0);
+            eventHistory.add(event);
+
+            if (eventHistory.size() > MAX_HISTORY_SIZE) {
+                eventHistory.remove(0);
+            }
+
+            logger.debug("Added event {} to history", event.getName());
+        } catch (Exception e) {
+            logger.error("Failed to add event to history: {}", e.getMessage());
         }
     }
 }
