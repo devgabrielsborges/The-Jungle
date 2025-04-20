@@ -64,7 +64,8 @@ public class Discovery<T extends Item> extends Event {
      */
     @Override
     public <U extends Character> void execute(U character) {
-        // Implementation for discovery:
+
+        //TODO Implementation for discovery:
         // 1. Show discovery description to player
         // 2. Check if character has required skills (if needed)
         // 3. Add discovered items to character inventory

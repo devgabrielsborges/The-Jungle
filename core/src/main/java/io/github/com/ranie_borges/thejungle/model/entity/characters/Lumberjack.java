@@ -1,73 +1,74 @@
 package io.github.com.ranie_borges.thejungle.model.entity.characters;
 
-import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
-import io.github.com.ranie_borges.thejungle.model.entity.NonPlayerCharacter;
+    import com.badlogic.gdx.utils.Array;
+    import io.github.com.ranie_borges.thejungle.model.entity.Character;
+    import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+    import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
-//TODO
-public class Lumberjack extends Character {
+    public class Lumberjack extends Character<Item> {
 
-    protected Lumberjack(String name) {
-        super(name);
+        protected Lumberjack(String name) {
+            super(name);
+            setLife(120);
+            setAttackDamage(15.0);
+            setInventoryInitialCapacity(6);
+        }
+
+        @Override
+        public void dropItem(Item item) {
+            getInventory().removeValue(item, true);
+            System.out.println(getName() + " dropped item: " + item.getName());
+        }
+
+        @Override
+        public boolean attack(double attackDamage, Creature creature) {
+            if (creature == null) return false;
+            double totalDamage = attackDamage + getAttackDamage();
+            System.out.println(getName() + " swings axe at " + creature.getName() + " for " + totalDamage + " damage.");
+
+            // Reduzir a vida da criatura baseado no dano
+            float creatureLife = creature.getLifeRatio();
+            creatureLife -= totalDamage;
+            creature.setLifeRatio(Math.max(0, creatureLife));
+
+            return creatureLife <= 0; // Retorna true se a criatura foi derrotada
+        }
+
+        @Override
+        public boolean avoidFight(boolean hasTraitLucky) {
+            boolean avoided = hasTraitLucky && Math.random() > 0.5;
+            System.out.println(getName() + (avoided ? " avoided" : " couldn't avoid") + " the fight.");
+            return avoided;
+        }
+
+        @Override
+        public void collectItem(Item nearbyItem, boolean isInventoryFull) {
+            if (nearbyItem != null && !isInventoryFull && getInventory().size < getInventoryInitialCapacity()) {
+                getInventory().add(nearbyItem);
+                System.out.println(getName() + " collected: " + nearbyItem.getName());
+            } else {
+                System.out.println(getName() + " couldn't collect the item.");
+            }
+        }
+
+        @Override
+        public void drink(boolean Drinkable) {
+            if (Drinkable) {
+                setLife(Math.min(getLife() + 5, 120)); // recupera um pouco de vida
+                System.out.println(getName() + " drank and recovered health. Current health: " + getLife());
+            } else {
+                System.out.println(getName() + " has nothing to drink.");
+            }
+        }
+
+        @Override
+        public void useItem(Item item) {
+            if (item != null && getInventory().contains(item, true)) {
+                item.useItem();
+                System.out.println(getName() + " used: " + item.getName());
+                getInventory().removeValue(item, true);
+            } else {
+                System.out.println(getName() + " doesn't have the item: " + (item != null ? item.getName() : "null"));
+            }
+        }
     }
-
-    /**
-     * @param item
-     */
-    @Override
-    public void dropItem(Item item) {
-
-    }
-
-    /**
-     *
-     */
-    @Override
-    public void defend() {
-
-    }
-
-    /**
-     * @param attackDamage The amount of damage to inflict
-     * @param npc          The non-player character target
-     * @return
-     */
-    @Override
-    public boolean attack(double attackDamage, NonPlayerCharacter npc) {
-        return false;
-    }
-
-    /**
-     * @param hasTraitLucky Whether the character has the lucky trait
-     * @return
-     */
-    @Override
-    public boolean avoidFight(boolean hasTraitLucky) {
-        return false;
-    }
-
-    /**
-     * @param hasItemNear     Whether an item is available nearby
-     * @param isInventoryFull Whether the character's inventory is full
-     */
-    @Override
-    public void collectItem(boolean hasItemNear, boolean isInventoryFull) {
-
-    }
-
-    /**
-     * @param hasDrinkableItem Whether the character has a drinkable item
-     */
-    @Override
-    public void drink(boolean hasDrinkableItem) {
-
-    }
-
-    /**
-     * @param item The item to use
-     */
-    @Override
-    public void useItem(Item item) {
-
-    }
-}

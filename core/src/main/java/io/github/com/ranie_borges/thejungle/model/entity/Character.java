@@ -238,5 +238,6 @@ public abstract class Character <T extends Item> implements ICharacter {
     }
 
     public abstract void dropItem(Item item);
-    public abstract void defend();
+
+    public abstract void collectItem(Item nearbyItem, boolean isInventoryFull);
 }
