@@ -4,7 +4,6 @@ import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.enums.AmbientAttribute;
 
 import java.util.Set;
-// TODO implement methods and base attributes for LakeRiver
 public class LakeRiver extends Ambient {
 
     protected LakeRiver(String name, String description, float difficult, Set<AmbientAttribute> attributes) {

@@ -42,7 +42,6 @@ public class Injury extends Event {
      */
     @Override
     public <T extends Character> void execute(T character) {
-        //TODO implement injury behavior
     }
 
 }

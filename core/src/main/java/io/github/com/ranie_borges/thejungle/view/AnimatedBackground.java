@@ -58,7 +58,6 @@ public class AnimatedBackground extends Actor {
         batch.draw(currentFrame, getX(), getY(), getWidth(), getHeight());
     }
 
-    // Método para liberar os recursos utilizados
     public void dispose() {
         spriteSheet.dispose();
     }

@@ -47,6 +47,5 @@ public class Climate extends Event {
      */
     @Override
     public <T extends Character> void execute(T character) {
-        //TODO to implement
     }
 }
