@@ -63,7 +63,6 @@ public class Mob<T extends Creature> extends Event {
      */
     @Override
     public <U extends Character> void execute(U character) {
-        // TODO implement mob behavior
     }
 
 }

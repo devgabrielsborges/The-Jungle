@@ -1,5 +1,4 @@
 package io.github.com.ranie_borges.thejungle.model.enums;
-// TODO implement more discoveries following its structure
 public enum Discoveries {
     ABANDONED_SHELTER("Abandoned Shelter", "An old shelter that might contain useful items."),
     WATER_SOURCE("Water Source", "A natural spring providing clean water."),

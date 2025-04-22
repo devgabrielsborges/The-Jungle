@@ -141,8 +141,7 @@ public class TurnController<C extends Character<?>, A extends Ambient> {
     }
 
     private void updateClimateConditions() {
-        // Climate might change based on time of day, season, etc.
-        // This would connect to the AmbientController TODO
+
     }
 
     private void updateCharacterAttributes(C player) {
@@ -169,7 +168,6 @@ public class TurnController<C extends Character<?>, A extends Ambient> {
 
         if (player.getLife() <= 0) {
             logger.info("Player has died!");
-            // Trigger game over state TODO
         }
     }
 
