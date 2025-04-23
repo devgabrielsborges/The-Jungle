@@ -4,5 +4,8 @@ public enum Trait {
     FAST_HEALING,
     FAST,
     STRONG,
-    INSANE
+    INSANE,
+    SOBER,
+    INNOVATIVE,
+    BALANCED
 }
