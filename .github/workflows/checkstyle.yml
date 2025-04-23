@@ -19,6 +19,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: gradle
+          # Temporarily disable cache to debug
+          # cache: gradle
       - name: Run Checkstyle
         run: ./gradlew check
