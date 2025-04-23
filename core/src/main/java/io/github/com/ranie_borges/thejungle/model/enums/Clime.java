@@ -7,5 +7,5 @@ public enum Clime {
     FOREST,
     LAKERIVER,
     CAVE,
-    SNOW
+    SNOW,
 }

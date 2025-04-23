@@ -3,4 +3,6 @@ public enum AmbientAttribute {
     DENSE_VEGETATION,
     ABUNDANT_FAUNA,
     HUMID_CLIMATE,
+    DRY_CLIMATE,
+
 }
