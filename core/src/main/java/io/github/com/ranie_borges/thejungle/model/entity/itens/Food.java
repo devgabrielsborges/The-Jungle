@@ -4,7 +4,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
 public class Food extends Item {
 
-    protected Food(String name, float weight, float durability) {
+    public Food(String name, float weight, float durability) {
         super(name, weight, durability);
     }
 
