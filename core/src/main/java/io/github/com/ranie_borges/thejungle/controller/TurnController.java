@@ -221,7 +221,7 @@ public class TurnController<C extends Character<?>, A extends Ambient> {
         String getName();
         String getDescription();
 
-        void execute(C character);
+        void execute(C character);   // applies some event effect on the character
     }
 
     public class CharacterStatus {
