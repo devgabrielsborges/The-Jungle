@@ -55,25 +55,25 @@ public class StatsScreen implements Screen {
 
         somCliqueClasse = Gdx.audio.newSound(Gdx.files.internal("StatsScreen/pagina.mp3"));
 
-        Label tituloLabel = new Label("Selecione sua profissão", skin);
+        Label tituloLabel = new Label("Select your profession", skin);
         tituloLabel.setFontScale(2f);
 
-        desempregadoBtn = criarBotaoProfissao("Desempregado", "sprites/profissoes/desempregado.png");
-        cacadorBtn = criarBotaoProfissao("Cacador", "sprites/profissoes/profissao_cacador.png");
-        lenhadorBtn = criarBotaoProfissao("Lenhador", "sprites/profissoes/profissao_lenhador.png");
-        medicoBtn = criarBotaoProfissao("Medico", "sprites/profissoes/profissao_medico.png");
+        desempregadoBtn = criarBotaoProfissao("Civilian", "sprites/profissoes/desempregado.png");
+        cacadorBtn = criarBotaoProfissao("Hunter", "sprites/profissoes/profissao_cacador.png");
+        lenhadorBtn = criarBotaoProfissao("Lumberjack", "sprites/profissoes/profissao_lenhador.png");
+        medicoBtn = criarBotaoProfissao("Doctor", "sprites/profissoes/profissao_medico.png");
 
-        Label desempregadoLabel = new Label("Desempregado", skin);
-        Label cacadorLabel = new Label("Cacador", skin);
-        Label lenhadorLabel = new Label("Lenhador", skin);
-        Label medicoLabel = new Label("Medico", skin);
+        Label desempregadoLabel = new Label("Civilian", skin);
+        Label cacadorLabel = new Label("Hunter", skin);
+        Label lenhadorLabel = new Label("Lumberjack", skin);
+        Label medicoLabel = new Label("Doctor", skin);
 
         descricaoProfissaoLabel = new Label("", skin);
         descricaoProfissaoLabel.setWrap(true);
         descricaoProfissaoLabel.setAlignment(Align.center);
         descricaoProfissaoLabel.setFontScale(1.8f);
 
-        TextButton confirmarBtn = new TextButton("Confirmar", skin);
+        TextButton confirmarBtn = new TextButton("confirm", skin);
         confirmarBtn.getLabel().setFontScale(2f);
         confirmarBtn.addListener(new ClickListener() {
             @Override
@@ -82,12 +82,12 @@ public class StatsScreen implements Screen {
                 if (!nome.isEmpty() && !profissaoSelecionada.isEmpty()) {
                     game.setScreen(new ProceduralMapScreen());
                 } else {
-                    System.out.println("Escolha um nome e uma profissão.");
+                    System.out.println("Choose a name and a profession.");
                 }
             }
         });
 
-        Label nomeLabel = new Label("Nome do Personagem:", skin);
+        Label nomeLabel = new Label("Character Name:", skin);
         nomeLabel.setFontScale(1.8f);
         nomeTextField = new TextField("", skin);
         nomeTextField.getStyle().font.getData().setScale(2f);
@@ -170,10 +170,10 @@ public class StatsScreen implements Screen {
     private void atualizarImagemPersonagem(String profissao) {
         String caminho = null;
 
-        if (profissao.equals("Desempregado")) caminho = "StatsScreen/desempregadoFundo.png";
-        else if (profissao.equals("Cacador")) caminho = "StatsScreen/cacadorFundo.png";
-        else if (profissao.equals("Lenhador")) caminho = "StatsScreen/lenhadorFundo.png";
-        else if (profissao.equals("Medico")) caminho = "StatsScreen/medicoFundo.png";
+        if (profissao.equals("Civilian")) caminho = "StatsScreen/desempregadoFundo.png";
+        else if (profissao.equals("Hunter")) caminho = "StatsScreen/cacadorFundo.png";
+        else if (profissao.equals("Lumberjack")) caminho = "StatsScreen/lenhadorFundo.png";
+        else if (profissao.equals("Doctor")) caminho = "StatsScreen/medicoFundo.png";
 
         if (caminho != null) {
             Texture texture = new Texture(Gdx.files.internal(caminho));
@@ -189,10 +189,10 @@ public class StatsScreen implements Screen {
     }
 
     private void atualizarSelecaoVisual() {
-        animarSelecao(desempregadoBtn, profissaoSelecionada.equals("Desempregado"));
-        animarSelecao(cacadorBtn, profissaoSelecionada.equals("Cacador"));
-        animarSelecao(lenhadorBtn, profissaoSelecionada.equals("Lenhador"));
-        animarSelecao(medicoBtn, profissaoSelecionada.equals("Medico"));
+        animarSelecao(desempregadoBtn, profissaoSelecionada.equals("Civilian"));
+        animarSelecao(cacadorBtn, profissaoSelecionada.equals("Hunter"));
+        animarSelecao(lenhadorBtn, profissaoSelecionada.equals("Lumberjack"));
+        animarSelecao(medicoBtn, profissaoSelecionada.equals("Doctor"));
     }
 
     private void animarSelecao(ImageButton botao, boolean selecionado) {
@@ -213,14 +213,14 @@ public class StatsScreen implements Screen {
     }
 
     private void atualizarDescricao(String profissao) {
-        if (profissao.equals("Desempregado")) {
-            descricaoProfissaoLabel.setText("Sem ocupação atual, mas com potencial para aprender qualquer coisa.");
-        } else if (profissao.equals("Cacador")) {
-            descricaoProfissaoLabel.setText("Especialista em rastrear e capturar animais. Ótimo com armadilhas.");
-        } else if (profissao.equals("Lenhador")) {
-            descricaoProfissaoLabel.setText("Forte e resistente, coleta madeira com eficiência. Útil na construção.");
-        } else if (profissao.equals("Medico")) {
-            descricaoProfissaoLabel.setText("Capaz de curar aliados e manter o grupo vivo durante emergências.");
+        if (profissao.equals("Civilian")) {
+            descricaoProfissaoLabel.setText("Currently without occupation, but with potential to learn anything.");
+        } else if (profissao.equals("Hunter")) {
+            descricaoProfissaoLabel.setText("Expert in tracking and capturing animals. Great with traps.");
+        } else if (profissao.equals("Lumberjack")) {
+            descricaoProfissaoLabel.setText("Strong and resistant, collects wood efficiently. Useful for construction.");
+        } else if (profissao.equals("Doctor")) {
+            descricaoProfissaoLabel.setText("Able to heal allies and keep the group alive during emergencies.");
         } else {
             descricaoProfissaoLabel.setText("");
         }
