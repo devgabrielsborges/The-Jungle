@@ -193,7 +193,6 @@ public abstract class Character <T extends Item> implements ICharacter {
     public void increaseInventoryCapacity(int newCapacity) {
         if (isNewInventoryCapacityOk(newCapacity)) {
             this.inventoryInitialCapacity = newCapacity;
-            // Resize array if needed
             if (inventory.size < newCapacity) {
                 inventory.ensureCapacity(newCapacity);
             }
