@@ -17,13 +17,11 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Doctor;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Hunter;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Lumberjack;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Survivor;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
-import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,23 +37,20 @@ public class StatsScreen implements Screen {
     private static final String LUMBERJACK_PROFESSION = "Lumberjack";
     private static final String DOCTOR_PROFESSION = "Doctor";
 
-    private final Main game;
+    private Main game;
     private Stage stage;
     private Skin skin;
     private TextField nameTextField;
     private String selectedProfession = "";
 
-    private ImageButton survivorBtn;
-    private ImageButton hunterBtn;
-    private ImageButton lumberjackBtn;
-    private ImageButton doctorBtn;
+    private ImageButton survivorBtn, hunterBtn, lumberjackBtn, doctorBtn;
     private Label professionDescriptionLabel;
     private Image characterImage;
     private Table formTable;
     private boolean movedToLeft = false;
 
     private Sound professionClickSound;
-    private final SaveManager saveManager;
+    private SaveManager saveManager;
 
     public StatsScreen(Main game) {
         this.game = game;
@@ -107,22 +102,26 @@ public class StatsScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 if (!selectedProfession.isEmpty() && !nameTextField.getText().isEmpty()) {
                     String characterName = nameTextField.getText().trim();
-                    Character<Item> character = createCharacter(selectedProfession, characterName);
+                    Character character = createCharacter(selectedProfession, characterName);
 
                     if (character != null) {
-                        GameState<Character<Item>, Ambient> gameState = new GameState<>();
+                        // Create a new GameState with the character
+                        GameState gameState = new GameState();
                         gameState.setPlayerCharacter(character);
                         gameState.setDaysSurvived(0);
                         gameState.setOffsetDateTime(OffsetDateTime.now());
                         gameState.setActiveEvents(new ArrayList<>());
 
+                        // Save the game
                         String saveName = "save_" + characterName;
-                        if (saveManager.saveGame(gameState, saveName)) {
-                            logger.info("Game saved successfully for character: {}", characterName);
+                        boolean saved = saveManager.saveGame(gameState, saveName);
+
+                        if (saved) {
+                            logger.info("Character {} created and game saved successfully", characterName);
+                            // Navigate to game screen
                             game.setScreen(new ProceduralMapScreen());
                         } else {
-                            logger.error("Failed to save game for character: {}", characterName);
-                            // Could add UI feedback here for the error
+                            logger.error("Failed to save game for character {}", characterName);
                         }
                     } else {
                         logger.warn("Character creation failed: name or profession not selected");
@@ -176,7 +175,7 @@ public class StatsScreen implements Screen {
         stage.addActor(container);
     }
 
-    private Character<Item> createCharacter(String profession, String name) {
+    private Character createCharacter(String profession, String name) {
         // Default initial position
         float initialX = 100f;
         float initialY = 100f;
@@ -252,27 +251,26 @@ public class StatsScreen implements Screen {
         movedToLeft = true;
     }
 
-    private void updateCharacterImage(String profession) throws IllegalArgumentException{
-        Texture texture;
+    private void updateCharacterImage(String profession) {
+        Texture texture = null;
         switch (profession) {
             case SURVIVOR_PROFESSION:
-                texture = new Texture("StatsScreen/desempregadoFundo.png");
+                texture = new Texture("StatsScreen/desempregado_grande.png");
                 break;
             case HUNTER_PROFESSION:
-                texture = new Texture("StatsScreen/cacadorFundo.png");
+                texture = new Texture("StatsScreen/cacador_grande.png");
                 break;
             case LUMBERJACK_PROFESSION:
-                texture = new Texture("StatsScreen/lenhadorFundo.png");
+                texture = new Texture("StatsScreen/lenhador_grande.png");
                 break;
             case DOCTOR_PROFESSION:
-                texture = new Texture("StatsScreen/medicoFundo.png");
+                texture = new Texture("StatsScreen/medico_grande.png");
                 break;
-            default:
-                throw new IllegalArgumentException("Invalid profession was passed as argument");
         }
 
-        characterImage.setDrawable(new TextureRegionDrawable(new TextureRegion(texture)));
-
+        if (texture != null) {
+            characterImage.setDrawable(new TextureRegionDrawable(new TextureRegion(texture)));
+        }
     }
 
     private void updateVisualSelection() {

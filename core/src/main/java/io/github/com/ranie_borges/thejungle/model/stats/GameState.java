@@ -11,12 +11,12 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GameState<C extends Character<?>, A extends Ambient> {
+public class GameState {
     @Expose
-    private C playerCharacter;
+    private Character playerCharacter;
 
     @Expose
-    private A currentAmbient;
+    private Ambient currentAmbient;
 
     @Expose
     private List<Event> activeEvents;
@@ -27,29 +27,28 @@ public class GameState<C extends Character<?>, A extends Ambient> {
     @Expose
     private OffsetDateTime offsetDateTime;
 
-    // These shouldn't be serialized
-    private EventController<C> eventController;
-    private AmbientController<A, C> ambientController;
+    private EventController eventController;
+    private AmbientController ambientController;
 
     public GameState() {
         this.activeEvents = new ArrayList<>();
         this.offsetDateTime = OffsetDateTime.now();
-        this.eventController = new EventController<>(this);
+        this.eventController = new EventController(this);
     }
 
-    public C getPlayerCharacter() {
+    public Character getPlayerCharacter() {
         return playerCharacter;
     }
 
-    public void setPlayerCharacter(C playerCharacter) {
+    public void setPlayerCharacter(Character playerCharacter) {
         this.playerCharacter = playerCharacter;
     }
 
-    public A getCurrentAmbient() {
+    public Ambient getCurrentAmbient() {
         return currentAmbient;
     }
 
-    public void setCurrentAmbient(A currentAmbient) {
+    public void setCurrentAmbient(Ambient currentAmbient) {
         this.currentAmbient = currentAmbient;
     }
 
@@ -77,27 +76,19 @@ public class GameState<C extends Character<?>, A extends Ambient> {
         this.offsetDateTime = offsetDateTime;
     }
 
-    public EventController<C> getEventController() {
+    public EventController getEventController() {
         return eventController;
     }
 
-    public void setEventController(EventController<C> eventController) {
+    public void setEventController(EventController eventController) {
         this.eventController = eventController;
     }
 
-    public AmbientController<A, C> getAmbientController() {
+    public AmbientController getAmbientController() {
         return ambientController;
     }
 
-    public void setAmbientController(AmbientController<A, C> ambientController) {
+    public void setAmbientController(AmbientController ambientController) {
         this.ambientController = ambientController;
-    }
-
-    public void copyFrom(GameState<C, A> other) {
-        this.playerCharacter = other.getPlayerCharacter();
-        this.currentAmbient = other.getCurrentAmbient();
-        this.daysSurvived = other.getDaysSurvived();
-        this.offsetDateTime = other.getOffsetDateTime();
-        this.activeEvents = new ArrayList<>(other.getActiveEvents());
     }
 }
