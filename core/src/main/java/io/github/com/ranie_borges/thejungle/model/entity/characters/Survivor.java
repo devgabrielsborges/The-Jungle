@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Survivor extends Character<Item> {
+public class Survivor extends Character {
     private static final Logger logger = LoggerFactory.getLogger(Survivor.class);
 
     public Survivor(String name, float xPosition, float yPosition) {

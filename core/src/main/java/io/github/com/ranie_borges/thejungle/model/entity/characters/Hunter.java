@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Hunter extends Character<Item> {
+public class Hunter extends Character {
     private static final Logger logger = LoggerFactory.getLogger(Hunter.class);
 
     public Hunter(String name, float xPosition, float yPosition) {
