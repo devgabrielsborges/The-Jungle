@@ -17,15 +17,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class AmbientController<A extends Ambient, C extends Character<?>> {
+public class AmbientController<A extends Ambient, C extends Character> {
     private static final Logger logger = LoggerFactory.getLogger(AmbientController.class);
-    private final EventController<C> eventController;
+    private final EventController eventController;
     private Clime globalClime;
     private Set<A> ambients;
     private List<A> visitedAmbients;
-    private GameState<C, A> gameState;
+    private GameState gameState;
 
-    public AmbientController(GameState<C, A> gameState, EventController<C> eventController) {
+    public AmbientController(GameState gameState, EventController eventController) {
         this.ambients = new HashSet<>();
         this.visitedAmbients = new ArrayList<>();
         this.eventController = eventController;
@@ -93,11 +93,11 @@ public class AmbientController<A extends Ambient, C extends Character<?>> {
         }
     }
 
-    public GameState<C, A> getGameState() {
+    public GameState getGameState() {
         return gameState;
     }
 
-    public void setGameState(GameState<C, A> gameState) {
+    public void setGameState(GameState gameState) {
         try {
             if (gameState == null) {
                 logger.error("Cannot set game state: game state is null");
@@ -208,7 +208,7 @@ public class AmbientController<A extends Ambient, C extends Character<?>> {
         }
     }
 
-    public boolean removeResource(A ambient, Item resource) {
+    public boolean removeResource(Ambient ambient, Item resource) {
         try {
             if (ambient == null) {
                 logger.error("Cannot remove resource: ambient is null");

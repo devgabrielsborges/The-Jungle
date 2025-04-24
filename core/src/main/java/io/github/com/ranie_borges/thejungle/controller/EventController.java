@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class EventController<C extends Character<?>> {
+public class EventController {
     private static final Logger logger = LoggerFactory.getLogger(EventController.class);
     private final Map<String, Event> possibleEvents;
     private final List<Event> eventHistory;
@@ -130,7 +130,7 @@ public class EventController<C extends Character<?>> {
      * @param event     The event to apply
      * @param character The character affected by the event
      */
-    public void applyEvent(Event event, Character<?> character) {
+    public void applyEvent(Event event, Character character) {
         try {
             validateEvent(event);
             validateCharacter(character);
@@ -156,7 +156,7 @@ public class EventController<C extends Character<?>> {
         }
     }
 
-    private void validateCharacter(Character<?> character) {
+    private void validateCharacter(Character character) {
         if (character == null) {
             logger.error("Cannot apply event: character is null");
             throw new IllegalArgumentException("Character cannot be null");
