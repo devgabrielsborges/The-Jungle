@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Lumberjack extends Character<Item> {
+public class Lumberjack extends Character {
     private static final Logger logger = LoggerFactory.getLogger(Lumberjack.class);
 
     public Lumberjack(String name, float xPosition, float yPosition) {
