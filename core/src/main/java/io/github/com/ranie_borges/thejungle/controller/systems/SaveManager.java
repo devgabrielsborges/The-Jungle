@@ -25,6 +25,7 @@ public class SaveManager {
                 .setPrettyPrinting()
                 .excludeFieldsWithoutExposeAnnotation()
                 .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter())
+                .serializeSpecialFloatingPointValues() // Handle NaN and infinity
                 .create();
 
             // Create save directory if it doesn't exist
@@ -35,26 +36,15 @@ public class SaveManager {
         }
     }
 
-    private void createSaveDirectory() {
-        try {
-            Files.createDirectories(Paths.get(SAVE_DIRECTORY));
-            logger.info("Save directory created at: {}", SAVE_DIRECTORY);
-        } catch (IOException e) {
-            logger.error("Failed to create save directory: {}", e.getMessage(), e);
-            throw new SaveManagerException("Failed to create save directory", e);
-        }
-    }
-
-    public boolean saveGame(GameState gameState, String saveName) {
+    public <T extends GameState<?, ?>> boolean saveGame(T gameState, String saveName) {
         try {
             if (gameState == null) {
                 logger.error("Cannot save game: game state is null");
                 throw new SaveManagerException("Failed to save game");
             }
 
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
             String filename = saveName.isEmpty() ?
-                "save_" + timestamp + ".json" :
+                "save_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".json" :
                 saveName + ".json";
 
             try (Writer writer = new FileWriter(SAVE_DIRECTORY + filename)) {
@@ -68,6 +58,16 @@ public class SaveManager {
         } catch (Exception e) {
             logger.error("Unexpected error saving game: {}", e.getMessage());
             return false;
+        }
+    }
+
+    private void createSaveDirectory() {
+        try {
+            Files.createDirectories(Paths.get(SAVE_DIRECTORY));
+            logger.info("Save directory created at: {}", SAVE_DIRECTORY);
+        } catch (IOException e) {
+            logger.error("Failed to create save directory: {}", e.getMessage(), e);
+            throw new SaveManagerException("Failed to create save directory", e);
         }
     }
 

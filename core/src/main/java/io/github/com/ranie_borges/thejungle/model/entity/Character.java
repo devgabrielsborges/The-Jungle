@@ -34,8 +34,7 @@ public abstract class Character <T extends Item> implements ICharacter {
     private int maxInventoryCapacity = 100;
     @Expose
     private double attackDamage;
-    @Expose
-    private double defenseStatus;
+
     @Expose
     private List<Trait> traits;
     @Expose
@@ -211,14 +210,6 @@ public abstract class Character <T extends Item> implements ICharacter {
 
     public void setAttackDamage(double attackDamage) {
         this.attackDamage = attackDamage;
-    }
-
-    public double getDefenseStatus() {
-        return defenseStatus;
-    }
-
-    public void setDefenseStatus(double defenseStatus) {
-        this.defenseStatus = defenseStatus;
     }
 
     public List<Trait> getTraits() {

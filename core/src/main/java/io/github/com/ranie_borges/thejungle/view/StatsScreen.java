@@ -14,25 +14,52 @@ import com.badlogic.gdx.scenes.scene2d.utils.*;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
+import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
+import io.github.com.ranie_borges.thejungle.model.entity.characters.Doctor;
+import io.github.com.ranie_borges.thejungle.model.entity.characters.Hunter;
+import io.github.com.ranie_borges.thejungle.model.entity.characters.Lumberjack;
+import io.github.com.ranie_borges.thejungle.model.entity.characters.Survivor;
+import io.github.com.ranie_borges.thejungle.model.stats.GameState;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 
 public class StatsScreen implements Screen {
-    private Main game;
+    private static final Logger logger = LoggerFactory.getLogger(StatsScreen.class);
+
+    // Profession constants
+    private static final String SURVIVOR_PROFESSION = "Survivor";
+    private static final String HUNTER_PROFESSION = "Hunter";
+    private static final String LUMBERJACK_PROFESSION = "Lumberjack";
+    private static final String DOCTOR_PROFESSION = "Doctor";
+
+    private final Main game;
     private Stage stage;
     private Skin skin;
-    private TextField nomeTextField;
-    private String profissaoSelecionada = "";
+    private TextField nameTextField;
+    private String selectedProfession = "";
 
-    private ImageButton desempregadoBtn, cacadorBtn, lenhadorBtn, medicoBtn;
-    private Label descricaoProfissaoLabel;
-    private Image imagemPersonagem;
-    private Table formulario;
-    private boolean movidoParaEsquerda = false;
+    private ImageButton survivorBtn;
+    private ImageButton hunterBtn;
+    private ImageButton lumberjackBtn;
+    private ImageButton doctorBtn;
+    private Label professionDescriptionLabel;
+    private Image characterImage;
+    private Table formTable;
+    private boolean movedToLeft = false;
 
-    private Sound somCliqueClasse;
+    private Sound professionClickSound;
+    private final SaveManager saveManager;
 
     public StatsScreen(Main game) {
         this.game = game;
+        this.saveManager = new SaveManager();
     }
 
     @Override
@@ -49,200 +76,241 @@ public class StatsScreen implements Screen {
         backgroundImage.setFillParent(true);
         stage.addActor(backgroundImage);
 
-        imagemPersonagem = new Image();
-        imagemPersonagem.setScaling(Scaling.fit);
-        imagemPersonagem.getColor().a = 0f;
+        characterImage = new Image();
+        characterImage.setScaling(Scaling.fit);
+        characterImage.getColor().a = 0f;
 
-        somCliqueClasse = Gdx.audio.newSound(Gdx.files.internal("StatsScreen/pagina.mp3"));
+        professionClickSound = Gdx.audio.newSound(Gdx.files.internal("StatsScreen/pagina.mp3"));
 
-        Label tituloLabel = new Label("Select your profession", skin);
-        tituloLabel.setFontScale(2f);
+        Label titleLabel = new Label("Select your profession", skin);
+        titleLabel.setFontScale(2f);
 
-        desempregadoBtn = criarBotaoProfissao("Civilian", "sprites/profissoes/desempregado.png");
-        cacadorBtn = criarBotaoProfissao("Hunter", "sprites/profissoes/profissao_cacador.png");
-        lenhadorBtn = criarBotaoProfissao("Lumberjack", "sprites/profissoes/profissao_lenhador.png");
-        medicoBtn = criarBotaoProfissao("Doctor", "sprites/profissoes/profissao_medico.png");
+        survivorBtn = createProfessionButton(SURVIVOR_PROFESSION, "sprites/profissoes/desempregado.png");
+        hunterBtn = createProfessionButton(HUNTER_PROFESSION, "sprites/profissoes/profissao_cacador.png");
+        lumberjackBtn = createProfessionButton(LUMBERJACK_PROFESSION, "sprites/profissoes/profissao_lenhador.png");
+        doctorBtn = createProfessionButton(DOCTOR_PROFESSION, "sprites/profissoes/profissao_medico.png");
 
-        Label desempregadoLabel = new Label("Civilian", skin);
-        Label cacadorLabel = new Label("Hunter", skin);
-        Label lenhadorLabel = new Label("Lumberjack", skin);
-        Label medicoLabel = new Label("Doctor", skin);
+        Label survivorLabel = new Label(SURVIVOR_PROFESSION, skin);
+        Label hunterLabel = new Label(HUNTER_PROFESSION, skin);
+        Label lumberjackLabel = new Label(LUMBERJACK_PROFESSION, skin);
+        Label doctorLabel = new Label(DOCTOR_PROFESSION, skin);
 
-        descricaoProfissaoLabel = new Label("", skin);
-        descricaoProfissaoLabel.setWrap(true);
-        descricaoProfissaoLabel.setAlignment(Align.center);
-        descricaoProfissaoLabel.setFontScale(1.8f);
+        professionDescriptionLabel = new Label("", skin);
+        professionDescriptionLabel.setWrap(true);
+        professionDescriptionLabel.setAlignment(Align.center);
+        professionDescriptionLabel.setFontScale(1.8f);
 
-        TextButton confirmarBtn = new TextButton("confirm", skin);
-        confirmarBtn.getLabel().setFontScale(2f);
-        confirmarBtn.addListener(new ClickListener() {
+        TextButton confirmBtn = new TextButton("Confirm", skin);
+        confirmBtn.getLabel().setFontScale(2f);
+        confirmBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                String nome = nomeTextField.getText();
-                if (!nome.isEmpty() && !profissaoSelecionada.isEmpty()) {
-                    game.setScreen(new ProceduralMapScreen());
-                } else {
-                    System.out.println("Choose a name and a profession.");
+                if (!selectedProfession.isEmpty() && !nameTextField.getText().isEmpty()) {
+                    String characterName = nameTextField.getText().trim();
+                    Character<Item> character = createCharacter(selectedProfession, characterName);
+
+                    if (character != null) {
+                        GameState<Character<Item>, Ambient> gameState = new GameState<>();
+                        gameState.setPlayerCharacter(character);
+                        gameState.setDaysSurvived(0);
+                        gameState.setOffsetDateTime(OffsetDateTime.now());
+                        gameState.setActiveEvents(new ArrayList<>());
+
+                        String saveName = "save_" + characterName;
+                        if (saveManager.saveGame(gameState, saveName)) {
+                            logger.info("Game saved successfully for character: {}", characterName);
+                            game.setScreen(new ProceduralMapScreen());
+                        } else {
+                            logger.error("Failed to save game for character: {}", characterName);
+                            // Could add UI feedback here for the error
+                        }
+                    } else {
+                        logger.warn("Character creation failed: name or profession not selected");
+                    }
                 }
             }
         });
 
-        Label nomeLabel = new Label("Character Name:", skin);
-        nomeLabel.setFontScale(1.8f);
-        nomeTextField = new TextField("", skin);
-        nomeTextField.getStyle().font.getData().setScale(2f);
+        Label nameLabel = new Label("Character Name:", skin);
+        nameLabel.setFontScale(1.8f);
+        nameTextField = new TextField("", skin);
+        nameTextField.getStyle().font.getData().setScale(2f);
 
-        formulario = new Table(skin);
-        formulario.top().padTop(20);
-        formulario.setFillParent(false);
+        formTable = new Table(skin);
+        formTable.top().padTop(20);
+        formTable.setFillParent(false);
 
-        formulario.add(tituloLabel).colspan(4).padBottom(30);
-        formulario.row();
-        formulario.add(desempregadoBtn).size(100).pad(6);
-        formulario.add(cacadorBtn).size(100).pad(6);
-        formulario.add(lenhadorBtn).size(100).pad(6);
-        formulario.add(medicoBtn).size(100).pad(6);
-        formulario.row();
-        formulario.add(desempregadoLabel).pad(11);
-        formulario.add(cacadorLabel).pad(11);
-        formulario.add(lenhadorLabel).pad(11);
-        formulario.add(medicoLabel).pad(11);
-        formulario.row();
-        formulario.add().colspan(4).padBottom(20).row();
-        formulario.add(nomeLabel).colspan(4).padBottom(10);
-        formulario.row();
-        formulario.add(nomeTextField).width(250).colspan(4).padBottom(20);
-        formulario.row();
-        formulario.add(descricaoProfissaoLabel).width(300).colspan(4).padBottom(20);
-        formulario.row();
-        formulario.add(confirmarBtn).colspan(4).padTop(20);
+        formTable.add(titleLabel).colspan(4).padBottom(30);
+        formTable.row();
+        formTable.add(survivorBtn).size(100).pad(6);
+        formTable.add(hunterBtn).size(100).pad(6);
+        formTable.add(lumberjackBtn).size(100).pad(6);
+        formTable.add(doctorBtn).size(100).pad(6);
+        formTable.row();
+        formTable.add(survivorLabel).pad(11);
+        formTable.add(hunterLabel).pad(11);
+        formTable.add(lumberjackLabel).pad(11);
+        formTable.add(doctorLabel).pad(11);
+        formTable.row();
+        formTable.add().colspan(4).padBottom(20).row();
+        formTable.add(nameLabel).colspan(4).padBottom(10);
+        formTable.row();
+        formTable.add(nameTextField).width(250).colspan(4).padBottom(20);
+        formTable.row();
+        formTable.add(professionDescriptionLabel).width(300).colspan(4).padBottom(20);
+        formTable.row();
+        formTable.add(confirmBtn).colspan(4).padTop(20);
 
         Group container = new Group();
         container.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
-        formulario.pack();
-        formulario.setPosition((Gdx.graphics.getWidth() - formulario.getWidth()) / 2f,
-            (Gdx.graphics.getHeight() - formulario.getHeight()) / 2f);
-        container.addActor(formulario);
+        formTable.pack();
+        formTable.setPosition((Gdx.graphics.getWidth() - formTable.getWidth()) / 2f,
+                              (Gdx.graphics.getHeight() - formTable.getHeight()) / 2f);
+        container.addActor(formTable);
 
-        imagemPersonagem.setSize(Gdx.graphics.getWidth() / 2f, Gdx.graphics.getHeight());
-        imagemPersonagem.setPosition(Gdx.graphics.getWidth(), 0);
-        container.addActor(imagemPersonagem);
+        characterImage.setSize(Gdx.graphics.getWidth() / 2f, Gdx.graphics.getHeight());
+        characterImage.setPosition(Gdx.graphics.getWidth(), 0);
+        container.addActor(characterImage);
 
         stage.addActor(container);
     }
 
-    private ImageButton criarBotaoProfissao(final String nome, String caminhoImagem) {
-        Texture texture = new Texture(Gdx.files.internal(caminhoImagem));
-        ImageButton.ImageButtonStyle estilo = new ImageButton.ImageButtonStyle();
-        estilo.imageUp = new TextureRegionDrawable(texture);
-        estilo.imageDown = new TextureRegionDrawable(texture);
+    private Character<Item> createCharacter(String profession, String name) {
+        // Default initial position
+        float initialX = 100f;
+        float initialY = 100f;
 
-        final ImageButton botao = new ImageButton(estilo);
-        botao.setTransform(true);
-        botao.setScale(1f);
+        switch (profession) {
+            case SURVIVOR_PROFESSION:
+                return new Survivor(name, initialX, initialY);
+            case HUNTER_PROFESSION:
+                return new Hunter(name, initialX, initialY);
+            case LUMBERJACK_PROFESSION:
+                return new Lumberjack(name, initialX, initialY);
+            case DOCTOR_PROFESSION:
+                return new Doctor(name, initialX, initialY);
+            default:
+                logger.error("Unknown profession: {}", profession);
+                return null;
+        }
+    }
 
-        botao.addListener(new ClickListener() {
+    private void updateDescription(String profession) {
+        switch (profession) {
+            case SURVIVOR_PROFESSION:
+                professionDescriptionLabel.setText("A well-rounded character with basic survival skills.");
+                break;
+            case HUNTER_PROFESSION:
+                professionDescriptionLabel.setText("Skilled in tracking and combat. Higher attack damage.");
+                break;
+            case LUMBERJACK_PROFESSION:
+                professionDescriptionLabel.setText("Strong and resilient. Higher health and attack power.");
+                break;
+            case DOCTOR_PROFESSION:
+                professionDescriptionLabel.setText("Medical expertise. Better healing abilities and sanity.");
+                break;
+            default:
+                professionDescriptionLabel.setText("");
+        }
+    }
+
+    private ImageButton createProfessionButton(final String name, String imagePath) {
+        Texture texture = new Texture(Gdx.files.internal(imagePath));
+        TextureRegion region = new TextureRegion(texture);
+        ImageButton.ImageButtonStyle style = new ImageButton.ImageButtonStyle();
+        style.imageUp = new TextureRegionDrawable(region);
+        style.imageDown = new TextureRegionDrawable(region);
+
+        ImageButton button = new ImageButton(style);
+        button.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                profissaoSelecionada = nome;
-                somCliqueClasse.play(); // 🔊 Som ao clicar
-                atualizarSelecaoVisual();
-                atualizarDescricao(nome);
-                atualizarImagemPersonagem(nome);
-                moverFormularioParaEsquerda();
+                professionClickSound.play();
+                selectedProfession = name;
+                updateVisualSelection();
+                updateDescription(name);
+                updateCharacterImage(name);
+
+                if (!movedToLeft) {
+                    moveFormToLeft();
+                }
             }
         });
-
-        return botao;
+        return button;
     }
 
-    private void moverFormularioParaEsquerda() {
-        if (!movidoParaEsquerda) {
-            float destinoX = 50;
-            formulario.addAction(Actions.moveTo(destinoX, formulario.getY(), 0.5f));
-            imagemPersonagem.addAction(Actions.sequence(Actions.fadeIn(0.4f)));
-            imagemPersonagem.setPosition(Gdx.graphics.getWidth() / 2f, 0);
-            movidoParaEsquerda = true;
+    private void moveFormToLeft() {
+        formTable.addAction(Actions.moveTo(
+            formTable.getX() - Gdx.graphics.getWidth() / 4f,
+            formTable.getY(), 0.5f));
+
+        characterImage.addAction(Actions.sequence(
+            Actions.moveTo(Gdx.graphics.getWidth() / 2f, 0, 0.5f),
+            Actions.alpha(1f, 0.3f)));
+
+        movedToLeft = true;
+    }
+
+    private void updateCharacterImage(String profession) throws IllegalArgumentException{
+        Texture texture;
+        switch (profession) {
+            case SURVIVOR_PROFESSION:
+                texture = new Texture("StatsScreen/desempregadoFundo.png");
+                break;
+            case HUNTER_PROFESSION:
+                texture = new Texture("StatsScreen/cacadorFundo.png");
+                break;
+            case LUMBERJACK_PROFESSION:
+                texture = new Texture("StatsScreen/lenhadorFundo.png");
+                break;
+            case DOCTOR_PROFESSION:
+                texture = new Texture("StatsScreen/medicoFundo.png");
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid profession was passed as argument");
         }
+
+        characterImage.setDrawable(new TextureRegionDrawable(new TextureRegion(texture)));
+
     }
 
-    private void atualizarImagemPersonagem(String profissao) {
-        String caminho = null;
-
-        if (profissao.equals("Civilian")) caminho = "StatsScreen/desempregadoFundo.png";
-        else if (profissao.equals("Hunter")) caminho = "StatsScreen/cacadorFundo.png";
-        else if (profissao.equals("Lumberjack")) caminho = "StatsScreen/lenhadorFundo.png";
-        else if (profissao.equals("Doctor")) caminho = "StatsScreen/medicoFundo.png";
-
-        if (caminho != null) {
-            Texture texture = new Texture(Gdx.files.internal(caminho));
-            imagemPersonagem.setDrawable(new TextureRegionDrawable(new TextureRegion(texture)));
-
-            if (movidoParaEsquerda) {
-                imagemPersonagem.getColor().a = 0f;
-                imagemPersonagem.addAction(Actions.fadeIn(0.4f));
-            } else {
-                imagemPersonagem.getColor().a = 0f;
-            }
-        }
+    private void updateVisualSelection() {
+        animateSelection(survivorBtn, selectedProfession.equals(SURVIVOR_PROFESSION));
+        animateSelection(hunterBtn, selectedProfession.equals(HUNTER_PROFESSION));
+        animateSelection(lumberjackBtn, selectedProfession.equals(LUMBERJACK_PROFESSION));
+        animateSelection(doctorBtn, selectedProfession.equals(DOCTOR_PROFESSION));
     }
 
-    private void atualizarSelecaoVisual() {
-        animarSelecao(desempregadoBtn, profissaoSelecionada.equals("Civilian"));
-        animarSelecao(cacadorBtn, profissaoSelecionada.equals("Hunter"));
-        animarSelecao(lenhadorBtn, profissaoSelecionada.equals("Lumberjack"));
-        animarSelecao(medicoBtn, profissaoSelecionada.equals("Doctor"));
+    private void animateSelection(ImageButton button, boolean selected) {
+        button.setScale(selected ? 1.2f : 1f);
     }
 
-    private void animarSelecao(ImageButton botao, boolean selecionado) {
-        botao.clearActions();
-        if (selecionado) {
-            botao.getImage().setColor(1, 1, 1, 1f);
-            botao.addAction(Actions.sequence(
-                Actions.scaleTo(1.15f, 1.15f, 0.15f),
-                Actions.forever(Actions.sequence(
-                    Actions.scaleTo(1.18f, 1.18f, 0.4f),
-                    Actions.scaleTo(1.15f, 1.15f, 0.4f)
-                ))
-            ));
-        } else {
-            botao.getImage().setColor(1, 1, 1, 0.4f);
-            botao.addAction(Actions.scaleTo(1f, 1f, 0.15f));
-        }
-    }
-
-    private void atualizarDescricao(String profissao) {
-        if (profissao.equals("Civilian")) {
-            descricaoProfissaoLabel.setText("Currently without occupation, but with potential to learn anything.");
-        } else if (profissao.equals("Hunter")) {
-            descricaoProfissaoLabel.setText("Expert in tracking and capturing animals. Great with traps.");
-        } else if (profissao.equals("Lumberjack")) {
-            descricaoProfissaoLabel.setText("Strong and resistant, collects wood efficiently. Useful for construction.");
-        } else if (profissao.equals("Doctor")) {
-            descricaoProfissaoLabel.setText("Able to heal allies and keep the group alive during emergencies.");
-        } else {
-            descricaoProfissaoLabel.setText("");
-        }
-    }
-
-    @Override public void render(float delta) {
+    @Override
+    public void render(float delta) {
+        Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
         stage.act(delta);
         stage.draw();
     }
 
-    @Override public void resize(int width, int height) {
+    @Override
+    public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
     }
 
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
+    @Override
+    public void pause() {}
+    @Override
+    public void resume() {}
+    @Override
+    public void hide() {}
 
-    @Override public void dispose() {
+    @Override
+    public void dispose() {
         stage.dispose();
         skin.dispose();
-        somCliqueClasse.dispose();
+        professionClickSound.dispose();
     }
 }

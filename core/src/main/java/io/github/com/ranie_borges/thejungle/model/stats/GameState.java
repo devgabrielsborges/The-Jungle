@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle.model.stats;
 
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.controller.AmbientController;
 import io.github.com.ranie_borges.thejungle.controller.EventController;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
@@ -11,11 +12,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameState<C extends Character<?>, A extends Ambient> {
+    @Expose
     private C playerCharacter;
+
+    @Expose
     private A currentAmbient;
+
+    @Expose
     private List<Event> activeEvents;
+
+    @Expose
     private int daysSurvived;
+
+    @Expose
     private OffsetDateTime offsetDateTime;
+
+    // These shouldn't be serialized
     private EventController<C> eventController;
     private AmbientController<A, C> ambientController;
 
