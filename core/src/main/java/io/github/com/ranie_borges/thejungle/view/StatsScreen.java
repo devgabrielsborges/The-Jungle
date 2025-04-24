@@ -116,10 +116,10 @@ public class StatsScreen implements Screen {
                         String saveName = "save_" + characterName;
                         boolean saved = saveManager.saveGame(gameState, saveName);
 
-                        if (saved) {
+                        if (saved && character != null) {
                             logger.info("Character {} created and game saved successfully", characterName);
                             // Navigate to game screen
-                            game.setScreen(new ProceduralMapScreen());
+                            game.setScreen(new ProceduralMapScreen(characterName, selectedProfession));
                         } else {
                             logger.error("Failed to save game for character {}", characterName);
                         }
