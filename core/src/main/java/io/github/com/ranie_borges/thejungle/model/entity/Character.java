@@ -13,7 +13,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Character <T extends Item> implements ICharacter {
+public abstract class Character implements ICharacter {
     // Fields to be serialized
     @Expose
     private String name;
@@ -28,7 +28,7 @@ public abstract class Character <T extends Item> implements ICharacter {
     @Expose
     private float sanity;
     @Expose
-    private Array<T> inventory;
+    private Array<Item> inventory;
 
     @Expose
     private int inventoryInitialCapacity = 15;
@@ -40,7 +40,6 @@ public abstract class Character <T extends Item> implements ICharacter {
 
     @Expose
     private List<Trait> traits;
-
 
     @Expose
     private String characterType;
@@ -133,11 +132,11 @@ public abstract class Character <T extends Item> implements ICharacter {
         this.speed = speed;
     }
 
-    public Array<T> getInventory() {
+    public Array<Item> getInventory() {
         return inventory;
     }
 
-    public void setInventory(Array<T> inventory) {
+    public void setInventory(Array<Item> inventory) {
         this.inventory = inventory;
     }
 
@@ -159,11 +158,11 @@ public abstract class Character <T extends Item> implements ICharacter {
 
     public void insertItemInInventory(Item item) {
         if (item != null && !isInventoryFull()) {
-            inventory.add((T) item);
+            inventory.add(item);
         }
     }
 
-    public void insertItemInInventory(T item, int index) {
+    public void insertItemInInventory(Item item, int index) {
         if (index >= 0 && index < inventoryInitialCapacity) {
             // Ensure array is large enough for the index
             while (inventory.size <= index) {
@@ -173,7 +172,7 @@ public abstract class Character <T extends Item> implements ICharacter {
         }
     }
 
-    public T getItem(int index) {
+    public Item getItem(int index) {
         if (index >= 0 && index < inventory.size) {
             return inventory.get(index);
         }
@@ -219,7 +218,7 @@ public abstract class Character <T extends Item> implements ICharacter {
         // Check if size is 0 or all elements are null
         if (inventory.size == 0) return true;
 
-        for (T item : inventory) {
+        for (Item item : inventory) {
             if (item != null) return false;
         }
         return true;
@@ -277,5 +276,4 @@ public abstract class Character <T extends Item> implements ICharacter {
     public void dispose() {
         this.texture.dispose();
     }
-
 }
