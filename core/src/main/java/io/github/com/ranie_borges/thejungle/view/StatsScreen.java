@@ -17,13 +17,11 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Doctor;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Hunter;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Lumberjack;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Survivor;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
-import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,17 +105,18 @@ public class StatsScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 if (!selectedProfession.isEmpty() && !nameTextField.getText().isEmpty()) {
                     String characterName = nameTextField.getText().trim();
-                    Character<Item> character = createCharacter(selectedProfession, characterName);
+                    Character character = createCharacter(selectedProfession, characterName);
 
                     if (character != null) {
-                        GameState<Character<Item>, Ambient> gameState = new GameState<>();
+                        GameState gameState = new GameState();
                         gameState.setPlayerCharacter(character);
                         gameState.setDaysSurvived(0);
                         gameState.setOffsetDateTime(OffsetDateTime.now());
                         gameState.setActiveEvents(new ArrayList<>());
 
                         String saveName = "save_" + characterName;
-                        if (character != null) {
+                        if (saveManager.saveGame(gameState, saveName)) {
+                            logger.info("Game saved successfully for character: {}", characterName);
                             game.setScreen(new ProceduralMapScreen(characterName, selectedProfession));
                         } else {
                             logger.error("Failed to save game for character: {}", characterName);
@@ -175,7 +174,7 @@ public class StatsScreen implements Screen {
         stage.addActor(container);
     }
 
-    private Character<Item> createCharacter(String profession, String name) {
+    private Character createCharacter(String profession, String name) {
         // Default initial position
         float initialX = 100f;
         float initialY = 100f;
