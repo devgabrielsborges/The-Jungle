@@ -94,7 +94,9 @@ public class LoadingScreen implements Screen {
     public void resume() { }
 
     @Override
-    public void hide() { }
+    public void hide() {
+        backgroundMusic.stop();
+    }
 
     @Override
     public void dispose() {
