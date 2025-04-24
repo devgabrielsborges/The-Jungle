@@ -1,10 +1,5 @@
 package io.github.com.ranie_borges.thejungle.model.entity;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
@@ -28,6 +23,8 @@ public abstract class Character <T extends Item> implements ICharacter {
     @Expose
     private float sanity;
     @Expose
+    private double[] localization;
+    @Expose
     private Array<T> inventory;
 
     @Expose
@@ -41,40 +38,25 @@ public abstract class Character <T extends Item> implements ICharacter {
     private double defenseStatus;
     @Expose
     private List<Trait> traits;
-
-
     @Expose
-    private String characterType;
-    @Expose
-    private float speed;
+    private String characterType; // For proper deserialization of subtypes
 
-    @Expose
-    private Vector2 position;
-    private final Texture texture;
-
-    protected Character(
-        String name,
-        float life,
-        float hunger,
-        float thirsty,
-        float energy,
-        float sanity,
-        float attackDamage,
-        String spritePath,
-        float xPosition,
-        float yPosition
-        ) {
-        this.name = name;
-        this.life = life;
-        this.hunger = hunger;
-        this.thirsty = thirsty;
-        this.energy = energy;
-        this.sanity = sanity;
-        this.attackDamage = attackDamage;
+    protected Character() {
         this.inventory = new Array<>(inventoryInitialCapacity);
         this.traits = new ArrayList<>();
-        this.texture = new Texture(Gdx.files.internal(spritePath));
-        this.position = new Vector2(xPosition, yPosition);
+        this.localization = new double[]{0.0, 0.0};
+    }
+
+    protected Character(String name) {
+        this();
+        this.name = name;
+        this.life = 100.0f;
+        this.hunger = 0.0f;
+        this.thirsty = 0.0f;
+        this.energy = 100.0f;
+        this.sanity = 100.0f;
+        this.attackDamage = 0.0;
+        this.defenseStatus = 0.0;
         this.characterType = this.getClass().getSimpleName();
     }
 
@@ -126,12 +108,12 @@ public abstract class Character <T extends Item> implements ICharacter {
         this.sanity = sanity;
     }
 
-    public float getSpeed() {
-        return speed;
+    public double[] getLocalization() {
+        return localization;
     }
 
-    public void setSpeed(float speed) {
-        this.speed = speed;
+    public void setLocalization(double[] localization) {
+        this.localization = localization;
     }
 
     public Array<T> getInventory() {
@@ -140,14 +122,6 @@ public abstract class Character <T extends Item> implements ICharacter {
 
     public void setInventory(Array<T> inventory) {
         this.inventory = inventory;
-    }
-
-    public int getMaxInventoryCapacity() {
-        return maxInventoryCapacity;
-    }
-
-    public void setMaxInventoryCapacity(int maxInventoryCapacity) {
-        this.maxInventoryCapacity = maxInventoryCapacity;
     }
 
     public int getInventoryInitialCapacity() {
@@ -265,27 +239,5 @@ public abstract class Character <T extends Item> implements ICharacter {
 
     public abstract void dropItem(Item item);
 
-    public void updatePosition(float delta) {
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            position.y += speed * delta;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            position.y -= speed * delta;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            position.x -= speed * delta;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            position.x += speed * delta;
-        }
-    }
-
-    public void render(Batch batch) {
-        batch.draw(this.texture, this.position.x, this.position.y);
-    }
-
-    public void dispose() {
-        this.texture.dispose();
-    }
-
+    public abstract void collectItem(Item nearbyItem, boolean isInventoryFull);
 }

@@ -1,6 +1,5 @@
 package io.github.com.ranie_borges.thejungle.model.entity.interfaces;
 
-     import com.badlogic.gdx.graphics.g2d.Batch;
      import io.github.com.ranie_borges.thejungle.model.entity.Creature;
      import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
@@ -43,8 +42,4 @@ package io.github.com.ranie_borges.thejungle.model.entity.interfaces;
           * @param item O item a ser usado
           */
          void useItem(Item item);
-
-         void updatePosition(float delta);
-         void render(Batch batch);
-         void dispose();
      }
