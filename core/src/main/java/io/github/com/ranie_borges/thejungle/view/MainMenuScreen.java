@@ -74,7 +74,7 @@ public class MainMenuScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 backgroundMusic.stop();
-                game.setScreen(new LoadingScreen(game));
+                game.getScenarioController().startNewGame();
             }
         });
 
@@ -93,12 +93,11 @@ public class MainMenuScreen implements Screen {
             table.add(continueButton).width(200f).height(60f).center().padBottom(20);
             table.row();
 
-            newGameButton.addListener(new ClickListener() {
+            continueButton.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     backgroundMusic.stop();
-                    saveManager.loadGame("FIXME");   //FIXME add loadGameHandler, like a screen to load the save
-                    game.setScreen(new LoadingScreen(game));
+                    game.getScenarioController().loadSavedGame();
                 }
             });
         }

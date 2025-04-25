@@ -70,18 +70,9 @@ public class LetterScreen implements Screen {
         stage.act(delta);
         stage.draw();
 
-        // Se apertar Backspace e não estiver em transição
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && !transitioning) {
-            transitioning = true;
-
-            // Adiciona fade-out antes de mudar para a GameScreen
-            stage.getRoot().addAction(sequence(
-                fadeOut(1f),
-                run(() -> {
-                    backgroundMusic.stop();
-                    game.setScreen(new StatsScreen(game));
-                })
-            ));
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            backgroundMusic.stop();
+            game.getScenarioController().navigateToNextScreen();
         }
     }
 
