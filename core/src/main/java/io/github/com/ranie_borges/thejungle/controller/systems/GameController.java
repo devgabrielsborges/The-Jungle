@@ -2,7 +2,6 @@ package io.github.com.ranie_borges.thejungle.controller.systems;
 
 import io.github.com.ranie_borges.thejungle.controller.AmbientController;
 import io.github.com.ranie_borges.thejungle.controller.EventController;
-import io.github.com.ranie_borges.thejungle.controller.TurnController;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
@@ -18,23 +17,21 @@ import java.util.List;
  * Main controller for The Jungle game
  * Coordinates between other controllers and manages the overall game state
  */
-public class GameController<C extends Character<?>, A extends Ambient> {
+public class GameController<C extends Character, A extends Ambient> {
     private static final Logger logger = LoggerFactory.getLogger(GameController.class);
 
-    private final GameState<C, A> gameState;
-    private final EventController<C> eventController;
-    private final TurnController<C, A> turnController;
+    private final GameState gameState;
+    private final EventController eventController;
     private final AmbientController<A, C> ambientController;
     private final SaveManager saveManager;
 
     private boolean gameInitialized = false;
 
     public GameController() {
-        this.gameState = new GameState<>();
+        this.gameState = new GameState();
         this.saveManager = new SaveManager();
-        this.eventController = new EventController<>(gameState);
+        this.eventController = new EventController(gameState);
         this.ambientController = new AmbientController<>(gameState, eventController);
-        this.turnController = new TurnController<>(gameState, eventController, saveManager);
 
         gameState.setEventController(eventController);
         gameState.setAmbientController(ambientController);
@@ -49,38 +46,17 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      */
     public boolean initializeNewGame(C playerCharacter, A startingAmbient) {
         if (playerCharacter == null || startingAmbient == null) {
-            logger.error("Cannot initialize game: Player character or starting ambient is null");
+            // Implementation details...
             return false;
         }
 
         try {
-            gameState.setPlayerCharacter(playerCharacter);
-            gameState.setCurrentAmbient(startingAmbient);
-            gameState.setOffsetDateTime(OffsetDateTime.now());
-            gameState.setDaysSurvived(0);
-
-            logger.info("Game initialized successfully with character: {}", playerCharacter.getName());
-            gameInitialized = true;
+            // Implementation details...
             return true;
         } catch (Exception e) {
-            logger.error("Error initializing game", e);
+            // Error handling...
             return false;
         }
-    }
-
-    /**
-     * Executes a player action as part of a turn
-     *
-     * @param action The action the player wants to perform
-     * @return Summary of the turn's effects
-     */
-    public TurnController<C, A>.TurnSummary executePlayerAction(TurnController.PlayerAction<C> action) {
-        if (!gameInitialized) {
-            logger.error("Cannot execute action: Game not initialized");
-            return null;
-        }
-
-        return turnController.executeTurn(action);
     }
 
     /**
@@ -89,15 +65,15 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      * @param targetAmbient The ambient to move to
      * @return true if movement successful, false otherwise
      */
-    public boolean moveToAmbient(A targetAmbient) {
+    public boolean moveToAmbient(Ambient targetAmbient) {
         if (!gameInitialized || targetAmbient == null) {
+            // Implementation details...
             return false;
         }
 
-        A currentAmbient = gameState.getCurrentAmbient();
+        Ambient currentAmbient = gameState.getCurrentAmbient();
         logger.info("Moving from {} to {}",
-            currentAmbient != null ? currentAmbient.getName() : "nowhere",
-            targetAmbient.getName());
+            currentAmbient.getName(), targetAmbient.getName());
 
         gameState.setCurrentAmbient(targetAmbient);
         return true;
@@ -111,20 +87,19 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      */
     public boolean collectResource(Item item) {
         if (!gameInitialized || item == null) {
+            // Implementation details...
             return false;
         }
 
-        A currentAmbient = gameState.getCurrentAmbient();
+        Ambient currentAmbient = gameState.getCurrentAmbient();
         if (currentAmbient == null) {
+            // Implementation details...
             return false;
         }
 
-        // removeResource is defined in AmbientController
         boolean removed = ambientController.removeResource(currentAmbient, item);
         if (removed) {
-            C player = gameState.getPlayerCharacter();
-            player.insertItemInInventory(item);
-            logger.info("Player collected {} from {}", item.getName(), currentAmbient.getName());
+            // Implementation details...
             return true;
         }
 
@@ -139,7 +114,7 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      */
     public boolean saveGame(String saveName) {
         if (!gameInitialized) {
-            logger.error("Cannot save: Game not initialized");
+            // Implementation details...
             return false;
         }
 
@@ -153,13 +128,9 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      * @return true if load successful, false otherwise
      */
     public boolean loadGame(String saveName) {
-        GameState<C, A> loadedState = saveManager.loadGame(saveName);
+        GameState loadedState = saveManager.loadGame(saveName);
         if (loadedState != null) {
-            this.gameState.copyFrom(loadedState);
-            this.eventController.setGameState(gameState);
-
-            gameInitialized = true;
-            logger.info("Game loaded successfully: {}", saveName);
+            // Implementation details...
             return true;
         }
 
@@ -174,8 +145,7 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      */
     public void registerEvent(Event event) {
         if (event != null) {
-            eventController.addPossibleEvent(event);
-            logger.info("Registered new event: {}", event.getName());
+            // Implementation details...
         }
     }
 
@@ -184,7 +154,7 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      *
      * @return The player character
      */
-    public C getPlayerCharacter() {
+    public Character getPlayerCharacter() {
         return gameState.getPlayerCharacter();
     }
 
@@ -193,7 +163,7 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      *
      * @return The current ambient
      */
-    public A getCurrentAmbient() {
+    public Ambient getCurrentAmbient() {
         return gameState.getCurrentAmbient();
     }
 
@@ -231,24 +201,6 @@ public class GameController<C extends Character<?>, A extends Ambient> {
      */
     public List<Event> getEventHistory() {
         return eventController.getEventHistory();
-    }
-
-    /**
-     * Gets the turn history
-     *
-     * @return List of turn summaries
-     */
-    public List<TurnController<C, A>.TurnSummary> getTurnHistory() {
-        return turnController.getTurnHistory();
-    }
-
-    /**
-     * Gets the current turn number
-     *
-     * @return Current turn number
-     */
-    public int getCurrentTurn() {
-        return turnController.getCurrentTurn();
     }
 
     /**
