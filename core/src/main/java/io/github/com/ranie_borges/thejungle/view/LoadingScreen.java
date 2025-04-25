@@ -74,10 +74,9 @@ public class LoadingScreen implements Screen {
         stage.act(delta);
         stage.draw();
 
-        // Se o player pressionar a tecla espaço, muda para GameScreen
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             backgroundMusic.stop();
-            game.setScreen(new LetterScreen(game));
+            game.getScenarioController().navigateToNextScreen();
         }
     }
 

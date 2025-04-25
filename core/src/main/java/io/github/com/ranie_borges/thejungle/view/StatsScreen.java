@@ -117,10 +117,9 @@ public class StatsScreen implements Screen {
                         String saveName = "save_" + characterName;
                         if (saveManager.saveGame(gameState, saveName)) {
                             logger.info("Game saved successfully for character: {}", characterName);
-                            game.setScreen(new ProceduralMapScreen(characterName, selectedProfession));
+                            game.getScenarioController().startGameWithCharacter(characterName, selectedProfession);
                         } else {
                             logger.error("Failed to save game for character: {}", characterName);
-                            // Could add UI feedback here for the error
                         }
                     } else {
                         logger.warn("Character creation failed: name or profession not selected");
