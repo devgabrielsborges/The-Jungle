@@ -20,8 +20,8 @@ public class LakeRiver extends Ambient {
             "A tranquil body of water with clear surface, surrounded by vibrant vegetation and teeming with aquatic life.",
             1.5f,
             Set.of(HUMID_CLIMATE),
-            new Texture(Gdx.files.internal("scenarios/lakeriver/floor.png")),
-            new Texture(Gdx.files.internal("scenarios/lakeriver/wall.png")),
+            new Texture(Gdx.files.internal("scenarios/lakeriver/lakeriverFloor.png")),
+            new Texture(Gdx.files.internal("scenarios/lakeriver/lakeriverWall.png")),
             new Texture(Gdx.files.internal("scenarios/lakeriver/sidebar.jpg")),
             0.15f,  // wallDensity - fewer obstacles
             0.4f    // itemDensity - more items near water

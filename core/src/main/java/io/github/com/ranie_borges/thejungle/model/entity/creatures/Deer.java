@@ -3,6 +3,7 @@ package io.github.com.ranie_borges.thejungle.model.entity.creatures;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.math.Vector2; // <-- Import adicionado
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
@@ -13,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class Deer extends Creature {
+
+    private Vector2 position = new Vector2(); // <-- Adicionado
 
     protected Deer(
         String name,
@@ -42,7 +45,7 @@ public class Deer extends Creature {
 
     private static Map<String, Sprite> createSprites() {
         Map<String, Sprite> sprites = new HashMap<>();
-        sprites.put("idle", new Sprite(new Texture(Gdx.files.internal("imagemAqui"))));
+        sprites.put("idle", new Sprite(new Texture(Gdx.files.internal("sprites/criaturas/DeerIdle.png"))));
         return sprites;
     }
 
@@ -51,15 +54,19 @@ public class Deer extends Creature {
         drops.add(new Item("Carne Crua de Veado", 15, 25) {
             @Override
             public void useItem() {
-
+                // comportamento ao usar
             }
 
             @Override
             public void dropItem() {
-
+                // comportamento ao dropar
             }
         });
         return drops;
+    }
+
+    public Vector2 getPosition() { // <-- Adicionado
+        return position;
     }
 
     @Override

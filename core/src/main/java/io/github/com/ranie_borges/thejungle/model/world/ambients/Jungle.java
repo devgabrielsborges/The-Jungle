@@ -22,8 +22,8 @@ public class Jungle extends Ambient {
             "A dense forest with tall trees, lush vegetation, and sounds of wild animals.",
             1f,
             Set.of(DENSE_VEGETATION, ABUNDANT_FAUNA),
-            new Texture(Gdx.files.internal("scenarios/jungle/floor.png")),
-            new Texture(Gdx.files.internal("scenarios/jungle/wall.png")),
+            new Texture(Gdx.files.internal("scenarios/jungle/jungleFloor.png")),
+            new Texture(Gdx.files.internal("scenarios/jungle/jungleWall.png")),
             new Texture(Gdx.files.internal("scenarios/jungle/sidebar.jpg")),
             0.2f,
             0.3f

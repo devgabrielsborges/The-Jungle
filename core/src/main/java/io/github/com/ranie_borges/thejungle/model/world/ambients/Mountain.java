@@ -20,8 +20,8 @@ public class Mountain extends Ambient {
             "Steep rocky peaks with thin air and panoramic views. The harsh terrain offers limited resources but valuable minerals.",
             3.0f,
             Set.of(DRY_CLIMATE),
-            new Texture(Gdx.files.internal("scenarios/mountain/floor.png")),
-            new Texture(Gdx.files.internal("scenarios/mountain/wall.png")),
+            new Texture(Gdx.files.internal("scenarios/mountain/mountainFloor.png")),
+            new Texture(Gdx.files.internal("scenarios/mountain/mountainWall.png")),
             new Texture(Gdx.files.internal("scenarios/mountain/sidebar.jpg")),
             0.35f,  // wallDensity - more rocky terrain
             0.2f    // itemDensity - scarce resources
