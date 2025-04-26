@@ -19,8 +19,8 @@ public class Cave extends Ambient {
             "A dark and damp cave, echoing with the sounds of dripping water and distant growls.",
             3.5f,
             Set.of(HUMID_CLIMATE),
-            new Texture(Gdx.files.internal("scenarios/cave/floor.png")),
-            new Texture(Gdx.files.internal("scenarios/cave/wall.png")),
+            new Texture(Gdx.files.internal("scenarios/cave/caveFloor.png")),
+            new Texture(Gdx.files.internal("scenarios/cave/caveWall.png")),
             new Texture(Gdx.files.internal("scenarios/cave/sidebar.jpg")),
             0.3f,
             0.2f
