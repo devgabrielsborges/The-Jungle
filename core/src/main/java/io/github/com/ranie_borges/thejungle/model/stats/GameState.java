@@ -19,6 +19,11 @@ public class GameState {
     private Ambient currentAmbient;
 
     @Expose
+    private int[][] currentMap;
+    @Expose
+    private Character character;
+
+    @Expose
     private List<Event> activeEvents;
 
     @Expose
@@ -29,6 +34,9 @@ public class GameState {
 
     private EventController eventController;
     private AmbientController ambientController;
+
+    private int mapWidth;
+    private int mapHeight;
 
     public GameState() {
         this.activeEvents = new ArrayList<>();
@@ -90,5 +98,37 @@ public class GameState {
 
     public void setAmbientController(AmbientController ambientController) {
         this.ambientController = ambientController;
+    }
+
+    public int[][] getCurrentMap() {
+        return currentMap;
+    }
+
+    public void setCurrentMap(int[][] currentMap) {
+        this.currentMap = currentMap;
+    }
+
+    public int getMapWidth() {
+        return mapWidth;
+    }
+
+    public void setMapWidth(int mapWidth) {
+        this.mapWidth = mapWidth;
+    }
+
+    public int getMapHeight() {
+        return mapHeight;
+    }
+
+    public void setMapHeight(int mapHeight) {
+        this.mapHeight = mapHeight;
+    }
+
+    public Character getCharacter() {
+        return character;
+    }
+
+    public void setCharacter(Character character) {
+        this.character = character;
     }
 }

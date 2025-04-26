@@ -1,10 +1,6 @@
 package io.github.com.ranie_borges.thejungle.controller.systems;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.TypeAdapter;
+import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.save.SaveManagerException;
@@ -14,6 +10,12 @@ import io.github.com.ranie_borges.thejungle.model.entity.characters.Hunter;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Lumberjack;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Survivor;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Mountain;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Ruins;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +89,7 @@ public class SaveManager {
         }
     }
 
+
     public boolean saveGame(GameState gameState, String saveName) {
         if (gameState == null) {
             logger.error("Cannot save game: game state is null");
@@ -102,17 +105,26 @@ public class SaveManager {
         Writer writer = null;
 
         try {
-            File saveFile = new File(SAVE_DIRECTORY + filename);
-            if (!saveFile.getParentFile().exists()) {
-                createSaveDirectory();
+            File saveDir = new File(SAVE_DIRECTORY);
+            if (!saveDir.exists() && !saveDir.mkdirs()) {
+                logger.error("Failed to create save directory: {}", SAVE_DIRECTORY);
+                return false;
             }
 
+            File saveFile = new File(SAVE_DIRECTORY + filename);
             writer = new FileWriter(saveFile);
+
+            Gson gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                .setPrettyPrinting()
+                .create();
+
             gson.toJson(gameState, writer);
-            logger.info("Game saved successfully to: {}", filename);
+
+            logger.info("Game saved successfully to: {}", saveFile.getAbsolutePath());
             return true;
         } catch (JsonIOException e) {
-            logger.error("JSON writing error while saving game: {}", e.getMessage());
+            logger.error("JSON error while saving game: {}", e.getMessage());
             return false;
         } catch (IOException e) {
             logger.error("I/O error while saving game: {}", e.getMessage());
@@ -122,7 +134,7 @@ public class SaveManager {
                 try {
                     writer.close();
                 } catch (IOException e) {
-                    logger.error("Failed to close file writer: {}", e.getMessage());
+                    logger.error("Error closing writer: {}", e.getMessage());
                 }
             }
         }
@@ -139,50 +151,118 @@ public class SaveManager {
 
         try {
             File saveFile = new File(filePath);
-            if (!saveFile.exists() || !saveFile.isFile()) {
-                logger.error("Save file not found: {}", filePath);
-                return null;
+            if (!saveFile.exists()) {
+                logger.error("Save file does not exist: {}", filePath);
+                throw new FileNotFoundException("Save file not found: " + filePath);
             }
 
             reader = new FileReader(saveFile);
-            GameState gameState = gson.fromJson(reader, GameState.class);
+            JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
 
-            if (gameState == null) {
-                logger.error("Failed to deserialize game state from: {}", filePath);
-                return null;
+            // Create game state from JSON
+            GameState gameState = new GameState();
+
+            // Load character data
+            if (jsonObject.has("character")) {
+                JsonObject characterObj = jsonObject.getAsJsonObject("character");
+                String name = characterObj.has("name") ? characterObj.get("name").getAsString() : "Unknown";
+                String characterType = characterObj.has("characterType") ?
+                    characterObj.get("characterType").getAsString() : "Survivor";
+
+                // Get position from saved data or default
+                float xPos = 0f, yPos = 0f;
+                if (characterObj.has("position")) {
+                    JsonObject posObj = characterObj.getAsJsonObject("position");
+                    xPos = posObj.has("x") ? posObj.get("x").getAsFloat() : 0f;
+                    yPos = posObj.has("y") ? posObj.get("y").getAsFloat() : 0f;
+                }
+
+                // Restore character based on type and position
+                Character character = null;
+                switch (characterType) {
+                    case "Doctor":
+                        character = new Doctor(name, xPos, yPos);
+                        break;
+                    case "Hunter":
+                        character = new Hunter(name, xPos, yPos);
+                        break;
+                    case "Lumberjack":
+                        character = new Lumberjack(name, xPos, yPos);
+                        break;
+                    case "Survivor":
+                    default:
+                        character = new Survivor(name, xPos, yPos);
+                        break;
+                }
+
+                // Restore character stats
+                if (characterObj.has("life")) character.setLife(characterObj.get("life").getAsFloat());
+                if (characterObj.has("hunger")) character.setHunger(characterObj.get("hunger").getAsFloat());
+                if (characterObj.has("thirsty")) character.setThirsty(characterObj.get("thirsty").getAsFloat());
+                if (characterObj.has("energy")) character.setEnergy(characterObj.get("energy").getAsFloat());
+                if (characterObj.has("sanity")) character.setSanity(characterObj.get("sanity").getAsFloat());
+
+                gameState.setCharacter(character);
             }
 
-            logger.info("Game loaded successfully from: {}", filename);
+            // Load ambient data
+            if (jsonObject.has("ambientName")) {
+                String ambientName = jsonObject.get("ambientName").getAsString();
+                Ambient ambient;
+
+                switch (ambientName) {
+                    case "Jungle": ambient = new Jungle(); break;
+                    case "Cave": ambient = new Cave(); break;
+                    case "Lake River": ambient = new LakeRiver(); break;
+                    case "Mountain": ambient = new Mountain(); break;
+                    case "Ruins": ambient = new Ruins(); break;
+                    default: ambient = new Jungle(); break;
+                }
+
+                gameState.setCurrentAmbient(ambient);
+            }
+
+            // Load map data
+            if (jsonObject.has("currentMap")) {
+                JsonArray mapArray = jsonObject.getAsJsonArray("currentMap");
+                int height = mapArray.size();
+                int width = height > 0 ? mapArray.get(0).getAsJsonArray().size() : 0;
+
+                int[][] map = new int[height][width];
+                for (int y = 0; y < height; y++) {
+                    JsonArray row = mapArray.get(y).getAsJsonArray();
+                    for (int x = 0; x < width; x++) {
+                        map[y][x] = row.get(x).getAsInt();
+                    }
+                }
+
+                gameState.setCurrentMap(map);
+            }
+
+            // Load other game state data
+            if (jsonObject.has("daysSurvived"))
+                gameState.setDaysSurvived(jsonObject.get("daysSurvived").getAsInt());
+
+            logger.info("Game loaded successfully from: {}", filePath);
             return gameState;
+
         } catch (JsonSyntaxException e) {
-            logger.error("Invalid JSON format in save file: {}", e.getMessage());
-            return null;
+            logger.error("JSON syntax error while loading game: {}", e.getMessage());
+            throw new RuntimeException("Error parsing save file: " + e.getMessage(), e);
+        } catch (JsonIOException e) {
+            logger.error("JSON I/O error while loading game: {}", e.getMessage());
+            throw new RuntimeException("Error reading save file: " + e.getMessage(), e);
         } catch (IOException e) {
             logger.error("I/O error while loading game: {}", e.getMessage());
-            return null;
+            throw new RuntimeException("Error accessing save file: " + e.getMessage(), e);
         } finally {
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    logger.error("Failed to close file reader: {}", e.getMessage());
+                    logger.error("Error closing reader: {}", e.getMessage());
                 }
             }
-        }
-    }
-
-    public String[] getSaveFiles() {
-        try {
-            File saveDir = new File(SAVE_DIRECTORY);
-            if (!saveDir.exists() || !saveDir.isDirectory()) {
-                logger.warn("Save directory does not exist or is not a directory");
-                return new String[0];
-            }
-
-            return saveDir.list((dir, name) -> name.toLowerCase().endsWith(JSON));
-        } catch (SecurityException e) {
-            logger.error("Security exception accessing save directory: {}", e.getMessage());
-            return new String[0];
         }
     }
 
@@ -277,5 +357,18 @@ public class SaveManager {
                 return null;
             }
         }
+    }
+
+    /**
+     * Returns an array of save files in the save directory
+     * @return Array of save files or empty array if directory doesn't exist
+     */
+    public File[] getSaveFiles() {
+        File directory = new File(SAVE_DIRECTORY);
+        if (!directory.exists() || !directory.isDirectory()) {
+            createSaveDirectory();
+            return new File[0];
+        }
+        return directory.listFiles((dir, name) -> name.toLowerCase().endsWith(JSON));
     }
 }
