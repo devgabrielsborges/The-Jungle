@@ -53,6 +53,7 @@ public abstract class Character implements ICharacter {
 
     @Expose
     private Vector2 position;
+
     private final Texture texture;
 
     protected Character(
@@ -477,6 +478,10 @@ public abstract class Character implements ICharacter {
 
     public String getCharacterType() {
         return characterType;
+    }
+
+    public Vector2 getPosition() {
+        return position;
     }
 
     public void setCharacterType(String characterType) {

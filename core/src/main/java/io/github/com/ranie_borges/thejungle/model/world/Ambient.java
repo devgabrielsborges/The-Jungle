@@ -1,16 +1,13 @@
 package io.github.com.ranie_borges.thejungle.model.world;
 
+import com.badlogic.gdx.graphics.Texture;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.AmbientAttribute;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 import io.github.com.ranie_borges.thejungle.model.world.interfaces.IAmbients;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Ambient implements IAmbients {
     private String name;
@@ -21,8 +18,23 @@ public abstract class Ambient implements IAmbients {
     private Set<Item> resources;
     private Map<Event, Double> possibleEvents;
     private Set<Clime> climes;
+    private final Texture floorTexture;
+    private final Texture wallTexture;
+    private final Texture sidebarTexture;
+    private final float wallDensity;
+    private final float itemDensity;
 
-    protected Ambient(String name, String description, float difficult, Set<AmbientAttribute> attributes) {
+    protected Ambient(
+        String name,
+        String description,
+        float difficult,
+        Set<AmbientAttribute> attributes,
+        Texture floorTexture,
+        Texture wallTexture,
+        Texture sidebarTexture,
+        float wallDensity,
+        float itemDensity
+    ) {
         setName(name);
         setDescription(description);
         setDifficult(difficult);
@@ -30,10 +42,11 @@ public abstract class Ambient implements IAmbients {
         this.resources = new HashSet<>();
         this.possibleEvents = new HashMap<>();
         this.climes = new HashSet<>();
-    }
-
-    protected Ambient(String name, String description, float difficult) {
-        this(name, description, difficult, new HashSet<>());
+        this.floorTexture = floorTexture;
+        this.wallTexture = wallTexture;
+        this.sidebarTexture = sidebarTexture;
+        this.wallDensity = wallDensity;
+        this.itemDensity = itemDensity;
     }
 
     public String getName() {
@@ -98,5 +111,54 @@ public abstract class Ambient implements IAmbients {
 
     public void setAttributes(Set<AmbientAttribute> attributes) {
         this.attributes = attributes;
+    }
+
+    public Texture getFloorTexture() {
+        return floorTexture;
+    }
+
+    public Texture getWallTexture() {
+        return wallTexture;
+    }
+
+    public Texture getSidebarTexture() {
+        return sidebarTexture;
+    }
+
+    public float getItemDensity() {
+        return itemDensity;
+    }
+
+    public float getWallDensity() {
+        return wallDensity;
+    }
+
+    protected void addDoors(int[][] map, int mapWidth, int mapHeight, Random rand) {
+        int numDoors = 2 + (rand.nextFloat() < itemDensity ? 1 : 0);
+        java.util.List<int[]> borderPositions = new java.util.ArrayList<>();
+
+        // Collect possible door positions along borders
+        for (int x = 2; x < mapWidth - 2; x++) {
+            borderPositions.add(new int[]{0, x});
+            borderPositions.add(new int[]{mapHeight - 1, x});
+        }
+        for (int y = 2; y < mapHeight - 2; y++) {
+            borderPositions.add(new int[]{y, 0});
+            borderPositions.add(new int[]{y, mapWidth - 1});
+        }
+
+        // Place doors
+        java.util.Collections.shuffle(borderPositions);
+        for (int i = 0; i < Math.min(numDoors, borderPositions.size()); i++) {
+            int[] pos = borderPositions.get(i);
+            int y = pos[0], x = pos[1];
+            map[y][x] = 2;
+
+            // Ensure door connects to walkable space
+            if (x == 0) map[y][1] = 0;
+            else if (x == mapWidth - 1) map[y][mapWidth - 2] = 0;
+            else if (y == 0) map[1][x] = 0;
+            else if (y == mapHeight - 1) map[mapHeight - 2][x] = 0;
+        }
     }
 }

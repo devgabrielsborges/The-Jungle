@@ -41,4 +41,7 @@ public interface IAmbients {
      * Must be implemented by concrete classes.
      */
     void disableEvent();
+
+    int[][] generateMap(int mapWidth, int mapHeight);
+
 }
