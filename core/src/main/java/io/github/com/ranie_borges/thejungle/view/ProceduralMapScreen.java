@@ -409,21 +409,23 @@ public class ProceduralMapScreen implements Screen {
                 for (int x = 0; x < MAP_WIDTH; x++) {
                     float dx = x * TILE_SIZE + offsetX;
                     float dy = y * TILE_SIZE + offsetY;
+
                     if (map[y][x] == TILE_GRASS) {
                         batch.draw(floorTexture, dx, dy);
-                    } else if (map[y][x] == TILE_WALL) {
-                        batch.draw(wallTexture, dx, dy);
-                    } else if (map[y][x] == TILE_DOOR) {
-                        batch.setColor(0.8f, 0.5f, 0.2f, 1f);
-                        batch.draw(floorTexture, dx, dy);
-                        batch.setColor(1, 1, 1, 1);
                     } else if (map[y][x] == TILE_CAVE) {
-                        batch.setColor(0.5f, 0.3f, 0.2f, 1f);
+                        batch.draw(floorTexture, dx, dy);
+                    } else if (map[y][x] == TILE_WALL) {
+                        batch.setColor(0.4f, 0.4f, 0.4f, 1f); // Paredes mais escuras (cinza escuro)
+                        batch.draw(floorTexture, dx, dy);
+                        batch.setColor(1, 1, 1, 1); // Resetar cor para não afetar o resto
+                    } else if (map[y][x] == TILE_DOOR) {
+                        batch.setColor(0, 0, 0, 1f); // Porta fica preta
                         batch.draw(floorTexture, dx, dy);
                         batch.setColor(1, 1, 1, 1);
                     }
                 }
             }
+
 
             batch.draw(playerTexture, playerPos.x + offsetX, playerPos.y + offsetY, 20, 20);
             batch.draw(backpackIcon, bx, by, size, size);
