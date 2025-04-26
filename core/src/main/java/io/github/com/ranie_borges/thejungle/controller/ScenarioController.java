@@ -1,11 +1,18 @@
-package io.github.com.ranie_borges.thejungle.controller.systems;
+package io.github.com.ranie_borges.thejungle.controller;
 
 import com.badlogic.gdx.Screen;
+import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
+import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
 import io.github.com.ranie_borges.thejungle.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
 
 public class ScenarioController {
     // if have a save -> MainMenu, ProceduralMapScreen
@@ -61,13 +68,13 @@ public class ScenarioController {
      * Load a saved game and transition to game screen
      */
     public void loadSavedGame() {
-        String[] saveFiles = saveManager.getSaveFiles();
+        File[] saveFiles = saveManager.getSaveFiles();
         logger.info("Found {} save files", saveFiles.length);
 
         if (saveFiles.length > 0) {
             try {
                 // Get first save file
-                String saveName = saveFiles[saveFiles.length - 1];
+                String saveName = String.valueOf(saveFiles[saveFiles.length - 1]);
                 logger.info("Attempting to load save file: {}", saveName);
 
                 // Load game state
@@ -85,11 +92,12 @@ public class ScenarioController {
                     return;
                 }
 
-                String characterName = gameState.getPlayerCharacter().getName();
+                Character characterName = gameState.getPlayerCharacter();
                 String profession = getProfessionFromCharacter(gameState.getPlayerCharacter());
-                logger.info("Successfully loaded character: {}, profession: {}", characterName, profession);
+                Ambient currentAmbient = gameState.getCurrentAmbient();
+                logger.info("Successfully loaded character: {}, profession: {}", characterName.getClass().getSimpleName(), profession);
 
-                setScreen(new ProceduralMapScreen(characterName, profession));
+                setScreen(new ProceduralMapScreen(characterName, currentAmbient));
             } catch (Exception e) {
                 logger.error("Error loading saved game", e);
                 e.printStackTrace(); // Add this to see full stack trace
@@ -115,8 +123,8 @@ public class ScenarioController {
     /**
      * Start game with a specific character
      */
-    public void startGameWithCharacter(String characterName, String profession) {
-        setScreen(new ProceduralMapScreen(characterName, profession));
+    public void startGameWithCharacter(Character character) {
+        setScreen(new ProceduralMapScreen(character,  new Cave()));
     }
 
     /**
