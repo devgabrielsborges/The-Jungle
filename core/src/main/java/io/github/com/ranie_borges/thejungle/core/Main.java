@@ -2,7 +2,7 @@ package io.github.com.ranie_borges.thejungle.core;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import io.github.com.ranie_borges.thejungle.controller.systems.ScenarioController;
+import io.github.com.ranie_borges.thejungle.controller.ScenarioController;
 
 public class Main extends Game {
     private SpriteBatch batch;
