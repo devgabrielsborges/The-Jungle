@@ -19,8 +19,8 @@ public class Ruins extends Ambient {
             "Ancient stone structures overtaken by time, with crumbling walls and hidden passages. Artifacts of a forgotten civilization may be found here.",
             2.5f,
             Set.of(DRY_CLIMATE),
-            new Texture(Gdx.files.internal("scenarios/ruins/floor.png")),
-            new Texture(Gdx.files.internal("scenarios/ruins/wall.png")),
+            new Texture(Gdx.files.internal("scenarios/ruins/ruinsFloor.png")),
+            new Texture(Gdx.files.internal("scenarios/ruins/ruinsWall.png")),
             new Texture(Gdx.files.internal("scenarios/ruins/sidebar.jpg")),
             0.4f,   // wallDensity - more structural remains
             0.3f    // itemDensity - moderate artifact presence
