@@ -117,7 +117,7 @@ public class StatsScreen implements Screen {
                         String saveName = "save_" + characterName;
                         if (saveManager.saveGame(gameState, saveName)) {
                             logger.info("Game saved successfully for character: {}", characterName);
-                            game.getScenarioController().startGameWithCharacter(characterName, selectedProfession);
+                            game.getScenarioController().startGameWithCharacter(character);
                         } else {
                             logger.error("Failed to save game for character: {}", characterName);
                         }
