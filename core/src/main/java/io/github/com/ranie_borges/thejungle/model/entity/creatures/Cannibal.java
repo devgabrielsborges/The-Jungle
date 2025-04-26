@@ -3,6 +3,7 @@ package io.github.com.ranie_borges.thejungle.model.entity.creatures;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.math.Vector2; // <-- Import adicionado
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
@@ -13,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class Cannibal extends Creature {
+
+    private Vector2 position = new Vector2(); // <-- Igual ao Deer!
 
     protected Cannibal(
         String name,
@@ -35,15 +38,25 @@ public class Cannibal extends Creature {
             0.7f,
             15.0f,
             Clime.CAVE,
-            new HashSet<>(),
+            createDrops(),
             createSprites()
         );
     }
 
     private static Map<String, Sprite> createSprites() {
         Map<String, Sprite> sprites = new HashMap<>();
-        sprites.put("idle", new Sprite(new Texture(Gdx.files.internal("imagemAqui"))));
+        sprites.put("idle", new Sprite(new Texture(Gdx.files.internal("sprites/criaturas/canibal.png"))));
         return sprites;
+    }
+
+    private static Set<Item> createDrops() {
+        Set<Item> drops = new HashSet<>();
+        // Aqui você poderia adicionar itens dropáveis no futuro.
+        return drops;
+    }
+
+    public Vector2 getPosition() { // <-- Agora igualzinho o Deer
+        return position;
     }
 
     @Override

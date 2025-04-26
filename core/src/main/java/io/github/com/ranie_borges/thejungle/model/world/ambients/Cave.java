@@ -22,8 +22,8 @@ public class Cave extends Ambient {
             new Texture(Gdx.files.internal("scenarios/cave/floor.png")),
             new Texture(Gdx.files.internal("scenarios/cave/wall.png")),
             new Texture(Gdx.files.internal("scenarios/cave/sidebar.jpg")),
-            0.3f,  // wallDensity - more walls for caves
-            0.2f   // itemDensity - fewer items in caves
+            0.3f,
+            0.2f
         );
 
         setClimes(Set.of(CAVE));
@@ -58,7 +58,7 @@ public class Cave extends Ambient {
         // Start with all walls
         for (int y = 0; y < mapHeight; y++) {
             for (int x = 0; x < mapWidth; x++) {
-                map[y][x] = 1;
+                map[y][x] = 1; // Parede
             }
         }
 
@@ -67,14 +67,13 @@ public class Cave extends Ambient {
         int centerY = mapHeight / 2;
         int radius = Math.min(mapWidth, mapHeight) / 3;
 
-        // Start with a central chamber
         for (int y = centerY - radius; y <= centerY + radius; y++) {
             for (int x = centerX - radius; x <= centerX + radius; x++) {
                 if (y > 0 && y < mapHeight - 1 && x > 0 && x < mapWidth - 1) {
                     int dx = x - centerX;
                     int dy = y - centerY;
-                    if (dx*dx + dy*dy <= radius*radius) {
-                        map[y][x] = 0;
+                    if (dx * dx + dy * dy <= radius * radius) {
+                        map[y][x] = 3; // Piso de CAVERNA aqui, não grama!
                     }
                 }
             }
@@ -89,13 +88,13 @@ public class Cave extends Ambient {
             int curY = centerY;
 
             for (int j = 0; j < length; j++) {
-                curX = (int)(centerX + j * Math.cos(angle));
-                curY = (int)(centerY + j * Math.sin(angle));
+                curX = (int) (centerX + j * Math.cos(angle));
+                curY = (int) (centerY + j * Math.sin(angle));
 
                 if (curY > 0 && curY < mapHeight - 1 && curX > 0 && curX < mapWidth - 1) {
-                    map[curY][curX] = 0;
-                    map[curY][curX+1] = 0;
-                    map[curY+1][curX] = 0;
+                    map[curY][curX] = 3; // Piso de CAVERNA
+                    if (curX + 1 < mapWidth) map[curY][curX + 1] = 3; // Piso de CAVERNA
+                    if (curY + 1 < mapHeight) map[curY + 1][curX] = 3; // Piso de CAVERNA
                 }
             }
         }
