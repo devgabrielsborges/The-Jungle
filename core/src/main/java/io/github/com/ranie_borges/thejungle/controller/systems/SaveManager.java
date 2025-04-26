@@ -146,7 +146,7 @@ public class SaveManager {
             throw new IllegalArgumentException("Filename cannot be null or empty");
         }
 
-        String filePath = SAVE_DIRECTORY + (filename.endsWith(JSON) ? filename : filename + JSON);
+        String filePath = filename.endsWith(JSON) ? filename : filename + JSON;
         Reader reader = null;
 
         try {
