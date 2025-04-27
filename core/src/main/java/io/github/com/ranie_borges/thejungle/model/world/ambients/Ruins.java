@@ -28,7 +28,7 @@ public class Ruins extends Ambient {
 
         setClimes(Set.of(DESERT));
         setResources(Set.of(
-            new Drinkable("Stagnant Water", 0.2f, 0.3f)
+            new Drinkable("Stagnant Water", 0.2f, 0.3f, false, 3f) // Água contaminada, 3 unidades de volume
         ));
     }
 
@@ -76,12 +76,10 @@ public class Ruins extends Ambient {
             // Draw room walls
             for (int y = roomY; y < roomY + roomHeight; y++) {
                 for (int x = roomX; x < roomX + roomWidth; x++) {
-                    // Only walls around perimeter
                     if (y == roomY || y == roomY + roomHeight - 1 ||
                         x == roomX || x == roomX + roomWidth - 1) {
                         map[y][x] = 1;
 
-                        // Add some broken walls to represent ruins
                         if (rand.nextFloat() < 0.3 && x != 0 && y != 0 &&
                             x != mapWidth-1 && y != mapHeight-1) {
                             map[y][x] = 0;

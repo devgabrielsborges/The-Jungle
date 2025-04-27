@@ -8,9 +8,12 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
 import org.slf4j.Logger;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Tool;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -34,6 +37,12 @@ public abstract class Character implements ICharacter {
     private float sanity;
     @Expose
     private Array<Item> inventory;
+    @Expose
+    private float currentWeight = 0f;
+
+    @Expose
+    private float maxCarryWeight = 30f; // peso máximo padrão (pode mudar por profissão depois)
+
 
     @Expose
     private int inventoryInitialCapacity = 15;
@@ -288,39 +297,26 @@ public abstract class Character implements ICharacter {
 
             if (isInventoryFull()) {
                 logger.warn("{}: Cannot add item '{}', inventory is full", name, item.getName());
+                System.out.println(getName() + " tentou adicionar um item, mas o inventário está cheio!");
+                return;
+            }
+
+            if (!canCarryMore(item.getWeight())) {
+                logger.warn("{}: Cannot carry item '{}', too heavy!", name, item.getName());
+                System.out.println(getName() + " está muito pesado para carregar: " + item.getName());
                 return;
             }
 
             inventory.add(item);
-            logger.debug("{}: Added item '{}' to inventory", name, item.getName());
+            currentWeight += item.getWeight();
+
+            logger.debug("{}: Added item '{}' to inventory (currentWeight = {}/{})", name, item.getName(), currentWeight, maxCarryWeight);
+            System.out.println(getName() + " adicionou " + item.getName() + " no inventário. Peso atual: " + currentWeight + "/" + maxCarryWeight);
         } catch (Exception e) {
             logger.error("{}: Error adding item to inventory: {}", name, e.getMessage());
         }
     }
 
-    public void insertItemInInventory(Item item, int index) {
-        try {
-            if (item == null) {
-                logger.warn("{}: Attempted to add null item at index {}", name, index);
-                return;
-            }
-
-            if (index < 0 || index >= inventoryInitialCapacity) {
-                logger.warn("{}: Invalid inventory index: {}", name, index);
-                return;
-            }
-
-            // Ensure array is large enough for the index
-            while (inventory.size <= index) {
-                inventory.add(null);
-            }
-
-            inventory.set(index, item);
-            logger.debug("{}: Set item '{}' at index {}", name, item.getName(), index);
-        } catch (Exception e) {
-            logger.error("{}: Error setting item at index {}: {}", name, index, e.getMessage());
-        }
-    }
 
     public Item getItem(int index) {
         try {
@@ -354,6 +350,124 @@ public abstract class Character implements ICharacter {
             logger.error("{}: Error dropping item at index {}: {}", name, index, e.getMessage());
         }
     }
+    public void cutTree() {
+        try {
+            if (isInventoryFull()) {
+                logger.warn("{}: Inventory full, cannot collect wood.", getName());
+                System.out.println(getName() + " tentou cortar uma árvore, mas o inventário está cheio!");
+                return;
+            }
+
+            Material woodLog = Material.createWoodLog(); // Usa o método padrão da classe Material
+            insertItemInInventory(woodLog);
+
+            logger.info("{} cut down a tree and collected a Wood Log.", getName());
+            System.out.println(getName() + " cortou uma árvore e coletou uma tora de madeira!");
+        } catch (Exception e) {
+            logger.error("{}: Error while cutting tree: {}", getName(), e.getMessage());
+        }
+    }
+    /**
+     * Cuts a tree using an Axe, collecting extra wood logs if successful.
+     */
+    public void cutTreeWithAxe() {
+        try {
+            Tool axe = null;
+
+            for (Item item : inventory) {
+                if (item instanceof Tool) {
+                    Tool tool = (Tool) item;
+                    if (tool.getName().equalsIgnoreCase("Axe")) {
+                        axe = tool;
+                        break;
+                    }
+                }
+            }
+
+            if (axe == null) {
+                logger.warn("{}: Tried to cut a tree but has no Axe.", getName());
+                System.out.println(getName() + " tentou cortar uma árvore, mas não tem um Machado!");
+                return;
+            }
+
+            if (isInventoryFull()) {
+                logger.warn("{}: Inventory full, cannot collect wood.", getName());
+                System.out.println(getName() + " tentou cortar uma árvore, mas o inventário está cheio!");
+                return;
+            }
+
+            insertItemInInventory(Material.createWoodLog());
+            insertItemInInventory(Material.createWoodLog());
+
+            logger.info("{} used an Axe to cut a tree and collected 2 Wood Logs.", getName());
+            System.out.println(getName() + " cortou uma árvore com o Machado e coletou 2 toras de madeira!");
+
+            axe.useItem();
+
+            if (axe.getDurability() <= 0) {
+                inventory.removeValue(axe, true);
+                System.out.println("O Machado quebrou após o uso!");
+                logger.info("{}: Axe broke after use.", getName());
+            }
+        } catch (Exception e) {
+            logger.error("{}: Error while cutting tree with Axe: {}", getName(), e.getMessage());
+        }
+    }
+    /**
+     * Collects a resource using a Knife, improving success and reducing wear.
+     *
+     * @param resource The item to collect
+     */
+    public void collectWithKnife(Item resource) {
+        try {
+            if (resource == null) {
+                logger.warn("{}: Tried to collect a null resource.", getName());
+                System.out.println(getName() + " tentou coletar algo, mas não havia nada.");
+                return;
+            }
+
+            Tool knife = null;
+
+            for (Item item : inventory) {
+                if (item instanceof Tool) {
+                    Tool tool = (Tool) item;
+                    if (tool.getName().equalsIgnoreCase("Knife")) {
+                        knife = tool;
+                        break;
+                    }
+                }
+            }
+
+            if (knife == null) {
+                logger.warn("{}: Tried to collect a resource but has no Knife.", getName());
+                System.out.println(getName() + " tentou coletar um recurso, mas não tem uma Faca!");
+                return;
+            }
+
+            if (isInventoryFull()) {
+                logger.warn("{}: Inventory full, cannot collect resource.", getName());
+                System.out.println(getName() + " tentou coletar, mas o inventário está cheio!");
+                return;
+            }
+
+            insertItemInInventory(resource);
+
+            logger.info("{} used a Knife to collect resource: {}", getName(), resource.getName());
+            System.out.println(getName() + " usou a Faca e coletou com sucesso: " + resource.getName());
+
+            knife.useItem();
+
+            if (knife.getDurability() <= 0) {
+                inventory.removeValue(knife, true);
+                System.out.println("A Faca quebrou após o uso!");
+                logger.info("{}: Knife broke after use.", getName());
+            }
+        } catch (Exception e) {
+            logger.error("{}: Error while collecting with Knife: {}", getName(), e.getMessage());
+        }
+    }
+
+
 
     public void emptyInventory() {
         try {
@@ -362,6 +476,9 @@ public abstract class Character implements ICharacter {
         } catch (Exception e) {
             logger.error("{}: Error emptying inventory: {}", name, e.getMessage());
         }
+    }
+    private boolean canCarryMore(float itemWeight) {
+        return (currentWeight + itemWeight) <= maxCarryWeight;
     }
 
     public void increaseInventoryCapacity(int newCapacity) {
@@ -441,6 +558,100 @@ public abstract class Character implements ICharacter {
         }
     }
 
+    /**
+     * Heals the character using a Medicine item.
+     *
+     * @param medicine The medicine item to use
+     */
+    public void heal(Medicine medicine) {
+        try {
+            if (medicine == null) {
+                logger.warn("{}: Tried to heal with a null medicine.", getName());
+                System.out.println(getName() + " tentou usar um medicamento inexistente!");
+                return;
+            }
+
+            if (!inventory.contains(medicine, true)) {
+                logger.warn("{}: Tried to heal with a medicine not in inventory.", getName());
+                System.out.println(getName() + " tentou usar um medicamento que não está no inventário!");
+                return;
+            }
+
+            // Cura a vida baseado no healRatio do remédio
+            float lifeRestored = (float) (getHealRatioPercentage(medicine) * getLifeMax());
+
+            setLife(Math.min(getLife() + lifeRestored, getLifeMax()));
+
+            // Usa o remédio
+            medicine.useItem();
+
+            logger.info("{} used {} and restored {} life.", getName(), medicine.getName(), lifeRestored);
+            System.out.println(getName() + " usou " + medicine.getName() + " e restaurou " + lifeRestored + " pontos de vida!");
+
+            // Se a durabilidade zerar, remove do inventário
+            if (medicine.getDurability() <= 0) {
+                inventory.removeValue(medicine, true);
+                System.out.println("O medicamento " + medicine.getName() + " acabou após o uso!");
+                logger.info("{}: {} finished after usage.", getName(), medicine.getName());
+            }
+
+        } catch (Exception e) {
+            logger.error("{}: Error while using medicine: {}", getName(), e.getMessage());
+        }
+    }
+
+    /**
+     * Helper method to get how much of life the medicine will restore.
+     */
+    private float getHealRatioPercentage(Medicine medicine) {
+        return (float) (medicine.getHealRatio() / 100.0);
+    }
+
+    /**
+     * Helper method to define the maximum life of a character (could vary by profession)
+     */
+    private float getLifeMax() {
+        return 100f; // Aqui você pode depois customizar dependendo da classe (Hunter 100, Doctor 80, etc.)
+    }
+
+    /**
+     * Uses an item intelligently depending on its type (Medicine, Tool, Weapon, etc.).
+     *
+     * @param item The item to use
+     */
+    public void useItem(Item item) {
+        try {
+            if (item == null) {
+                logger.warn("{}: Tried to use a null item.", getName());
+                System.out.println(getName() + " tentou usar um item inexistente!");
+                return;
+            }
+
+            if (!inventory.contains(item, true)) {
+                logger.warn("{}: Tried to use an item not in inventory: {}", getName(), item.getName());
+                System.out.println(getName() + " tentou usar um item que não está no inventário: " + item.getName());
+                return;
+            }
+
+            if (item instanceof Medicine) {
+                heal((Medicine) item);
+            } else {
+                item.useItem();
+                System.out.println(getName() + " usou o item: " + item.getName());
+                logger.info("{} used item: {}", getName(), item.getName());
+            }
+
+            if (item.getDurability() <= 0) {
+                inventory.removeValue(item, true);
+                System.out.println("O item " + item.getName() + " quebrou ou foi consumido completamente!");
+                logger.info("{}: Item {} removed from inventory after use.", getName(), item.getName());
+            }
+        } catch (Exception e) {
+            logger.error("{}: Error while using item: {}", getName(), e.getMessage());
+        }
+    }
+
+
     public double getAttackDamage() {
         return attackDamage;
     }
@@ -498,7 +709,32 @@ public abstract class Character implements ICharacter {
         }
     }
 
-    public abstract void dropItem(Item item);
+    @Override
+    public void dropItem(Item item) {
+        try {
+            if (item == null) {
+                logger.warn("{}: Tried to drop a null item.", getName());
+                return;
+            }
+
+            if (!inventory.contains(item, true)) {
+                logger.warn("{}: Tried to drop an item not in inventory: {}", getName(), item.getName());
+                System.out.println(getName() + " tentou dropar um item que não possui: " + item.getName());
+                return;
+            }
+
+            inventory.removeValue(item, true);
+            currentWeight -= item.getWeight();
+            if (currentWeight < 0) currentWeight = 0;
+
+            System.out.println(getName() + " dropou o item: " + item.getName());
+            logger.info("{} dropped item: {}", getName(), item.getName());
+
+        } catch (Exception e) {
+            logger.error("{}: Error dropping item: {}", getName(), e.getMessage());
+        }
+    }
+
 
     public void updatePosition(float delta) {
         try {

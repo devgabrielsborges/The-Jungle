@@ -29,8 +29,8 @@ public class Mountain extends Ambient {
 
         setClimes(Set.of(SNOW));
         setResources(Set.of(
-            new Drinkable("Mountain Spring Water", 0.1f, 1.0f),
-            new Food("Wild Berries", 0.5f, 1.2f)
+            new Drinkable("Mountain Spring Water", 0.1f, 1.0f, true, 6f), // Água potável, 6 unidades de volume
+            new Food("Mountain Berries", 0.5f, 1.2f, 10, "Fruit", 2) // Berries de montanha: valor 10, validade 2 turnos
         ));
     }
 
@@ -68,7 +68,6 @@ public class Mountain extends Ambient {
                     continue;
                 }
 
-                // Create peaks based on noise
                 double noise = (Math.sin(x * 0.4) + Math.cos(y * 0.3)) * 0.5;
                 noise += rand.nextDouble() * 0.5;
 
@@ -80,8 +79,7 @@ public class Mountain extends Ambient {
         int pathY = mapHeight / 2;
         for (int x = 1; x < mapWidth - 1; x++) {
             map[pathY][x] = 0;
-            // Make wider path sections
-            map[pathY-1][x] = 0;
+            map[pathY - 1][x] = 0;
 
             if (rand.nextFloat() < 0.2 && pathY > 3 && pathY < mapHeight - 4) {
                 pathY += rand.nextBoolean() ? 1 : -1;

@@ -58,7 +58,7 @@ public class Weapon extends Item {
      */
     @Override
     public void dropItem() {
-        // Implementation for dropping a weapon
+        System.out.println("Você deixou cair a arma: " + getName() + ".");
     }
 
     public float getAttackSpeed() {
@@ -66,6 +66,29 @@ public class Weapon extends Item {
     }
 
     public void setAttackSpeed(float attackSpeed) {
-        this.attackSpeed = attackSpeed;
+        this.attackSpeed = Math.max(0, attackSpeed);
+    }
+
+    // ======= ADICIONADO: Factory Methods para criar armas padrão =======
+
+    /**
+     * Creates a basic Wooden Spear
+     */
+    public static Weapon createWoodenSpear() {
+        return new Weapon("Wooden Spear", 1.5f, 1.0f, 8.0f, 1.0f);
+    }
+
+    /**
+     * Creates a Stone Spear (improved spear with more damage)
+     */
+    public static Weapon createStoneSpear() {
+        return new Weapon("Stone Spear", 2.0f, 1.2f, 12.0f, 0.9f);
+    }
+
+    /**
+     * Creates a basic Knife (usable as weapon too)
+     */
+    public static Weapon createKnife() {
+        return new Weapon("Knife", 0.8f, 0.9f, 5.0f, 1.5f);
     }
 }

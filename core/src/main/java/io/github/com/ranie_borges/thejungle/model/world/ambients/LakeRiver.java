@@ -23,16 +23,16 @@ public class LakeRiver extends Ambient {
             new Texture(Gdx.files.internal("scenarios/lakeriver/lakeriverFloor.png")),
             new Texture(Gdx.files.internal("scenarios/lakeriver/lakeriverWall.png")),
             new Texture(Gdx.files.internal("scenarios/lakeriver/sidebar.jpg")),
-            0.15f,  // wallDensity - fewer obstacles
-            0.4f    // itemDensity - more items near water
+            0.15f,
+            0.4f
         );
 
         setResources(Set.of(
-            new Drinkable("Fresh Water", 0.1f, 1.0f),
-            new Food("Wild Berries", 0.5f, 1.2f),
-            new Material("Rope", 1.0f, 0.5f),
-            new Material("Stick", 0.2f, 0.5f)
+            new Drinkable("Fresh Water", 0.1f, 1.0f, true, 8f),
+            new Food("Wild Berries", 0.5f, 1.2f, 12, "Fruit", 3),
+            new Material("Pebble", 0.4f, 1.0f, "Stone", 0.7f)
         ));
+
     }
 
     @Override
@@ -71,7 +71,6 @@ public class LakeRiver extends Ambient {
         boolean isLake = rand.nextBoolean();
 
         if (isLake) {
-            // Create a lake in the center
             int lakeX = mapWidth / 2;
             int lakeY = mapHeight / 2;
             int lakeRadius = Math.min(mapWidth, mapHeight) / 4;
@@ -80,21 +79,20 @@ public class LakeRiver extends Ambient {
                 for (int x = 0; x < mapWidth; x++) {
                     int dx = x - lakeX;
                     int dy = y - lakeY;
-                    if (dx*dx + dy*dy < lakeRadius*lakeRadius) {
-                        map[y][x] = 1; // Water is represented as walls (can't walk through)
+                    if (dx * dx + dy * dy < lakeRadius * lakeRadius) {
+                        map[y][x] = 1; // Water represented as walls
                     }
                 }
             }
         } else {
-            // Create a winding river
             int riverY = mapHeight / 2;
             int width = 2 + rand.nextInt(2);
 
             for (int x = 0; x < mapWidth; x++) {
-                for (int w = -width/2; w <= width/2; w++) {
+                for (int w = -width / 2; w <= width / 2; w++) {
                     int y = riverY + w;
                     if (y > 0 && y < mapHeight - 1) {
-                        map[y][x] = 1; // River is represented as walls
+                        map[y][x] = 1;
                     }
                 }
 
