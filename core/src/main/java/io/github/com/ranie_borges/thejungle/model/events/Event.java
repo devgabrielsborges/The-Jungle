@@ -11,7 +11,7 @@ public abstract class Event implements IEvent {
     private String name;
     private String description;
     private float probability;
-    private List<Attribute> impacts;
+    private List<Attribute> impacts;   //FIXME
     private boolean isActivatable;
 
     protected Event(String name, String description, float probability) {
