@@ -42,4 +42,6 @@ package io.github.com.ranie_borges.thejungle.model.entity.interfaces;
           * @param item O item a ser usado
           */
          void useItem(Item item);
+
+         void dropItem(Item item);
      }
