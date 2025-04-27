@@ -3,6 +3,7 @@ package io.github.com.ranie_borges.thejungle.model.events.events;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 
 import java.util.Random;
 import java.util.Set;
@@ -43,9 +44,11 @@ public class Climate extends Event {
     }
 
     /**
-     *
+     * @param character
+     * @param ambient
      */
     @Override
-    public <T extends Character> void execute(T character) {
+    public void execute(Character character, Ambient ambient) {
+
     }
 }
