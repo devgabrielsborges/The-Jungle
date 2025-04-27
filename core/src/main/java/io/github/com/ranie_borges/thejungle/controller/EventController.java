@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle.controller;
 
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.event.EventControllerException;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.event.InvalidEventException;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
@@ -13,7 +14,8 @@ import java.util.*;
 
 public class EventController {
     private static final Logger logger = LoggerFactory.getLogger(EventController.class);
-    private final Map<String, Event> possibleEvents;
+    private final Map<Event, Float> possibleEvents;
+    @Expose
     private final List<Event> eventHistory;
     private final Random random;
     private GameState gameState;
@@ -26,17 +28,17 @@ public class EventController {
         this.gameState = gameState;
     }
 
-    public Map<String, Event> getPossibleEvents() {
-        return Collections.unmodifiableMap(possibleEvents);
+    public Map<Event, Float>getPossibleEvents() {
+        return possibleEvents;
     }
 
-    public void addPossibleEvent(Event event) {
+    public void addPossibleEvent(Event event, float probability) {
         try {
             if (event == null) {
                 logger.error("Cannot add event: event is null");
                 throw new InvalidEventException("Event cannot be null");
             }
-            possibleEvents.put(event.getName(), event);
+            possibleEvents.put(event, probability);
             logger.info("Added event: {}", event.getName());
         } catch (Exception e) {
             logger.error("Failed to add event: {}", e.getMessage());
@@ -130,12 +132,12 @@ public class EventController {
      * @param event     The event to apply
      * @param character The character affected by the event
      */
-    public void applyEvent(Event event, Character character) {
+    public void applyEvent(Event event, Character character, Ambient ambient) {
         try {
             validateEvent(event);
             validateCharacter(character);
 
-            event.execute(character);
+            event.execute(character, ambient);
 
             addToHistory(event);
             if (!gameState.getActiveEvents().contains(event)) {
@@ -234,6 +236,35 @@ public class EventController {
             logger.debug("Added event {} to history", event.getName());
         } catch (Exception e) {
             logger.error("Failed to add event to history: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Selects a random event compatible with the given ambient
+     *
+     * @param ambient The ambient to draw an event from
+     * @return The selected event or null if no event occurs
+     */
+    public Event generateRandomEvent(Ambient ambient) {
+        try {
+            if (ambient == null) {
+                logger.error("Cannot generate random event: ambient is null");
+                throw new InvalidEventException("Ambient cannot be null");
+            }
+
+            Event selectedEvent = drawEvent(ambient);
+
+            if (selectedEvent != null) {
+                logger.info("Generated random event: {} for ambient: {}",
+                          selectedEvent.getName(), ambient.getName());
+            } else {
+                logger.debug("No event generated for ambient: {}", ambient.getName());
+            }
+
+            return selectedEvent;
+        } catch (Exception e) {
+            logger.error("Error generating random event: {}", e.getMessage());
+            throw new EventControllerException("Error generating random event", e);
         }
     }
 }
