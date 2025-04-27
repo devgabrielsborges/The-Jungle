@@ -31,11 +31,11 @@ public class Jungle extends Ambient {
 
         setClimes(Set.of(FOREST));
         setResources(Set.of(
-            new Drinkable("Stream Water", 0.1f, 0.8f),
-            new Food("Wild Berries", 0.5f, 1.2f),
-            new Material("Rope", 1.0f, 0.5f),
-            new Material("Stick", 0.2f, 0.5f)
+            new Drinkable("Stream Water", 0.1f, 0.8f, true, 5f),
+            new Food("Wild Berries", 0.5f, 1.2f, 15, "Fruit", 3),
+            new Material("Pebble", 0.4f, 1.0f, "Stone", 0.7f)
         ));
+
     }
 
     @Override
@@ -88,6 +88,4 @@ public class Jungle extends Ambient {
         addDoors(map, mapWidth, mapHeight, rand);
         return map;
     }
-
-
 }

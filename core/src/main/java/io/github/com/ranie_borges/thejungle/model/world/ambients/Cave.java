@@ -27,7 +27,9 @@ public class Cave extends Ambient {
         );
 
         setClimes(Set.of(CAVE));
-        setResources(Set.of(new Drinkable("Cave Water", 0.3f, 0.5f)));
+        setResources(Set.of(
+            new Drinkable("Cave Water", 0.3f, 0.5f, false, 5f)
+        ));
     }
 
     @Override
@@ -58,11 +60,11 @@ public class Cave extends Ambient {
         // Start with all walls
         for (int y = 0; y < mapHeight; y++) {
             for (int x = 0; x < mapWidth; x++) {
-                map[y][x] = 1; // Parede
+                map[y][x] = 1; // Wall
             }
         }
 
-        // Carve out cave chambers using cellular automata
+        // Carve out cave chambers
         int centerX = mapWidth / 2;
         int centerY = mapHeight / 2;
         int radius = Math.min(mapWidth, mapHeight) / 3;
@@ -73,13 +75,13 @@ public class Cave extends Ambient {
                     int dx = x - centerX;
                     int dy = y - centerY;
                     if (dx * dx + dy * dy <= radius * radius) {
-                        map[y][x] = 3; // Piso de CAVERNA aqui, não grama!
+                        map[y][x] = 3; // Cave floor
                     }
                 }
             }
         }
 
-        // Add tunnels branching out from center
+        // Add tunnels
         int tunnels = 3 + rand.nextInt(3);
         for (int i = 0; i < tunnels; i++) {
             double angle = rand.nextDouble() * Math.PI * 2;
@@ -92,9 +94,9 @@ public class Cave extends Ambient {
                 curY = (int) (centerY + j * Math.sin(angle));
 
                 if (curY > 0 && curY < mapHeight - 1 && curX > 0 && curX < mapWidth - 1) {
-                    map[curY][curX] = 3; // Piso de CAVERNA
-                    if (curX + 1 < mapWidth) map[curY][curX + 1] = 3; // Piso de CAVERNA
-                    if (curY + 1 < mapHeight) map[curY + 1][curX] = 3; // Piso de CAVERNA
+                    map[curY][curX] = 3;
+                    if (curX + 1 < mapWidth) map[curY][curX + 1] = 3;
+                    if (curY + 1 < mapHeight) map[curY + 1][curX] = 3;
                 }
             }
         }
