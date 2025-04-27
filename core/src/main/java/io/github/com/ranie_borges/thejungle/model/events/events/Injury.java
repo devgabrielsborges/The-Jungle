@@ -1,12 +1,20 @@
 package io.github.com.ranie_borges.thejungle.model.events.events;
 
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
+
+import java.util.Set;
 
 public class Injury extends Event {
+    private String name;
+
     private float impact;
+
     private float healRate;
     private boolean isHealable;
+    private Set<Item> healableItems;
 
     protected Injury(String name, String description, float probability) {
         super(name, description, probability);
@@ -38,10 +46,28 @@ public class Injury extends Event {
 
     /**
      * @param character
-     * @param <T>
+     * @param ambient
      */
     @Override
-    public <T extends Character> void execute(T character) {
+    public void execute(Character character, Ambient ambient) {
+
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Set<Item> getHealableItems() {
+        return healableItems;
+    }
+
+    public void setHealableItems(Set<Item> healableItems) {
+        this.healableItems = healableItems;
+    }
 }

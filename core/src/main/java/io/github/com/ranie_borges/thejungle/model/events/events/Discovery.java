@@ -4,20 +4,21 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Discoveries;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class Discovery<T extends Item> extends Event {
+public class Discovery extends Event {
     private Discoveries discoveryType;
-    private Set<T> items;
+    private Set<Item> itemsFound;
     private String condition; // Optional condition to access discovery
     private boolean requiresSkill;
 
     public Discovery(String name, String description, float probability, Discoveries discoveryType) {
         super(name, description, probability);
         this.discoveryType = discoveryType;
-        this.items = new HashSet<>();
+        this.itemsFound = new HashSet<>();
         this.requiresSkill = false;
     }
 
@@ -29,16 +30,16 @@ public class Discovery<T extends Item> extends Event {
         this.discoveryType = discoveryType;
     }
 
-    public Set<T> getItems() {
-        return items;
+    public Set<Item> getItemsFound() {
+        return itemsFound;
     }
 
-    public void setItems(Set<T> items) {
-        this.items = items;
+    public void setItemsFound(Set<Item> itemsFound) {
+        this.itemsFound = itemsFound;
     }
 
-    public void addItem(T item) {
-        this.items.add(item);
+    public void addItem(Item item) {
+        this.itemsFound.add(item);
     }
 
     public String getCondition() {
@@ -58,12 +59,11 @@ public class Discovery<T extends Item> extends Event {
     }
 
     /**
-     * Execute the discovery event for a character
-     *
-     * @param character The character who experiences the discovery
+     * @param character
+     * @param ambient
      */
     @Override
-    public <U extends Character> void execute(U character) {
+    public void execute(Character character, Ambient ambient) {
 
     }
 }

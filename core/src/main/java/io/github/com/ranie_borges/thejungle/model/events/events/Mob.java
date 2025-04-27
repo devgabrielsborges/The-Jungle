@@ -3,16 +3,17 @@ package io.github.com.ranie_borges.thejungle.model.events.events;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 
-public class Mob<T extends Creature> extends Event {
-    private T creature;
+public class Mob extends Event {
+    private Creature creature;
     private int dangerLevel;
     private boolean isHostile;
     private boolean isAvoidable;
 
-    public T getCreature() { return creature; }
+    public Creature getCreature() { return creature; }
 
-    public void setCreature(T creature) {
+    public void setCreature(Creature creature) {
         this.creature = creature;
     }
 
@@ -44,7 +45,7 @@ public class Mob<T extends Creature> extends Event {
         String name,
         String description,
         float probability,
-        T creature,
+        Creature creature,
         int dangerLevel,
         boolean isAvoidable,
         boolean isHostile
@@ -59,10 +60,10 @@ public class Mob<T extends Creature> extends Event {
 
     /**
      * @param character
-     * @param <U>
+     * @param ambient
      */
     @Override
-    public <U extends Character> void execute(U character) {
-    }
+    public void execute(Character character, Ambient ambient) {
 
+    }
 }

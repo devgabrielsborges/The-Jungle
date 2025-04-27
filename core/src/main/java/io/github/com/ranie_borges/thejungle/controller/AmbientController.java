@@ -151,7 +151,7 @@ public class AmbientController<A extends Ambient, C extends Character> {
 
             Event event = eventController.drawEvent(ambient);
             if (event != null) {
-                eventController.applyEvent(event, gameState.getPlayerCharacter());
+                eventController.applyEvent(event, gameState.getPlayerCharacter(), ambient);
                 logger.info("Applied event {} in ambient {}", event.getName(), ambient.getName());
             } else {
                 logger.debug("No event generated for ambient {}", ambient.getName());
