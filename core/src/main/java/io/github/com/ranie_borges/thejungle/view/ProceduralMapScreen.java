@@ -100,44 +100,36 @@ public class ProceduralMapScreen implements Screen {
 
     // In your initialization method/constructor, load all animations
     private void loadPlayerAnimations() {
-        // Load idle animations
-        playerIdleDown = loadAnimation("personagem_parado_frente.png", 0.01f);
-        playerIdleUp = loadAnimation("personagem_parado_costas.gif", 0.01f);
-        playerIdleLeft = loadAnimation("personagem_parado_esquerda.gif", 0.01f);
-        playerIdleRight = loadAnimation("personagem_parado_direita.gif", 0.01f);
+        // IDLE: 2 frames
+        playerIdleDown = loadAnimation("personagem_parado_frente.png", 0.1f, 2);
+        playerIdleUp = loadAnimation("personagem_parado_costas.png", 0.1f, 2);
+        playerIdleLeft = loadAnimation("personagem_parado_esquerda.png", 0.1f, 2);
+        playerIdleRight = loadAnimation("personagem_parado_direita.png", 0.1f, 2);
 
-        // Load walking animations
-        playerWalkDown = loadAnimation("personagem_andando_frente.gif", 0.04f);
-        playerWalkUp = loadAnimation("personagem_andando_costas.gif", 0.04f);
-        playerWalkLeft = loadAnimation("personagem_andando_esquerda.gif", 0.04f);
-        playerWalkRight = loadAnimation("personagem_andando_direita.gif", 0.04f);
+// WALK: 4 frames
+        playerWalkDown = loadAnimation("personagem_andando_frente.png", 0.1f, 4);
+        playerWalkUp = loadAnimation("personagem_andando_costas.png", 0.1f, 4);
+        playerWalkLeft = loadAnimation("personagem_andando_esquerda.png", 0.1f, 4);
+        playerWalkRight = loadAnimation("personagem_andando_direita.png", 0.1f, 4);
+
     }
 
-    private Animation<TextureRegion> loadAnimation(String filename, float frameDuration) {
-        try {
-            // Load a sprite sheet instead of GIF
-            Texture spriteSheet = new Texture(Gdx.files.internal("sprites/character/" + filename.replace(".gif", ".png")));
+    private Animation<TextureRegion> loadAnimation(String filename, float frameDuration, int framesCount) {
+        Texture spriteSheet = new Texture(Gdx.files.internal("sprites/character/" + filename.replace(".gif", ".png")));
 
-            // For a 4-frame animation in a horizontal strip
-            int frameWidth = spriteSheet.getWidth() / 4;
-            int frameHeight = spriteSheet.getHeight();
+        int frameWidth = spriteSheet.getWidth() / framesCount;
+        int frameHeight = spriteSheet.getHeight();
 
-            TextureRegion[][] tmp = TextureRegion.split(spriteSheet, frameWidth, frameHeight);
-            Array<TextureRegion> frames = new Array<>(4);
+        TextureRegion[][] tmp = TextureRegion.split(spriteSheet, frameWidth, frameHeight);
+        Array<TextureRegion> frames = new Array<>(framesCount);
 
-            // Extract frames from the sprite sheet
-            for (int i = 0; i < 4; i++) {
-                frames.add(tmp[0][i]);
-            }
-
-            return new Animation<>(frameDuration, frames);
-        } catch (Exception e) {
-            logger.error("Failed to load animation: {}", filename, e);
-            // Create a fallback animation with the player texture
-            TextureRegion[] fallbackFrame = { new TextureRegion(playerTexture) };
-            return new Animation<>(frameDuration, new Array<>(fallbackFrame));
+        for (int i = 0; i < framesCount; i++) {
+            frames.add(tmp[0][i]);
         }
+
+        return new Animation<>(frameDuration, frames);
     }
+
 
     // Update this in your input processing method
     private void handleInput() {
@@ -193,11 +185,15 @@ public class ProceduralMapScreen implements Screen {
         stateTime += Gdx.graphics.getDeltaTime();
         TextureRegion currentFrame = getFrameForCurrentState(stateTime);
 
-        // Draw the player with increased size (40x40)
+        // Pega o tamanho real do quadro da animação
+        float frameWidth = currentFrame.getRegionWidth();
+        float frameHeight = currentFrame.getRegionHeight();
+
+        // Desenha o personagem centralizado no TILE_SIZE
         batch.draw(currentFrame,
-            playerPos.x + offsetX - (40 - TILE_SIZE)/2,
-            playerPos.y + offsetY - (40 - TILE_SIZE)/2,
-            40, 40);
+            playerPos.x + offsetX + (TILE_SIZE - frameWidth) / 2f,
+            playerPos.y + offsetY + (TILE_SIZE - frameHeight) / 2f,
+            frameWidth, frameHeight);
     }
 
     // Helper method to get the current animation frame
