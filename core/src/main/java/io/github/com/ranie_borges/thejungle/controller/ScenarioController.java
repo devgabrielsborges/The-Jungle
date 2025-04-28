@@ -124,7 +124,7 @@ public class ScenarioController {
      * Start game with a specific character
      */
     public void startGameWithCharacter(Character character) {
-        setScreen(new ProceduralMapScreen(character,  new Cave()));
+        setScreen(new ProceduralMapScreen(character,  new Jungle()));
     }
 
     /**

@@ -83,7 +83,7 @@ public class StatsScreen implements Screen {
         Label titleLabel = new Label("Select your profession", skin);
         titleLabel.setFontScale(2f);
 
-        survivorBtn = createProfessionButton(SURVIVOR_PROFESSION, "sprites/profissoes/desempregado.png");
+        survivorBtn = createProfessionButton(SURVIVOR_PROFESSION, "sprites/profissoes/civilian.png");
         hunterBtn = createProfessionButton(HUNTER_PROFESSION, "sprites/profissoes/profissao_cacador.png");
         lumberjackBtn = createProfessionButton(LUMBERJACK_PROFESSION, "sprites/profissoes/profissao_lenhador.png");
         doctorBtn = createProfessionButton(DOCTOR_PROFESSION, "sprites/profissoes/profissao_medico.png");
