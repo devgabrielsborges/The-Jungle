@@ -1,6 +1,5 @@
 package io.github.com.ranie_borges.thejungle.view;
 
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Texture;
@@ -19,14 +18,22 @@ import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 public class ProceduralMapScreen implements Screen {
     private static final Logger logger = LoggerFactory.getLogger(ProceduralMapScreen.class);
@@ -35,13 +42,16 @@ public class ProceduralMapScreen implements Screen {
     private final int MAP_HEIGHT = 20;
     private final int SIDEBAR_WIDTH = 300;
 
-
     private static final int TILE_GRASS = 0;
     private static final int TILE_WALL = 1;
     private static final int TILE_DOOR = 2;
     private static final int TILE_CAVE = 3;
     private static final int TILE_WATER = 4;
 
+    // Ambient rotation fields
+    private int currentAmbientUseCount = 0;
+    private final int MAX_AMBIENT_USES = 2 + (int)(Math.random()); // Random 2-3 uses before switching
+    private boolean playerSpawned = false;
 
     private int[][] map;
     private Texture floorTexture, wallTexture, playerTexture, sidebarTexture, classIcon;
@@ -51,42 +61,169 @@ public class ProceduralMapScreen implements Screen {
     private BitmapFont font;
     private GlyphLayout layout;
 
-
     private float offsetX, offsetY;
     private Vector2 playerPos;
-    private final Character character;
-    private final Ambient ambient;
+    private Character character;
+    private Ambient ambient;
     private boolean showInventory = false;
-
 
     private float blinkTimer = 0f;
     private boolean blinkVisible = true;
     private final float BLINK_INTERVAL = 0.5f;
-
 
     private GameState gameState;
     private SaveManager saveManager;
     private float autosaveTimer = 0f;
     private final float AUTOSAVE_INTERVAL = 60f;
 
-
     private List<Deer> deers;
     private List<Cannibal> cannibals;
     private List<Material> materiaisNoMapa;
 
+    // Add these fields to your ProceduralMapScreen class
+    private Animation<TextureRegion> playerIdleUp;
+    private Animation<TextureRegion> playerIdleDown;
+    private Animation<TextureRegion> playerIdleLeft;
+    private Animation<TextureRegion> playerIdleRight;
+    private Animation<TextureRegion> playerWalkUp;
+    private Animation<TextureRegion> playerWalkDown;
+    private Animation<TextureRegion> playerWalkLeft;
+    private Animation<TextureRegion> playerWalkRight;
+    private float stateTime = 0;
+    private PlayerState currentState = PlayerState.IDLE_DOWN;
+    private boolean isMoving = false;
+    private Direction lastDirection = Direction.DOWN;
 
+    // Enums for player state
+    private enum PlayerState { IDLE_UP, IDLE_DOWN, IDLE_LEFT, IDLE_RIGHT, WALK_UP, WALK_DOWN, WALK_LEFT, WALK_RIGHT }
+    private enum Direction { UP, DOWN, LEFT, RIGHT }
 
+    // In your initialization method/constructor, load all animations
+    private void loadPlayerAnimations() {
+        // Load idle animations
+        playerIdleDown = loadAnimation("personagem_parado_frente.png", 0.01f);
+        playerIdleUp = loadAnimation("personagem_parado_costas.gif", 0.01f);
+        playerIdleLeft = loadAnimation("personagem_parado_esquerda.gif", 0.01f);
+        playerIdleRight = loadAnimation("personagem_parado_direita.gif", 0.01f);
 
+        // Load walking animations
+        playerWalkDown = loadAnimation("personagem_andando_frente.gif", 0.04f);
+        playerWalkUp = loadAnimation("personagem_andando_costas.gif", 0.04f);
+        playerWalkLeft = loadAnimation("personagem_andando_esquerda.gif", 0.04f);
+        playerWalkRight = loadAnimation("personagem_andando_direita.gif", 0.04f);
+    }
 
+    private Animation<TextureRegion> loadAnimation(String filename, float frameDuration) {
+        try {
+            // Load a sprite sheet instead of GIF
+            Texture spriteSheet = new Texture(Gdx.files.internal("sprites/character/" + filename.replace(".gif", ".png")));
 
+            // For a 4-frame animation in a horizontal strip
+            int frameWidth = spriteSheet.getWidth() / 4;
+            int frameHeight = spriteSheet.getHeight();
 
+            TextureRegion[][] tmp = TextureRegion.split(spriteSheet, frameWidth, frameHeight);
+            Array<TextureRegion> frames = new Array<>(4);
 
+            // Extract frames from the sprite sheet
+            for (int i = 0; i < 4; i++) {
+                frames.add(tmp[0][i]);
+            }
+
+            return new Animation<>(frameDuration, frames);
+        } catch (Exception e) {
+            logger.error("Failed to load animation: {}", filename, e);
+            // Create a fallback animation with the player texture
+            TextureRegion[] fallbackFrame = { new TextureRegion(playerTexture) };
+            return new Animation<>(frameDuration, new Array<>(fallbackFrame));
+        }
+    }
+
+    // Update this in your input processing method
+    private void handleInput() {
+        boolean isMovingNow = false;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            playerPos.y += character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.UP;
+            isMovingNow = true;
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            playerPos.y -= character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.DOWN;
+            isMovingNow = true;
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            playerPos.x -= character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.LEFT;
+            isMovingNow = true;
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            playerPos.x += character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.RIGHT;
+            isMovingNow = true;
+        }
+
+        // Update player state based on movement and direction
+        isMoving = isMovingNow;
+        updatePlayerState();
+    }
+
+    // Helper method to update the player state
+    private void updatePlayerState() {
+        if (isMoving) {
+            switch (lastDirection) {
+                case UP:    currentState = PlayerState.WALK_UP; break;
+                case DOWN:  currentState = PlayerState.WALK_DOWN; break;
+                case LEFT:  currentState = PlayerState.WALK_LEFT; break;
+                case RIGHT: currentState = PlayerState.WALK_RIGHT; break;
+            }
+        } else {
+            switch (lastDirection) {
+                case UP:    currentState = PlayerState.IDLE_UP; break;
+                case DOWN:  currentState = PlayerState.IDLE_DOWN; break;
+                case LEFT:  currentState = PlayerState.IDLE_LEFT; break;
+                case RIGHT: currentState = PlayerState.IDLE_RIGHT; break;
+            }
+        }
+    }
+
+    // In your render method, replace the player texture drawing with this:
+    private void renderPlayer(SpriteBatch batch) {
+        stateTime += Gdx.graphics.getDeltaTime();
+        TextureRegion currentFrame = getFrameForCurrentState(stateTime);
+
+        // Draw the player with increased size (40x40)
+        batch.draw(currentFrame,
+            playerPos.x + offsetX - (40 - TILE_SIZE)/2,
+            playerPos.y + offsetY - (40 - TILE_SIZE)/2,
+            40, 40);
+    }
+
+    // Helper method to get the current animation frame
+    private TextureRegion getFrameForCurrentState(float stateTime) {
+        Animation<TextureRegion> currentAnimation;
+
+        switch (currentState) {
+            case IDLE_UP:    currentAnimation = playerIdleUp; break;
+            case IDLE_DOWN:  currentAnimation = playerIdleDown; break;
+            case IDLE_LEFT:  currentAnimation = playerIdleLeft; break;
+            case IDLE_RIGHT: currentAnimation = playerIdleRight; break;
+            case WALK_UP:    currentAnimation = playerWalkUp; break;
+            case WALK_DOWN:  currentAnimation = playerWalkDown; break;
+            case WALK_LEFT:  currentAnimation = playerWalkLeft; break;
+            case WALK_RIGHT: currentAnimation = playerWalkRight; break;
+            default:         currentAnimation = playerIdleDown; break;
+        }
+
+        return currentAnimation.getKeyFrame(stateTime, true);
+    }
 
     public ProceduralMapScreen(Character character, Ambient ambient) {
         this.character = character;
         this.ambient = ambient;
         this.saveManager = new SaveManager();
-
+        this.playerPos = new Vector2();
 
         if (character == null) {
             logger.error("Character is null in ProceduralMapScreen constructor");
@@ -97,12 +234,10 @@ public class ProceduralMapScreen implements Screen {
             throw new IllegalArgumentException("Ambient cannot be null");
         }
 
-
         this.gameState = new GameState();
         gameState.setCharacter(character);
         gameState.setCurrentAmbient(ambient);
     }
-
 
     @Override
     public void show() {
@@ -110,11 +245,11 @@ public class ProceduralMapScreen implements Screen {
             floorTexture = ambient.getFloorTexture() != null ? ambient.getFloorTexture() : new Texture("GameScreen/chao.png");
             wallTexture = ambient.getWallTexture() != null ? ambient.getWallTexture() : new Texture("GameScreen/parede.png");
             playerTexture = new Texture("sprites/character/personagem_luta.png");
+            loadPlayerAnimations();
             sidebarTexture = ambient.getSidebarTexture() != null ? ambient.getSidebarTexture() : new Texture("Gameplay/sidebar.jpg");
             classIcon = new Texture(getIconPathForClass(character.getCharacterType()));
             inventoryBackground = new Texture(Gdx.files.internal("Gameplay/backpackInside.png"));
             backpackIcon = new Texture(Gdx.files.internal("Gameplay/backpack.png"));
-
 
             batch = new SpriteBatch();
             shapeRenderer = new ShapeRenderer();
@@ -123,39 +258,149 @@ public class ProceduralMapScreen implements Screen {
             font.setUseIntegerPositions(true);
             layout = new GlyphLayout();
 
-
             generateMap();
             if (ambient.getName().toLowerCase().contains("cave")) {
-                generateCaveDoors(); // só gera portas se for caverna
+                generateCaveDoors();
             }
             setPlayerPosition();
             resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
-
-
-
 
             regenerateDeers();
             regenerateCannibals();
             materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
 
-
-
-
-
         } catch (Exception e) {
             logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage());
             throw e;
         }
+    }
+
+    private void generateMap() {
+        try {
+            // Increment ambient use counter
+            currentAmbientUseCount++;
+            playerSpawned = false; // Reset player spawning flag
+
+            // Check if we need to rotate ambient
+            if (currentAmbientUseCount > MAX_AMBIENT_USES) {
+                // Switch to a new ambient
+                Ambient newAmbient = getNextAmbient();
+
+                // Update reference to current ambient
+                ambient = newAmbient;
+                gameState.setCurrentAmbient(newAmbient);
+
+                // Update textures for the new ambient
+                updateTextures(newAmbient);
+
+                logger.info("Rotating ambient to: {}", newAmbient.getName());
+                currentAmbientUseCount = 1; // Reset counter for new ambient
+            }
+
+            // Generate the map for the current ambient
+            map = ambient.generateMap(MAP_WIDTH, MAP_HEIGHT);
+            gameState.setCurrentMap(map);
+
+            logger.info("Map generated for ambient: {} (use {}/{})",
+                ambient.getName(),
+                currentAmbientUseCount,
+                MAX_AMBIENT_USES);
+
+        } catch (Exception e) {
+            logger.error("Error generating map: {}", e.getMessage());
+            // Fallback map generation
+            map = new int[MAP_HEIGHT][MAP_WIDTH];
+            for (int y = 0; y < MAP_HEIGHT; y++) {
+                for (int x = 0; x < MAP_WIDTH; x++) {
+                    map[y][x] = (x == 0 || y == 0 || x == MAP_WIDTH - 1 || y == MAP_HEIGHT - 1) ? TILE_WALL : TILE_GRASS;
+                }
+            }
+        }
+    }
+
+    // Update textures when changing ambient
+    private void updateTextures(Ambient newAmbient) {
+        if (floorTexture != null) floorTexture.dispose();
+        if (wallTexture != null) wallTexture.dispose();
+        if (sidebarTexture != null) sidebarTexture.dispose();
+
+        floorTexture = newAmbient.getFloorTexture();
+        wallTexture = newAmbient.getWallTexture();
+        sidebarTexture = newAmbient.getSidebarTexture();
+    }
+
+    // Get next ambient that is different from current
+    private Ambient getNextAmbient() {
+        // Get current ambient name
+        String currentName = ambient.getName();
+
+        // Define all available ambient types
+        Ambient[] ambients = {
+            new Jungle(),
+            new Cave(),
+            new LakeRiver(),
+            new Mountain(),
+            new Ruins()
+        };
+
+        // Filter out current ambient
+        List<Ambient> availableAmbients = new ArrayList<>();
+        for (Ambient a : ambients) {
+            if (!a.getName().equals(currentName)) {
+                availableAmbients.add(a);
+            }
+        }
+
+        // Pick a random ambient from available options
+        return availableAmbients.get(new Random().nextInt(availableAmbients.size()));
+    }
+
+    private String getIconPathForClass(String rawClass) {
+        switch (rawClass) {
+            case "Survivor": return "StatsScreen/desempregadoFundo.png";
+            case "Hunter": return "StatsScreen/cacadorFundo.png";
+            case "Lumberjack": return "StatsScreen/lenhadorFundo.png";
+            case "Doctor": return "StatsScreen/medicoFundo.png";
+            default: return "StatsScreen/desempregadoFundo.png";
+        }
+    }
+
+    // Fix deer spawning to only occur in appropriate ambients
+    private void regenerateDeers() {
+        deers = new ArrayList<>();
+        if (canSpawnDeerInCurrentAmbient()) {
+            for (int i = 0; i < 5; i++) {
+                int x, y;
+                do {
+                    x = (int)(Math.random() * MAP_WIDTH);
+                    y = (int)(Math.random() * MAP_HEIGHT);
+                } while (!isValidSpawnTile(x, y));
+
+                Deer deer = new Deer();
+                deer.getPosition().set(x * TILE_SIZE, y * TILE_SIZE);
+                deers.add(deer);
+            }
+        }
+    }
+
+    // Only allow deer in specific ambients
+    private boolean canSpawnDeerInCurrentAmbient() {
+        String ambientName = ambient.getName();
+        return ambientName.equals("Jungle") || ambientName.equals("Mountain");
+    }
+
+    // Fix cannibal spawning to only occur in caves
+    private void regenerateCannibals() {
         cannibals = new ArrayList<>();
-        if (ambient.getName().toLowerCase().contains("cave")) {
+        String ambientName = ambient.getName();
+
+        if (ambientName.equals("Cave")) {
             for (int i = 0; i < 3; i++) {
                 int x, y;
                 do {
                     x = (int)(Math.random() * MAP_WIDTH);
                     y = (int)(Math.random() * MAP_HEIGHT);
-                } while (!isValidCaveSpawnTile(x, y)); // <- usando a função certa agora!
-
+                } while (!isValidCaveSpawnTile(x, y));
 
                 Cannibal cannibal = new Cannibal();
                 cannibal.getPosition().set(x * TILE_SIZE, y * TILE_SIZE);
@@ -164,22 +409,11 @@ public class ProceduralMapScreen implements Screen {
         }
     }
 
-
-    private boolean canSpawnDeerInCurrentAmbient() {
-        // Só permitir veado em ambientes que são florestais, prados, etc
-        return ambient.getName().toLowerCase().contains("forest") ||
-            ambient.getName().toLowerCase().contains("jungle") ||
-            ambient.getName().toLowerCase().contains("plains") ||
-            ambient.getName().toLowerCase().contains("field");
-    }
-
-
-
     // Gera 2 portas em locais acessíveis
     private void generateCaveDoors() {
         int doorsPlaced = 0;
         int attempts = 0;
-        while (doorsPlaced < 2 && attempts < 1000) { // tenta até conseguir colocar 2 portas
+        while (doorsPlaced < 2 && attempts < 1000) {
             int x = (int) (Math.random() * MAP_WIDTH);
             int y = (int) (Math.random() * MAP_HEIGHT);
 
@@ -190,7 +424,7 @@ public class ProceduralMapScreen implements Screen {
             attempts++;
         }
 
-        // Agora remove portas que ficaram isoladas (sem cave perto)
+        // Remove isolated doors
         for (int y = 0; y < MAP_HEIGHT; y++) {
             for (int x = 0; x < MAP_WIDTH; x++) {
                 if (map[y][x] == TILE_DOOR) {
@@ -203,18 +437,19 @@ public class ProceduralMapScreen implements Screen {
                             if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
                                 if (map[ny][nx] == TILE_CAVE) {
                                     hasCaveNearby = true;
+                                    break;
                                 }
                             }
                         }
+                        if (hasCaveNearby) break;
                     }
                     if (!hasCaveNearby) {
-                        map[y][x] = TILE_WALL; // Se não tiver cave perto, volta a ser parede
+                        map[y][x] = TILE_WALL;
                     }
                 }
             }
         }
     }
-
 
     // Verifica se o tile ao lado é CAVE (chão jogável)
     private boolean hasAdjacentCave(int y, int x) {
@@ -224,88 +459,66 @@ public class ProceduralMapScreen implements Screen {
             (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE);
     }
 
-
-
-    private void regenerateCannibals() {
-        cannibals = new ArrayList<>();
-        if (ambient.getName().toLowerCase().contains("cave")) {
-            for (int i = 0; i < 3; i++) {
-                int x, y;
-                do {
-                    x = (int)(Math.random() * MAP_WIDTH);
-                    y = (int)(Math.random() * MAP_HEIGHT);
-                } while (!isValidCaveSpawnTile(x, y));
-                Cannibal cannibal = new Cannibal();
-                cannibal.getPosition().set(x * TILE_SIZE, y * TILE_SIZE);
-                cannibals.add(cannibal);
-            }
-        }
-    }
-
-
-
-
-    private void regenerateDeers() {
-        deers = new ArrayList<>();
-        if (canSpawnDeerInCurrentAmbient()) {
-            for (int i = 0; i < 5; i++) {
-                int x, y;
-                do {
-                    x = (int)(Math.random() * MAP_WIDTH);
-                    y = (int)(Math.random() * MAP_HEIGHT);
-                } while (!isValidSpawnTile(x, y));
-
-
-                Deer deer = new Deer();
-                deer.getPosition().set(x * TILE_SIZE, y * TILE_SIZE);
-                deers.add(deer);
-            }
-        }
-
-
-
-
-    }
-
-
-    private String getIconPathForClass(String rawClass) {
-        switch (rawClass) {
-            case "Survivor": return "StatsScreen/desempregadoFundo.png";
-            case "Hunter": return "StatsScreen/cacadorFundo.png";
-            case "Lumberjack": return "StatsScreen/lenhadorFundo.png";
-            case "Doctor": return "StatsScreen/medicoFundo.png";
-            default: return "StatsScreen/desempregadoFundo.png";
-        }
-    }
-
-
-
-
-    private void generateMap() {
+    private void setPlayerPosition() {
         try {
-            map = ambient.generateMap(MAP_WIDTH, MAP_HEIGHT);
-            gameState.setCurrentMap(map);
-            logger.debug("Map generated for ambient: {}", ambient.getName());
+            // Only set player position if not already spawned for this map
+            if (!playerSpawned) {
+                int x, y;
+                int attempts = 0;
+                int maxAttempts = 1000;
+                boolean positionFound = false;
 
-            // Verificar quantidade de portas
-            int doorCount = countDoors();
-            if (doorCount < 2) {
-                addDoors(2 - doorCount);
-            }
+                do {
+                    x = (int)(Math.random() * MAP_WIDTH);
+                    y = (int)(Math.random() * MAP_HEIGHT);
+                    attempts++;
 
-        } catch (Exception e) {
-            logger.error("Error generating map: {}", e.getMessage());
-            map = new int[MAP_HEIGHT][MAP_WIDTH];
-            for (int y = 0; y < MAP_HEIGHT; y++) {
-                for (int x = 0; x < MAP_WIDTH; x++) {
-                    if (x == 0 || y == 0 || x == MAP_WIDTH - 1 || y == MAP_HEIGHT - 1) {
-                        map[y][x] = TILE_WALL;
-                    } else {
-                        map[y][x] = TILE_GRASS;
+                    int tileType = map[y][x];
+                    boolean isValidTile = (tileType == TILE_GRASS || (ambient.getName().equals("Cave") && tileType == TILE_CAVE));
+
+                    if (isValidTile) {
+                        playerPos.set(x * TILE_SIZE, y * TILE_SIZE);
+                        positionFound = true;
+                        playerSpawned = true;
                     }
+                } while (!positionFound && attempts < maxAttempts);
+
+                if (!positionFound) {
+                    // Fallback to center of map
+                    playerPos.set(MAP_WIDTH / 2 * TILE_SIZE, MAP_HEIGHT / 2 * TILE_SIZE);
+                    playerSpawned = true;
+                    logger.warn("Could not find valid player spawn position, using fallback");
                 }
+
+                character.getPosition().x = x;
+                character.getPosition().y = y;
+                logger.info("Player spawned at ({}, {})", playerPos.x/TILE_SIZE, playerPos.y/TILE_SIZE);
             }
+        } catch (Exception e) {
+            logger.error("Error setting player position: {}", e.getMessage());
         }
+    }
+
+    private boolean isValidSpawnTile(int x, int y) {
+        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return false;
+        return map[y][x] == TILE_GRASS;
+    }
+
+    private boolean isValidCaveSpawnTile(int x, int y) {
+        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return false;
+        return map[y][x] == TILE_CAVE;
+    }
+
+    private boolean isValidPosition(int x, int y) {
+        return x > 0 && x < MAP_WIDTH - 1 && y > 0 && y < MAP_HEIGHT - 1 &&
+            (map[y][x] == TILE_GRASS || (ambient.getName().equals("Cave") && map[y][x] == TILE_CAVE));
+    }
+
+    private boolean hasAdjacentFloor(int y, int x) {
+        return (y > 0 && map[y - 1][x] == TILE_GRASS) ||
+            (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_GRASS) ||
+            (x > 0 && map[y][x - 1] == TILE_GRASS) ||
+            (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_GRASS);
     }
 
     // Método para contar quantas portas existem
@@ -347,70 +560,39 @@ public class ProceduralMapScreen implements Screen {
     }
 
 
-
-    private void setPlayerPosition() {
-        try {
-            Vector2 charPos = character.getPosition();
-            if (charPos != null && isValidPosition((int)(charPos.x / TILE_SIZE), (int)(charPos.y / TILE_SIZE))) {
-                playerPos = new Vector2(charPos.x, charPos.y);
-                return;
-            }
-
-
-            for (int y = 1; y < MAP_HEIGHT - 1; y++) {
-                for (int x = 1; x < MAP_WIDTH - 1; x++) {
-                    if (map[y][x] == TILE_GRASS && hasAdjacentFloor(y, x)) {
-                        playerPos = new Vector2(x * TILE_SIZE, y * TILE_SIZE);
-                        character.getPosition().set(playerPos);
-                        return;
-                    }
-                }
-            }
-
-
-            playerPos = new Vector2((MAP_WIDTH / 2) * TILE_SIZE, (MAP_HEIGHT / 2) * TILE_SIZE);
-            character.getPosition().set(playerPos);
-        } catch (Exception e) {
-            logger.error("Error setting player position: {}", e.getMessage());
-            playerPos = new Vector2((MAP_WIDTH / 2) * TILE_SIZE, (MAP_HEIGHT / 2) * TILE_SIZE);
-            character.getPosition().set(playerPos);
-        }
-    }
-    private boolean isValidSpawnTile(int x, int y) {
-        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return false;
-        return map[y][x] == TILE_GRASS;
-    }
-    private boolean isValidCaveSpawnTile(int x, int y) {
-        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return false;
-        return map[y][x] == TILE_CAVE;
-    }
-
-
-    private boolean isValidPosition(int x, int y) {
-        return x > 0 && x < MAP_WIDTH - 1 && y > 0 && y < MAP_HEIGHT - 1 && map[y][x] == TILE_GRASS;
-    }
-
-
-    private boolean hasAdjacentFloor(int y, int x) {
-        return (y > 0 && map[y - 1][x] == TILE_GRASS) ||
-            (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_GRASS) ||
-            (x > 0 && map[y][x - 1] == TILE_GRASS) ||
-            (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_GRASS);
-    }
-
-
     private void movePlayer(float delta) {
         try {
             float speed = character.getSpeed() > 0 ? character.getSpeed() : 100f;
             float nextX = playerPos.x, nextY = playerPos.y;
+            boolean isMovingNow = false;
 
+            // Track movement and direction
+            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                nextY += speed * delta;
+                lastDirection = Direction.UP;
+                isMovingNow = true;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                nextY -= speed * delta;
+                lastDirection = Direction.DOWN;
+                isMovingNow = true;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                nextX -= speed * delta;
+                lastDirection = Direction.LEFT;
+                isMovingNow = true;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                nextX += speed * delta;
+                lastDirection = Direction.RIGHT;
+                isMovingNow = true;
+            }
 
-            if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.W)) nextY += speed * delta;
-            if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.S)) nextY -= speed * delta;
-            if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.A)) nextX -= speed * delta;
-            if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.D)) nextX += speed * delta;
+            // Update animation state based on movement
+            isMoving = isMovingNow;
+            updatePlayerState();
 
-
+            // Continue with collision detection and movement
             int tileX = (int) ((nextX + 8) / TILE_SIZE), tileY = (int) ((nextY + 8) / TILE_SIZE);
             if (tileX >= 0 && tileX < MAP_WIDTH && tileY >= 0 && tileY < MAP_HEIGHT) {
                 int tileType = map[tileY][tileX];
@@ -435,31 +617,27 @@ public class ProceduralMapScreen implements Screen {
                         materiaisNoMapa = new ArrayList<>();
                     }
 
-
                     autosaveGame();
                 }
-
             }
-
 
             updateCharacterStats(delta);
 
-
+            // Handle material collection
+            Iterator<Material> materialIter = materiaisNoMapa.iterator();
+            while (materialIter.hasNext()) {
+                Material material = materialIter.next();
+                if (character.getPosition().dst(material.getPosition()) < TILE_SIZE) {
+                    if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+                        character.getInventory().add(material);
+                        materialIter.remove();
+                        System.out.println("Você coletou: " + material.getName());
+                    }
+                }
+            }
         } catch (Exception e) {
             logger.error("Error moving player: {}", e.getMessage());
         }
-        Iterator<Material> materialIter = materiaisNoMapa.iterator();
-        while (materialIter.hasNext()) {
-            Material material = materialIter.next();
-            if (character.getPosition().dst(material.getPosition()) < TILE_SIZE) {
-                if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.E)) {
-                    character.getInventory().add(material);
-                    materialIter.remove();
-                    System.out.println("Você coletou: " + material.getName());
-                }
-            }
-        }
-
     }
 
 
@@ -658,7 +836,7 @@ public class ProceduralMapScreen implements Screen {
 
 
 
-            batch.draw(playerTexture, playerPos.x + offsetX, playerPos.y + offsetY, 20, 20);
+            renderPlayer(batch);
             batch.draw(backpackIcon, bx, by, size, size);
 
 
