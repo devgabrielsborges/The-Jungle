@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -23,17 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.utils.GdxRuntimeException;
+
 
 public class ProceduralMapScreen implements Screen {
     private static final Logger logger = LoggerFactory.getLogger(ProceduralMapScreen.class);
@@ -135,8 +131,30 @@ public class ProceduralMapScreen implements Screen {
             }
             resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
-            regenerateDeers();
-            regenerateCannibals();
+            deers = Creature.regenerateCreatures(
+                5,
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_GRASS,
+                TILE_SIZE,
+                Deer::new,
+                ambient,
+                Deer::canSpawnIn
+            );
+
+            cannibals = Creature.regenerateCreatures(
+                3,
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_CAVE,
+                TILE_SIZE,
+                Cannibal::new,
+                ambient,
+                Cannibal::canSpawnIn
+            );
+
             materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
 
         } catch (Exception e) {
@@ -236,51 +254,8 @@ public class ProceduralMapScreen implements Screen {
         }
     }
 
-    // Fix deer spawning to only occur in appropriate ambients
-    private void regenerateDeers() {
-        deers = new ArrayList<>();
-        if (canSpawnDeerInCurrentAmbient()) {
-            for (int i = 0; i < 5; i++) {
-                int x, y;
-                do {
-                    x = (int)(Math.random() * MAP_WIDTH);
-                    y = (int)(Math.random() * MAP_HEIGHT);
-                } while (!isValidSpawnTile(x, y));
 
-                Deer deer = new Deer();
-                deer.getPosition().set(x * TILE_SIZE, y * TILE_SIZE);
-                deers.add(deer);
-            }
-        }
-    }
 
-    // Only allow deer in specific ambients
-    private boolean canSpawnDeerInCurrentAmbient() {
-        String ambientName = ambient.getName();
-        return ambientName.equals("Jungle") || ambientName.equals("Mountain");
-    }
-
-    // Fix cannibal spawning to only occur in caves
-    private void regenerateCannibals() {
-        cannibals = new ArrayList<>();
-        String ambientName = ambient.getName();
-
-        if (ambientName.equals("Cave")) {
-            for (int i = 0; i < 3; i++) {
-                int x, y;
-                do {
-                    x = (int)(Math.random() * MAP_WIDTH);
-                    y = (int)(Math.random() * MAP_HEIGHT);
-                } while (!isValidCaveSpawnTile(x, y));
-
-                Cannibal cannibal = new Cannibal();
-                cannibal.getPosition().set(x * TILE_SIZE, y * TILE_SIZE);
-                cannibals.add(cannibal);
-            }
-        }
-    }
-
-    // Gera 2 portas em locais acessíveis
     private void generateCaveDoors() {
         int doorsPlaced = 0;
         int attempts = 0;
@@ -517,8 +492,28 @@ public class ProceduralMapScreen implements Screen {
                 if (ambient.getName().toLowerCase().contains("cave")) {
                     generateCaveDoors();
                 }
-                regenerateDeers();
-                regenerateCannibals();
+                deers = Creature.regenerateCreatures(
+                    5,
+                    map,
+                    MAP_WIDTH,
+                    MAP_HEIGHT,
+                    TILE_GRASS,
+                    TILE_SIZE,
+                    Deer::new,
+                    ambient,
+                    Deer::canSpawnIn
+                );
+                    cannibals = Creature.regenerateCreatures(
+                        3,
+                        map,
+                        MAP_WIDTH,
+                        MAP_HEIGHT,
+                        TILE_CAVE,
+                        TILE_SIZE,
+                        Cannibal::new,
+                        ambient,
+                        Cannibal::canSpawnIn
+                );
                 // Materiais
                 if (ambient.getName().toLowerCase().contains("cave")) {
                     materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
@@ -663,7 +658,6 @@ public class ProceduralMapScreen implements Screen {
                 font.setColor(Color.WHITE);
             }
 
-            // 12) Desenha o personagem animado
             TextureRegion frame = character.getCurrentFrame();
             batch.draw(
                 frame,
