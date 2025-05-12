@@ -4,7 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
@@ -17,6 +20,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.itens.Tool;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public abstract class Character implements ICharacter {
@@ -62,8 +66,41 @@ public abstract class Character implements ICharacter {
 
     @Expose
     private Vector2 position;
+    private Vector2 playerPos;
+    private Character character;
+    private final int TILE_SIZE = 32;
+    private final int MAP_WIDTH = 30;
+    private final int MAP_HEIGHT = 20;
+    private static final int TILE_GRASS = 0;
+    private static final int TILE_WALL = 1;
+    private static final int TILE_DOOR = 2;
+    private static final int TILE_CAVE = 3;
+    private static final int TILE_WATER = 4;
+    private int[][] map;
+    private float offsetX, offsetY;
+
+
 
     private final Texture texture;
+
+    private Animation<TextureRegion> playerIdleUp;
+    private Animation<TextureRegion> playerIdleDown;
+    private Animation<TextureRegion> playerIdleLeft;
+    private Animation<TextureRegion> playerIdleRight;
+    private Animation<TextureRegion> playerWalkUp;
+    private Animation<TextureRegion> playerWalkDown;
+    private Animation<TextureRegion> playerWalkLeft;
+    private Animation<TextureRegion> playerWalkRight;
+
+    private enum PlayerState { IDLE_UP, IDLE_DOWN, IDLE_LEFT, IDLE_RIGHT, WALK_UP, WALK_DOWN, WALK_LEFT, WALK_RIGHT }
+    private enum Direction { UP, DOWN, LEFT, RIGHT }
+
+    private Direction lastDirection = Direction.DOWN;
+    private PlayerState currentState = PlayerState.IDLE_DOWN;
+    private boolean isMoving = false;
+    private float stateTime = 0;
+
+
 
     protected Character(
         String name,
@@ -114,6 +151,219 @@ public abstract class Character implements ICharacter {
             logger.error("Error creating character {}: {}", name, e.getMessage());
             throw e; // Re-throw after logging as this is a critical initialization error
         }
+    }
+    public void loadPlayerAnimations() {
+        // IDLE: 2 frames
+        playerIdleDown = loadAnimation("personagem_parado_frente.png", 0.5f, 2);
+        playerIdleUp = loadAnimation("personagem_parado_costas.png", 0.5f, 2);
+        playerIdleLeft = loadAnimation("personagem_parado_esquerda.png", 0.5f, 2);
+        playerIdleRight = loadAnimation("personagem_parado_direita.png", 0.5f, 2);
+
+// WALK: 4 frames
+        playerWalkDown = loadAnimation("personagem_andando_frente.png", 0.1f, 4);
+        playerWalkUp = loadAnimation("personagem_andando_costas.png", 0.1f, 4);
+        playerWalkLeft = loadAnimation("personagem_andando_esquerda.png", 0.1f, 4);
+        playerWalkRight = loadAnimation("personagem_andando_direita.png", 0.1f, 4);
+
+    }
+    public boolean setInitialSpawn(int[][] map, int mapWidth, int mapHeight, int tileSize, int tileGrass, int tileCave, String ambientName) {
+        try {
+            int x = 0, y = 0;
+            int attempts = 0;
+            int maxAttempts = 1000;
+            boolean positionFound = false;
+
+            do {
+                x = (int)(Math.random() * mapWidth);
+                y = (int)(Math.random() * mapHeight);
+                attempts++;
+
+                int tileType = map[y][x];
+                boolean isValidTile = (
+                    tileType == tileGrass ||
+                        (ambientName.equalsIgnoreCase("Cave") && tileType == tileCave)
+                );
+
+                if (isValidTile) {
+                    getPosition().set(x * tileSize, y * tileSize);
+                    positionFound = true;
+                }
+            } while (!positionFound && attempts < maxAttempts);
+
+            if (!positionFound) {
+                getPosition().set((mapWidth / 2) * tileSize, (mapHeight / 2) * tileSize);
+                logger.warn("{}: Could not find valid spawn position, using fallback", getName());
+            }
+
+            logger.info("{}: Player spawned at ({}, {})", getName(), (int)(getPosition().x / tileSize), (int)(getPosition().y / tileSize));
+            return true;
+        } catch (Exception e) {
+            logger.error("{}: Error during spawn positioning: {}", getName(), e.getMessage());
+            return false;
+        }
+    }
+
+
+    private Animation<TextureRegion> loadAnimation(String filename, float frameDuration, int framesCount) {
+        Texture spriteSheet = new Texture(Gdx.files.internal("sprites/character/" + filename.replace(".gif", ".png")));
+
+        int frameWidth = spriteSheet.getWidth() / framesCount;
+        int frameHeight = spriteSheet.getHeight();
+
+        TextureRegion[][] tmp = TextureRegion.split(spriteSheet, frameWidth, frameHeight);
+        Array<TextureRegion> frames = new Array<>(framesCount);
+
+        for (int i = 0; i < framesCount; i++) {
+            frames.add(tmp[0][i]);
+        }
+
+        return new Animation<>(frameDuration, frames);
+    }
+    private void handleInput() {
+        boolean isMovingNow = false;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            playerPos.y += character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.UP;
+            isMovingNow = true;
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            playerPos.y -= character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.DOWN;
+            isMovingNow = true;
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            playerPos.x -= character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.LEFT;
+            isMovingNow = true;
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            playerPos.x += character.getSpeed() * Gdx.graphics.getDeltaTime();
+            lastDirection = Direction.RIGHT;
+            isMovingNow = true;
+        }
+
+        // Update player state based on movement and direction
+        isMoving = isMovingNow;
+        updatePlayerState();
+    }
+    private void updatePlayerState() {
+        if (isMoving) {
+            switch (lastDirection) {
+                case UP:    currentState = PlayerState.WALK_UP; break;
+                case DOWN:  currentState = PlayerState.WALK_DOWN; break;
+                case LEFT:  currentState = PlayerState.WALK_LEFT; break;
+                case RIGHT: currentState = PlayerState.WALK_RIGHT; break;
+            }
+        } else {
+            switch (lastDirection) {
+                case UP:    currentState = PlayerState.IDLE_UP; break;
+                case DOWN:  currentState = PlayerState.IDLE_DOWN; break;
+                case LEFT:  currentState = PlayerState.IDLE_LEFT; break;
+                case RIGHT: currentState = PlayerState.IDLE_RIGHT; break;
+            }
+        }
+    }
+    private TextureRegion getFrameForCurrentState(float stateTime) {
+        Animation<TextureRegion> currentAnimation;
+
+        switch (currentState) {
+            case IDLE_UP:    currentAnimation = playerIdleUp; break;
+            case IDLE_DOWN:  currentAnimation = playerIdleDown; break;
+            case IDLE_LEFT:  currentAnimation = playerIdleLeft; break;
+            case IDLE_RIGHT: currentAnimation = playerIdleRight; break;
+            case WALK_UP:    currentAnimation = playerWalkUp; break;
+            case WALK_DOWN:  currentAnimation = playerWalkDown; break;
+            case WALK_LEFT:  currentAnimation = playerWalkLeft; break;
+            case WALK_RIGHT: currentAnimation = playerWalkRight; break;
+            default:         currentAnimation = playerIdleDown; break;
+        }
+
+        return currentAnimation.getKeyFrame(stateTime, true);
+    }
+    public void move(float deltaX, float deltaY) {
+        try {
+            // Atualiza a posição do personagem
+            position.x += deltaX;
+            position.y += deltaY;
+
+            // Atualiza o estado de movimento para animações
+            isMoving = (deltaX != 0 || deltaY != 0);
+
+            // Define a direção com base no movimento
+            if (deltaY > 0) lastDirection = Direction.UP;
+            else if (deltaY < 0) lastDirection = Direction.DOWN;
+            else if (deltaX < 0) lastDirection = Direction.LEFT;
+            else if (deltaX > 0) lastDirection = Direction.RIGHT;
+
+            // Atualiza o estado da animação do jogador
+            updatePlayerState();
+        } catch (Exception e) {
+            logger.error("{}: Erro ao mover personagem: {}", name, e.getMessage());
+        }
+    }
+    public boolean tryMove(float delta, int[][] map, int tileSize, int tileWall, int tileDoor, int tileCave, int mapWidth, int mapHeight) {
+        float speed = getSpeed() > 0 ? getSpeed() : 100f;
+        float deltaX = 0, deltaY = 0;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) deltaY = speed * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) deltaY = -speed * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) deltaX = -speed * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) deltaX = speed * delta;
+
+        float nextX = getPosition().x + deltaX;
+        float nextY = getPosition().y + deltaY;
+
+        int tileX = (int) ((nextX + 8) / tileSize);
+        int tileY = (int) ((nextY + 8) / tileSize);
+
+        if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
+            int tileType = map[tileY][tileX];
+
+            if (tileType != tileWall) {
+                move(deltaX, deltaY);
+                updateStats(delta);
+                updateStateTime(delta);
+                return tileType == tileDoor; // true se for uma porta (trigger para Procedural reagir)
+            }
+        }
+
+        updateStats(delta);
+        updateStateTime(delta);
+        return false;
+    }
+
+    public void updateStats(float delta) {
+        try {
+            // Depleção de recursos ao longo do tempo
+            float hungerDepletion = 0.01f * delta;
+            float thirstDepletion = 0.015f * delta;
+            float energyDepletion = 0.005f * delta;
+
+            // Atualiza os atributos
+            setHunger(Math.max(0, getHunger() - hungerDepletion));
+            setThirsty(Math.max(0, getThirsty() - thirstDepletion));
+            setEnergy(Math.max(0, getEnergy() - energyDepletion));
+
+            // Se fome ou sede estão baixas, diminui a vida
+            if (getHunger() <= 10 || getThirsty() <= 10) {
+                setLife(Math.max(0, getLife() - 0.05f * delta));
+            }
+        } catch (Exception e) {
+            logger.error("{}: Erro ao atualizar atributos: {}", name, e.getMessage());
+        }
+    }
+    public void updateStateTime(float delta) {
+        stateTime += delta;
+    }
+    public float getStateTime() {
+        return stateTime;
+    }
+    public PlayerState getCurrentState() {
+        return currentState;
+    }
+    public TextureRegion getCurrentFrame() {
+        return getFrameForCurrentState(stateTime);
     }
 
     public String getName() {
@@ -763,6 +1013,20 @@ public abstract class Character implements ICharacter {
         } catch (Exception e) {
             logger.error("{}: Error updating position: {}", name, e.getMessage());
         }
+    }
+    private void renderPlayer(SpriteBatch batch) {
+        stateTime += Gdx.graphics.getDeltaTime();
+        TextureRegion currentFrame = getFrameForCurrentState(stateTime);
+
+        // Pega o tamanho real do quadro da animação
+        float frameWidth = currentFrame.getRegionWidth();
+        float frameHeight = currentFrame.getRegionHeight();
+
+        // Desenha o personagem centralizado no TILE_SIZE
+        batch.draw(currentFrame,
+            playerPos.x + offsetX + (TILE_SIZE - frameWidth) / 2f,
+            playerPos.y + offsetY + (TILE_SIZE - frameHeight) / 2f,
+            frameWidth, frameHeight);
     }
 
     public void render(Batch batch) {

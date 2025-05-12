@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector2; // <-- Import adicionado
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +43,10 @@ public class Cannibal extends Creature {
             createSprites()
         );
     }
+    public static boolean canSpawnIn(Ambient ambient) {
+        return ambient.getName().equalsIgnoreCase("Cave");
+    }
+
 
     private static Map<String, Sprite> createSprites() {
         Map<String, Sprite> sprites = new HashMap<>();
@@ -58,6 +63,8 @@ public class Cannibal extends Creature {
     public Vector2 getPosition() { // <-- Agora igualzinho o Deer
         return position;
     }
+
+
 
     @Override
     public void attack() {

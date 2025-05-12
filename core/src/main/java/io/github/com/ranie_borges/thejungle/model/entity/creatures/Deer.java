@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector2; // <-- Import adicionado
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,7 +16,9 @@ import java.util.Set;
 
 public class Deer extends Creature {
 
-    private Vector2 position = new Vector2(); // <-- Adicionado
+    private Vector2 position = new Vector2();
+    private Ambient ambient;
+
 
     protected Deer(
         String name,
@@ -29,6 +32,15 @@ public class Deer extends Creature {
     ) {
         super(name, description, probability, lifeRatio, damage, climeSpawn, drops, sprites);
     }
+    private boolean canSpawnDeerInCurrentAmbient() {
+        String ambientName = ambient.getName();
+        return ambientName.equals("Jungle") || ambientName.equals("Mountain");
+    }
+    public static boolean canSpawnIn(Ambient ambient) {
+        String name = ambient.getName().toLowerCase();
+        return name.contains("lake") || name.contains("jungle");
+    }
+
 
     public Deer() {
         super(

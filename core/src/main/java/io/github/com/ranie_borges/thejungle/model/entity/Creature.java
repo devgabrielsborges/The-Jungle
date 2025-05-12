@@ -3,12 +3,13 @@ package io.github.com.ranie_borges.thejungle.model.entity;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICreature;
+import com.badlogic.gdx.math.Vector2;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public abstract class Creature implements ICreature {
     private String name;
@@ -19,6 +20,7 @@ public abstract class Creature implements ICreature {
     private Clime climeSpawn;
     private Set<Item> drops;
     private Map<String, Sprite> sprites;
+    private Vector2 position = new Vector2();
 
     protected Creature(
         String name,
@@ -38,6 +40,44 @@ public abstract class Creature implements ICreature {
         setClimeSpawn(climeSpawn);
         setDrops(drops != null ? new HashSet<>(drops) : new HashSet<>());
         setSprites(sprites != null ? new HashMap<>(sprites) : new HashMap<>());
+    }
+    public static <T extends Creature> List<T> regenerateCreatures(
+        int count,
+        int[][] map,
+        int mapWidth,
+        int mapHeight,
+        int validTileType,
+        int tileSize,
+        Supplier<T> constructor,
+        Ambient ambient,
+        Predicate<Ambient> canSpawnPredicate
+    ) {
+        List<T> creatures = new ArrayList<>();
+        int tries = 0;
+        Random rand = new Random();
+
+        if (!canSpawnPredicate.test(ambient)) {
+            return creatures;
+        }
+
+        while (creatures.size() < count && tries < 1000) {
+            int x = rand.nextInt(mapWidth);
+            int y = rand.nextInt(mapHeight);
+            tries++;
+
+            if (map[y][x] == validTileType) {
+                T creature = constructor.get();
+                creature.getPosition().set(x * tileSize, y * tileSize);
+                creatures.add(creature);
+            }
+        }
+
+        return creatures;
+    }
+
+
+    public Vector2 getPosition() {
+        return position;
     }
 
     public Clime getClimeSpawn() {
