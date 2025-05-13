@@ -537,6 +537,32 @@ public abstract class Character implements ICharacter {
             logger.error("{}: Error setting initial inventory capacity: {}", name, e.getMessage());
         }
     }
+    public boolean tryCollectNearbyMaterial(List<Material> materiais) {
+        Iterator<Material> iterator = materiais.iterator();
+        while (iterator.hasNext()) {
+            Material material = iterator.next();
+            float dist = getPosition().dst(material.getPosition());
+
+            // Considera coleta se estiver a menos de 24px (ajuste fino)
+            if (dist < 24f) {
+                if (isInventoryFull()) {
+                    System.out.println(getName() + ": inventário cheio!");
+                    return false;
+                }
+
+                if (!canCarryMore(material.getWeight())) {
+                    System.out.println(getName() + ": muito pesado para carregar " + material.getName());
+                    return false;
+                }
+
+                insertItemInInventory(material);
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public void insertItemInInventory(Item item) {
         try {
