@@ -85,6 +85,20 @@ public abstract class Item implements IItem {
 
         return ICON_CACHE.get(iconKey);
     }
+    private int quantity = 1;
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = Math.max(1, quantity);
+    }
+
+    public void addQuantity(int amount) {
+        this.quantity += amount;
+    }
+
 
 
 

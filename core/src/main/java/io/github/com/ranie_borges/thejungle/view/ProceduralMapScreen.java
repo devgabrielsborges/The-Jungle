@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftManager;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -79,6 +80,9 @@ public class ProceduralMapScreen implements Screen {
 
     private float stateTime = 0;
     private boolean isMoving = false;
+
+
+
 
 
     public ProceduralMapScreen(Character character, Ambient ambient) {
@@ -453,7 +457,24 @@ public class ProceduralMapScreen implements Screen {
         }
         shapeRenderer.end();
 
+        // Verifica clique do mouse para arrastar e soltar
+        if (Gdx.input.justTouched()) {
+            int mouseX = Gdx.input.getX();
+            int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
+                    float sx = startX + col * (slotSize + padding);
+                    float sy = startY + (rows - row - 1) * (slotSize + padding);
+                    int slotIndex = row * cols + col;
+                }
+            }
+        }
+
         batch.begin();
+        int mouseX = Gdx.input.getX();
+        int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 float sx = startX + col * (slotSize + padding);
@@ -462,26 +483,29 @@ public class ProceduralMapScreen implements Screen {
 
                 if (slotIndex < character.getInventory().size && character.getInventory().get(slotIndex) != null) {
                     Item item = character.getInventory().get(slotIndex);
-
-                    // Desenha o ícone
                     Texture icon = item.getIconTexture();
                     if (icon != null) {
                         batch.draw(icon, sx + 8, sy + 8, slotSize - 16, slotSize - 16);
                     }
 
-                    // Nome (opcional)
-                    String itemName = item.getName();
-                    layout.setText(font, itemName);
-                    if (layout.width > slotSize) {
-                        itemName = itemName.substring(0, 3) + "...";
+                    // Mostra quantidade sempre
+                    String qtd = "x" + item.getQuantity();
+                    layout.setText(font, qtd);
+                    font.draw(batch, qtd, sx + slotSize - layout.width - 4, sy + 16);
+
+                    // Mostra nome apenas se o mouse estiver sobre o slot
+                    if (mouseX >= sx && mouseX <= sx + slotSize && mouseY >= sy && mouseY <= sy + slotSize) {
+                        String itemName = item.getName();
                         layout.setText(font, itemName);
+                        font.draw(batch, itemName, sx + (slotSize - layout.width) / 2, sy + slotSize + 12);
                     }
-                    font.draw(batch, itemName, sx + (slotSize - layout.width) / 2, sy + 12);
                 }
             }
         }
+
         batch.end();
     }
+
     @Override
     public void render(float delta) {
         try {
@@ -716,6 +740,10 @@ public class ProceduralMapScreen implements Screen {
         // 13) Pega item no mapa
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             character.tryCollectNearbyMaterial(materiaisNoMapa);
+        }
+        if (showInventory) {
+            character.autoCombineInventory();
+            renderInventoryWindow();
         }
 
     }

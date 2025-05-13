@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftManager;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
@@ -1081,6 +1082,34 @@ public abstract class Character implements ICharacter {
             }
         } catch (Exception e) {
             logger.error("{}: Error disposing texture: {}", name, e.getMessage());
+        }
+    }
+    public void autoCombineInventory() {
+        Array<Item> inventory = getInventory();
+        for (int i = 0; i < inventory.size; i++) {
+            Item a = inventory.get(i);
+            if (a == null) continue;
+
+            for (int j = i + 1; j < inventory.size; j++) {
+                Item b = inventory.get(j);
+                if (b == null) continue;
+
+                // Combina iguais
+                if (a.getName().equalsIgnoreCase(b.getName())) {
+                    a.addQuantity(b.getQuantity());
+                    inventory.set(j, null);
+                } else {
+                    List<Item> pair = new ArrayList<>();
+                    pair.add(a);
+                    pair.add(b);
+                    Item crafted = CraftManager.tryCraft(pair);
+                    if (crafted != null) {
+                        inventory.set(i, crafted);
+                        inventory.set(j, null);
+                        return; // recomeça após crafting
+                    }
+                }
+            }
         }
     }
 }

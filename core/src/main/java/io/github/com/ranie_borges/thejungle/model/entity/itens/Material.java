@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle.model.entity.itens;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
@@ -76,14 +77,6 @@ public class Material extends Item {
 
     // --- Criadores padrão de Materiais ---
 
-    public static Material createPebble() {
-        Material pebble = new Material("Pebble", 0.4f, 1.0f, "Stone", 0.7f);
-        Map<String, Sprite> sprites = new HashMap<>();
-        sprites.put("idle", new Sprite(new Texture("sprites/itens/rock.png")));
-        pebble.setSprites(sprites);
-        return pebble;
-    }
-
     public static Material createSmallRock() {
         Material smallRock = new Material("Rock", 0.2f, 1.0f, "Rock", 0.5f);
         Map<String, Sprite> sprites = new HashMap<>();
@@ -148,5 +141,32 @@ public class Material extends Item {
         }
         return materiais;
     }
+    private static Map<String, Sprite> loadSprites(String path) {
+        Map<String, Sprite> sprites = new HashMap<>();
+        Texture texture = new Texture(Gdx.files.internal(path));
+        Sprite sprite = new Sprite(texture);
+        sprites.put("idle", sprite);
+        return sprites;
+    }
+
+    public static Material createKnife() {
+        Material knife = new Material("Knife", 1.2f, 100, "utility", 5f);
+        knife.setSprites(loadSprites("icons/knife.png"));
+        return knife;
+    }
+
+    public static Material createAxe() {
+        Material axe = new Material("Axe", 2.5f, 100, "utility", 5f);
+        axe.setSprites(loadSprites("icons/axe.png"));
+        return axe;
+    }
+
+    public static Material createSpear() {
+        Material spear = new Material("Spear", 2.0f, 100, "weapon", 5f);
+        spear.setSprites(loadSprites("icons/spear.png"));
+        return spear;
+    }
+
+
 }
 
