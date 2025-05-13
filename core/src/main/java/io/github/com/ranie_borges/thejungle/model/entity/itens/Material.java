@@ -85,7 +85,7 @@ public class Material extends Item {
     }
 
     public static Material createSmallRock() {
-        Material smallRock = new Material("Small Rock", 0.2f, 1.0f, "Rock", 0.5f);
+        Material smallRock = new Material("Rock", 0.2f, 1.0f, "Rock", 0.5f);
         Map<String, Sprite> sprites = new HashMap<>();
         sprites.put("idle", new Sprite(new Texture("sprites/itens/rock.png")));
         smallRock.setSprites(sprites);

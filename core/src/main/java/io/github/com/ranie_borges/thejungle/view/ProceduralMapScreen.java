@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -414,12 +415,12 @@ public class ProceduralMapScreen implements Screen {
 
 
 
+
     private void renderInventoryWindow() {
         float w = 400, h = 300;
         float x = (Gdx.graphics.getWidth() - w) / 2f, y = (Gdx.graphics.getHeight() - h) / 2f;
         float slotSize = 48, padding = 12;
         int cols = 5, rows = 3;
-
 
         batch.begin();
         batch.draw(inventoryBackground, x, y, w, h);
@@ -427,16 +428,13 @@ public class ProceduralMapScreen implements Screen {
         font.draw(batch, "Inventory", x + (w - layout.width) / 2f, y + h - 20);
         batch.end();
 
-
         float gridW = cols * slotSize + (cols - 1) * padding;
         float gridH = rows * slotSize + (rows - 1) * padding;
         float startX = x + (w - gridW) / 2f;
         float startY = y + (h - gridH) / 2f;
 
-
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(Color.LIGHT_GRAY);
-
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -444,9 +442,7 @@ public class ProceduralMapScreen implements Screen {
                 float sy = startY + (rows - row - 1) * (slotSize + padding);
                 int slotIndex = row * cols + col;
 
-
                 shapeRenderer.rect(sx, sy, slotSize, slotSize);
-
 
                 if (slotIndex < character.getInventory().size && character.getInventory().get(slotIndex) != null) {
                     shapeRenderer.setColor(Color.YELLOW);
@@ -457,7 +453,6 @@ public class ProceduralMapScreen implements Screen {
         }
         shapeRenderer.end();
 
-
         batch.begin();
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -465,15 +460,23 @@ public class ProceduralMapScreen implements Screen {
                 float sy = startY + (rows - row - 1) * (slotSize + padding);
                 int slotIndex = row * cols + col;
 
-
                 if (slotIndex < character.getInventory().size && character.getInventory().get(slotIndex) != null) {
-                    String itemName = character.getInventory().get(slotIndex).getName();
+                    Item item = character.getInventory().get(slotIndex);
+
+                    // Desenha o ícone
+                    Texture icon = item.getIconTexture();
+                    if (icon != null) {
+                        batch.draw(icon, sx + 8, sy + 8, slotSize - 16, slotSize - 16);
+                    }
+
+                    // Nome (opcional)
+                    String itemName = item.getName();
                     layout.setText(font, itemName);
                     if (layout.width > slotSize) {
                         itemName = itemName.substring(0, 3) + "...";
                         layout.setText(font, itemName);
                     }
-                    font.draw(batch, itemName, sx + (slotSize - layout.width) / 2, sy + slotSize / 2);
+                    font.draw(batch, itemName, sx + (slotSize - layout.width) / 2, sy + 12);
                 }
             }
         }
