@@ -78,7 +78,7 @@ public class Material extends Item {
     // --- Criadores padrão de Materiais ---
 
     public static Material createSmallRock() {
-        Material smallRock = new Material("Rock", 0.2f, 1.0f, "Rock", 0.5f);
+        Material smallRock = new Material("rock", 0.2f, 1.0f, "Rock", 0.5f); // ← nome padronizado
         Map<String, Sprite> sprites = new HashMap<>();
         sprites.put("idle", new Sprite(new Texture("sprites/itens/rock.png")));
         smallRock.setSprites(sprites);
@@ -94,9 +94,9 @@ public class Material extends Item {
     }
 
     public static Material createStick() {
-        Material stick = new Material("Stick", 0.1f, 1.0f, "Wood", 0.3f);
+        Material stick = new Material("stick", 0.1f, 1.0f, "Wood", 0.3f); // ← nome padronizado
         Map<String, Sprite> sprites = new HashMap<>();
-        sprites.put("idle", new Sprite(new Texture("sprites/itens/graveto.png"))); // <-- Aqui coloca a imagem do graveto
+        sprites.put("idle", new Sprite(new Texture("sprites/itens/graveto.png")));
         stick.setSprites(sprites);
         return stick;
     }

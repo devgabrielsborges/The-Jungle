@@ -40,7 +40,11 @@ public class Recipe {
         return resultSupplier.get();
     }
 
-    public String getName() {
+    public String getResultName() {
         return name;
+    }
+
+    public Map<String, Integer> getRequiredItems() {
+        return requiredItems;
     }
 }

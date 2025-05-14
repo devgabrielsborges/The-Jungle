@@ -15,6 +15,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftManager;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftingBar;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -80,6 +81,8 @@ public class ProceduralMapScreen implements Screen {
 
     private float stateTime = 0;
     private boolean isMoving = false;
+    private CraftingBar craftingBar;
+
 
 
 
@@ -166,7 +169,9 @@ public class ProceduralMapScreen implements Screen {
             logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage());
             throw e;
         }
-        character.updateStateTime(0f); // Zera animação no início
+        character.updateStateTime(0f);
+        this.craftingBar = new CraftingBar();
+
     }
 
     public void generateMap() {
@@ -732,6 +737,10 @@ public class ProceduralMapScreen implements Screen {
 
             // 12) Inventário e game-over
             if (showInventory) renderInventoryWindow();
+            if (showInventory) {
+                craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            }
+
             if (character.getLife() <= 0) gameOver();
 
         } catch (Exception e) {
@@ -742,7 +751,6 @@ public class ProceduralMapScreen implements Screen {
             character.tryCollectNearbyMaterial(materiaisNoMapa);
         }
         if (showInventory) {
-            character.autoCombineInventory();
             renderInventoryWindow();
         }
 
@@ -794,6 +802,8 @@ public class ProceduralMapScreen implements Screen {
         } catch (Exception e) {
             logger.error("Error disposing resources: {}", e.getMessage());
         }
+        if (craftingBar != null) craftingBar.dispose();
+
     }
 }
 
