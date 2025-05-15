@@ -11,7 +11,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
-import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftManager;
+import io.github.com.ranie_borges.thejungle.controller.CraftController;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
@@ -1098,7 +1098,7 @@ public abstract class Character implements ICharacter {
                     List<Item> pair = new ArrayList<>();
                     pair.add(a);
                     pair.add(b);
-                    Item crafted = CraftManager.tryCraft(pair);
+                    Item crafted = CraftController.tryCraft(pair);
                     if (crafted != null) {
                         inventory.set(i, crafted);
                         inventory.set(j, null);

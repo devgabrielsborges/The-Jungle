@@ -14,8 +14,6 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
-import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftManager;
-import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftingBar;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;

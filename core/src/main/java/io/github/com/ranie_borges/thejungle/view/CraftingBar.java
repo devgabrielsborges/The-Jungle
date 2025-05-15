@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle.model.entity.itens;
+package io.github.com.ranie_borges.thejungle.view;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -7,8 +7,11 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.Color;
+import io.github.com.ranie_borges.thejungle.controller.CraftController;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Recipe;
 
 import java.util.*;
 
@@ -59,7 +62,7 @@ public class CraftingBar {
             float x = startX + i * (slotSize + spacing);
             float y = barY;
 
-            boolean canCraft = CraftManager.canCraft(name.toLowerCase(), character.getInventory());
+            boolean canCraft = CraftController.canCraft(name.toLowerCase(), character.getInventory());
             batch.setColor(canCraft ? Color.WHITE : new Color(0.3f, 0.3f, 0.3f, 1f));
             batch.draw(icon, x, y, slotSize, slotSize);
             batch.setColor(Color.WHITE);
@@ -79,10 +82,12 @@ public class CraftingBar {
                 }
 
                 if (Gdx.input.justTouched()) {
-                    Item crafted = recipe.craft();
-                    if (crafted != null) {
-                        CraftManager.consumeIngredients(recipe, character.getInventory());
-                        character.insertItemInInventory(crafted);
+                    if (canCraft) {
+                        Item crafted = recipe.craft();
+                        if (crafted != null) {
+                            CraftController.consumeIngredients(recipe, character.getInventory());
+                            character.insertItemInInventory(crafted);
+                        }
                     }
                 }
             }

@@ -3,13 +3,12 @@ package io.github.com.ranie_borges.thejungle.view;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
-import io.github.com.ranie_borges.thejungle.model.entity.itens.CraftManager;
+import io.github.com.ranie_borges.thejungle.controller.CraftController;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Recipe;
 
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ public class CraftingScreen implements Screen {
         for (Item item : inventory) {
             if (item != null) filtered.add(item);
         }
-        this.availableRecipes = CraftManager.getAvailableRecipes(filtered);
+        this.availableRecipes = CraftController.getAvailableRecipes(filtered);
     }
 
     private void buildUI() {
@@ -82,8 +81,8 @@ public class CraftingScreen implements Screen {
                     for (Item i : inventory) if (i != null) currentItems.add(i);
 
                     boolean canCraft = recipe.matches(currentItems);
-                    if (CraftManager.canCraft(recipe.getResultName(), currentItems)) {
-                        CraftManager.consumeIngredients(recipe, inventory);
+                    if (CraftController.canCraft(recipe.getResultName(), currentItems)) {
+                        CraftController.consumeIngredients(recipe, inventory);
                         Item crafted = recipe.craft();
                         if (crafted != null) {
                             inventory.add(crafted);

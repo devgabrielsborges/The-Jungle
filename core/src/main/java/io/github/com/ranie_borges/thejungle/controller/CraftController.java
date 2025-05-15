@@ -1,11 +1,13 @@
-package io.github.com.ranie_borges.thejungle.model.entity.itens;
+package io.github.com.ranie_borges.thejungle.controller;
 
 import com.badlogic.gdx.utils.Array;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Recipe;
 
 import java.util.*;
 
-public class CraftManager {
+public class CraftController {
 
     private static final List<Recipe> recipes = new ArrayList<>();
 
