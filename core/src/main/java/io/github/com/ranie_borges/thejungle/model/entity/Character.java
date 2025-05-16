@@ -101,6 +101,9 @@ public abstract class Character implements ICharacter {
     private boolean isMoving = false;
     private float stateTime = 0;
 
+    private boolean inTallGrass = false;
+
+
 
 
     protected Character(
@@ -447,6 +450,15 @@ public abstract class Character implements ICharacter {
             logger.error("{}: Error setting energy: {}", name, e.getMessage());
         }
     }
+
+    public boolean isInTallGrass() {
+        return inTallGrass;
+    }
+
+    public void setInTallGrass(boolean inTallGrass) {
+        this.inTallGrass = inTallGrass;
+    }
+
 
     public float getSanity() {
         return sanity;
