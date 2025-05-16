@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -78,6 +79,11 @@ public class ProceduralMapScreen implements Screen {
 
     private float stateTime = 0;
     private boolean isMoving = false;
+    private CraftingBar craftingBar;
+
+
+
+
 
 
     public ProceduralMapScreen(Character character, Ambient ambient) {
@@ -161,7 +167,9 @@ public class ProceduralMapScreen implements Screen {
             logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage());
             throw e;
         }
-        character.updateStateTime(0f); // Zera animação no início
+        character.updateStateTime(0f);
+        this.craftingBar = new CraftingBar();
+
     }
 
     public void generateMap() {
@@ -414,12 +422,12 @@ public class ProceduralMapScreen implements Screen {
 
 
 
+
     private void renderInventoryWindow() {
         float w = 400, h = 300;
         float x = (Gdx.graphics.getWidth() - w) / 2f, y = (Gdx.graphics.getHeight() - h) / 2f;
         float slotSize = 48, padding = 12;
         int cols = 5, rows = 3;
-
 
         batch.begin();
         batch.draw(inventoryBackground, x, y, w, h);
@@ -427,16 +435,13 @@ public class ProceduralMapScreen implements Screen {
         font.draw(batch, "Inventory", x + (w - layout.width) / 2f, y + h - 20);
         batch.end();
 
-
         float gridW = cols * slotSize + (cols - 1) * padding;
         float gridH = rows * slotSize + (rows - 1) * padding;
         float startX = x + (w - gridW) / 2f;
         float startY = y + (h - gridH) / 2f;
 
-
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(Color.LIGHT_GRAY);
-
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -444,9 +449,7 @@ public class ProceduralMapScreen implements Screen {
                 float sy = startY + (rows - row - 1) * (slotSize + padding);
                 int slotIndex = row * cols + col;
 
-
                 shapeRenderer.rect(sx, sy, slotSize, slotSize);
-
 
                 if (slotIndex < character.getInventory().size && character.getInventory().get(slotIndex) != null) {
                     shapeRenderer.setColor(Color.YELLOW);
@@ -457,28 +460,55 @@ public class ProceduralMapScreen implements Screen {
         }
         shapeRenderer.end();
 
+        // Verifica clique do mouse para arrastar e soltar
+        if (Gdx.input.justTouched()) {
+            int mouseX = Gdx.input.getX();
+            int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < cols; col++) {
+                    float sx = startX + col * (slotSize + padding);
+                    float sy = startY + (rows - row - 1) * (slotSize + padding);
+                    int slotIndex = row * cols + col;
+                }
+            }
+        }
 
         batch.begin();
+        int mouseX = Gdx.input.getX();
+        int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 float sx = startX + col * (slotSize + padding);
                 float sy = startY + (rows - row - 1) * (slotSize + padding);
                 int slotIndex = row * cols + col;
 
-
                 if (slotIndex < character.getInventory().size && character.getInventory().get(slotIndex) != null) {
-                    String itemName = character.getInventory().get(slotIndex).getName();
-                    layout.setText(font, itemName);
-                    if (layout.width > slotSize) {
-                        itemName = itemName.substring(0, 3) + "...";
-                        layout.setText(font, itemName);
+                    Item item = character.getInventory().get(slotIndex);
+                    Texture icon = item.getIconTexture();
+                    if (icon != null) {
+                        batch.draw(icon, sx + 8, sy + 8, slotSize - 16, slotSize - 16);
                     }
-                    font.draw(batch, itemName, sx + (slotSize - layout.width) / 2, sy + slotSize / 2);
+
+                    // Mostra quantidade sempre
+                    String qtd = "x" + item.getQuantity();
+                    layout.setText(font, qtd);
+                    font.draw(batch, qtd, sx + slotSize - layout.width - 4, sy + 16);
+
+                    // Mostra nome apenas se o mouse estiver sobre o slot
+                    if (mouseX >= sx && mouseX <= sx + slotSize && mouseY >= sy && mouseY <= sy + slotSize) {
+                        String itemName = item.getName();
+                        layout.setText(font, itemName);
+                        font.draw(batch, itemName, sx + (slotSize - layout.width) / 2, sy + slotSize + 12);
+                    }
                 }
             }
         }
+
         batch.end();
     }
+
     @Override
     public void render(float delta) {
         try {
@@ -489,6 +519,31 @@ public class ProceduralMapScreen implements Screen {
 
             if (passedThroughDoor) {
                 generateMap();
+                // Garante spawn seguro do personagem após trocar de mapa
+                boolean spawnEncontrado = false;
+                int tentativas = 0;
+                int maxTentativas = 1000;
+
+                while (!spawnEncontrado && tentativas < maxTentativas) {
+                    int x = (int)(Math.random() * MAP_WIDTH);
+                    int y = (int)(Math.random() * MAP_HEIGHT);
+                    int tile = map[y][x];
+
+                    boolean tileEhValido = tile == TILE_GRASS || (ambient instanceof Cave && tile == TILE_CAVE);
+
+                    if (tileEhValido) {
+                        character.getPosition().set(x * TILE_SIZE, y * TILE_SIZE);
+                        spawnEncontrado = true;
+                    }
+
+                    tentativas++;
+                }
+
+                if (!spawnEncontrado) {
+                    // Fallback para o meio do mapa
+                    character.getPosition().set((MAP_WIDTH / 2) * TILE_SIZE, (MAP_HEIGHT / 2) * TILE_SIZE);
+                    logger.warn("Não foi possível encontrar um spawn seguro após {} tentativas. Usando fallback central.", maxTentativas);
+                }
                 if (ambient.getName().toLowerCase().contains("cave")) {
                     generateCaveDoors();
                 }
@@ -503,21 +558,21 @@ public class ProceduralMapScreen implements Screen {
                     ambient,
                     Deer::canSpawnIn
                 );
-                    cannibals = Creature.regenerateCreatures(
-                        3,
-                        map,
-                        MAP_WIDTH,
-                        MAP_HEIGHT,
-                        TILE_CAVE,
-                        TILE_SIZE,
-                        Cannibal::new,
-                        ambient,
-                        Cannibal::canSpawnIn
+                cannibals = Creature.regenerateCreatures(
+                    3,
+                    map,
+                    MAP_WIDTH,
+                    MAP_HEIGHT,
+                    TILE_CAVE,
+                    TILE_SIZE,
+                    Cannibal::new,
+                    ambient,
+                    Cannibal::canSpawnIn
                 );
                 // Materiais
-                if (ambient.getName().toLowerCase().contains("cave")) {
+                if (ambient instanceof Cave) {
                     materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
-                } else if (ambient.getName().toLowerCase().contains("forest") || ambient.getName().toLowerCase().contains("plains")) {
+                } else if (ambient instanceof Jungle || ambient instanceof LakeRiver || ambient instanceof Ruins) {
                     materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
                 } else {
                     materiaisNoMapa = new ArrayList<>();
@@ -540,9 +595,9 @@ public class ProceduralMapScreen implements Screen {
             int mouseX = Gdx.input.getX();
             int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
             boolean mouseOverBackpack = mouseX >= bx && mouseX <= bx + size
-                                     && mouseY >= by && mouseY <= by + size;
+                && mouseY >= by && mouseY <= by + size;
             if ((Gdx.input.justTouched() && mouseOverBackpack)
-             || Gdx.input.isKeyJustPressed(Input.Keys.I)) {
+                || Gdx.input.isKeyJustPressed(Input.Keys.I)) {
                 showInventory = !showInventory;
             }
 
@@ -553,23 +608,23 @@ public class ProceduralMapScreen implements Screen {
             // 5) Desenha sidebar
             batch.draw(sidebarTexture, 0, 0, SIDEBAR_WIDTH, Gdx.graphics.getHeight());
             batch.draw(sidebarTexture,
-                       Gdx.graphics.getWidth() - SIDEBAR_WIDTH,
-                       0,
-                       SIDEBAR_WIDTH,
-                       Gdx.graphics.getHeight());
+                Gdx.graphics.getWidth() - SIDEBAR_WIDTH,
+                0,
+                SIDEBAR_WIDTH,
+                Gdx.graphics.getHeight());
 
             // 6) Texto do ambiente e personagem
             layout.setText(font, ambient.getName().toUpperCase());
             font.draw(batch,
-                      ambient.getName().toUpperCase(),
-                      Gdx.graphics.getWidth() - SIDEBAR_WIDTH + (SIDEBAR_WIDTH - layout.width) / 2f,
-                      Gdx.graphics.getHeight() - 20);
+                ambient.getName().toUpperCase(),
+                Gdx.graphics.getWidth() - SIDEBAR_WIDTH + (SIDEBAR_WIDTH - layout.width) / 2f,
+                Gdx.graphics.getHeight() - 20);
             batch.draw(classIcon, 20, Gdx.graphics.getHeight() - 360, 260, 300);
             layout.setText(font, character.getName());
             font.draw(batch,
-                      character.getName(),
-                      SIDEBAR_WIDTH / 2f - layout.width / 2f,
-                      Gdx.graphics.getHeight() - 380);
+                character.getName(),
+                SIDEBAR_WIDTH / 2f - layout.width / 2f,
+                Gdx.graphics.getHeight() - 380);
 
             // 7) Barras de status (labels)
             float barX   = 30;
@@ -581,9 +636,9 @@ public class ProceduralMapScreen implements Screen {
             font.draw(batch, "Sanity", barX, baseY - spacing*3 + 45);
             font.draw(batch, "Energy", barX, baseY - spacing*4 + 45);
             font.draw(batch,
-                      "Days: " + gameState.getDaysSurvived(),
-                      Gdx.graphics.getWidth() - SIDEBAR_WIDTH + 20,
-                      Gdx.graphics.getHeight() - 60);
+                "Days: " + gameState.getDaysSurvived(),
+                Gdx.graphics.getWidth() - SIDEBAR_WIDTH + 20,
+                Gdx.graphics.getHeight() - 60);
 
             // 8) Desenha o mapa
             for (int y = 0; y < MAP_HEIGHT; y++) {
@@ -647,14 +702,14 @@ public class ProceduralMapScreen implements Screen {
                 }
             }
 
-            // 11) Blink do “i”
+            // 10) Blink do “i”
             if (blinkVisible || mouseOverBackpack) {
                 layout.setText(font, "i");
                 font.setColor(mouseOverBackpack ? Color.YELLOW : Color.GREEN);
                 font.draw(batch,
-                          "i",
-                          bx + size/2f - layout.width/2f,
-                          by + size/2.3f);
+                    "i",
+                    bx + size/2f - layout.width/2f,
+                    by + size/2.3f);
                 font.setColor(Color.WHITE);
             }
 
@@ -669,7 +724,7 @@ public class ProceduralMapScreen implements Screen {
 
             batch.end();
 
-            // 13) Barras de vida, fome etc
+            // 11) Barras de vida, fome etc
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             drawBar(Color.RED,    character.getLife()   /100f, barX, baseY);
             drawBar(Color.ORANGE, character.getHunger()/100f, barX, baseY - spacing);
@@ -678,13 +733,25 @@ public class ProceduralMapScreen implements Screen {
             drawBar(Color.YELLOW, character.getEnergy()/100f, barX, baseY - spacing*4);
             shapeRenderer.end();
 
-            // 14) Inventário e game-over
+            // 12) Inventário e game-over
             if (showInventory) renderInventoryWindow();
+            if (showInventory) {
+                craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            }
+
             if (character.getLife() <= 0) gameOver();
 
         } catch (Exception e) {
             logger.error("Error in render: {}", e.getMessage());
         }
+        // 13) Pega item no mapa
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            character.tryCollectNearbyMaterial(materiaisNoMapa);
+        }
+        if (showInventory) {
+            renderInventoryWindow();
+        }
+
     }
 
 
@@ -733,6 +800,8 @@ public class ProceduralMapScreen implements Screen {
         } catch (Exception e) {
             logger.error("Error disposing resources: {}", e.getMessage());
         }
+        if (craftingBar != null) craftingBar.dispose();
+
     }
 }
 

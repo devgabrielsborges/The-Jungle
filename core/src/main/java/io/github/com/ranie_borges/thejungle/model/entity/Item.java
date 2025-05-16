@@ -67,6 +67,39 @@ public abstract class Item implements IItem {
     public void setPosition(float x, float y) {
         this.position.set(x, y);
     }
+    private static final Map<String, Texture> ICON_CACHE = new HashMap<>();
+
+    public Texture getIconTexture() {
+        String iconKey = getName().toLowerCase();
+
+        if (!ICON_CACHE.containsKey(iconKey)) {
+            try {
+                Texture texture = new Texture("icons/" + iconKey + ".png");
+                ICON_CACHE.put(iconKey, texture);
+            } catch (Exception e) {
+                // Fallback se imagem não existir
+                Texture fallback = new Texture("icons/default.png");
+                ICON_CACHE.put(iconKey, fallback);
+            }
+        }
+
+        return ICON_CACHE.get(iconKey);
+    }
+    private int quantity = 1;
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = Math.max(1, quantity);
+    }
+
+    public void addQuantity(int amount) {
+        this.quantity += amount;
+    }
+
+
 
 
 }

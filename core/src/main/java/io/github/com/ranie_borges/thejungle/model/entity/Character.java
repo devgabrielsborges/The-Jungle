@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
+import io.github.com.ranie_borges.thejungle.controller.CraftController;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
@@ -537,35 +538,57 @@ public abstract class Character implements ICharacter {
             logger.error("{}: Error setting initial inventory capacity: {}", name, e.getMessage());
         }
     }
+    public boolean tryCollectNearbyMaterial(List<Material> materiais) {
+        Iterator<Material> iterator = materiais.iterator();
+        while (iterator.hasNext()) {
+            Material material = iterator.next();
+            float dist = getPosition().dst(material.getPosition());
+
+            // Considera coleta se estiver a menos de 24px (ajuste fino)
+            if (dist < 24f) {
+                if (isInventoryFull()) {
+                    System.out.println(getName() + ": inventário cheio!");
+                    return false;
+                }
+
+                if (!canCarryMore(material.getWeight())) {
+                    System.out.println(getName() + ": muito pesado para carregar " + material.getName());
+                    return false;
+                }
+
+                insertItemInInventory(material);
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public void insertItemInInventory(Item item) {
-        try {
-            if (item == null) {
-                logger.warn("{}: Attempted to add null item to inventory", name);
+        if (item == null) return;
+
+        // 1. Tenta somar com um item do mesmo tipo
+        for (int i = 0; i < inventory.size; i++) {
+            Item slot = inventory.get(i);
+            if (slot != null && slot.getName().equalsIgnoreCase(item.getName())) {
+                slot.addQuantity(item.getQuantity());
                 return;
             }
-
-            if (isInventoryFull()) {
-                logger.warn("{}: Cannot add item '{}', inventory is full", name, item.getName());
-                System.out.println(getName() + " tentou adicionar um item, mas o inventário está cheio!");
-                return;
-            }
-
-            if (!canCarryMore(item.getWeight())) {
-                logger.warn("{}: Cannot carry item '{}', too heavy!", name, item.getName());
-                System.out.println(getName() + " está muito pesado para carregar: " + item.getName());
-                return;
-            }
-
-            inventory.add(item);
-            currentWeight += item.getWeight();
-
-            logger.debug("{}: Added item '{}' to inventory (currentWeight = {}/{})", name, item.getName(), currentWeight, maxCarryWeight);
-            System.out.println(getName() + " adicionou " + item.getName() + " no inventário. Peso atual: " + currentWeight + "/" + maxCarryWeight);
-        } catch (Exception e) {
-            logger.error("{}: Error adding item to inventory: {}", name, e.getMessage());
         }
+
+        // 2. Tenta encontrar um slot vazio
+        for (int i = 0; i < inventory.size; i++) {
+            if (inventory.get(i) == null) {
+                inventory.set(i, item);
+                return;
+            }
+        }
+
+        // 3. Caso contrário, adiciona no final (expande o inventário)
+        inventory.add(item);
     }
+
 
 
     public Item getItem(int index) {
@@ -1055,6 +1078,34 @@ public abstract class Character implements ICharacter {
             }
         } catch (Exception e) {
             logger.error("{}: Error disposing texture: {}", name, e.getMessage());
+        }
+    }
+    public void autoCombineInventory() {
+        Array<Item> inventory = getInventory();
+        for (int i = 0; i < inventory.size; i++) {
+            Item a = inventory.get(i);
+            if (a == null) continue;
+
+            for (int j = i + 1; j < inventory.size; j++) {
+                Item b = inventory.get(j);
+                if (b == null) continue;
+
+                // Combina iguais
+                if (a.getName().equalsIgnoreCase(b.getName())) {
+                    a.addQuantity(b.getQuantity());
+                    inventory.set(j, null);
+                } else {
+                    List<Item> pair = new ArrayList<>();
+                    pair.add(a);
+                    pair.add(b);
+                    Item crafted = CraftController.tryCraft(pair);
+                    if (crafted != null) {
+                        inventory.set(i, crafted);
+                        inventory.set(j, null);
+                        return; // recomeça após crafting
+                    }
+                }
+            }
         }
     }
 }
