@@ -51,13 +51,13 @@ public class Hud {
         font.draw(batch, "Days: " + gameState.getDaysSurvived(), width - sidebarWidth + 20, height - 60.0f);
 
         if (backpackTexture != null) {
-            float backpackX = width - 250; // Ajuste para o canto direito com margem de 10px
-            float backpackY = 30; // Margem inferior
-            float backpackWidth = 200; // Largura ajustada
-            float backpackHeight = 200; // Altura ajustada
+            float backpackX = width - 250;
+            float backpackY = 30;
+            float backpackWidth = 200;
+            float backpackHeight = 200;
             batch.draw(backpackTexture, backpackX, backpackY, backpackWidth, backpackHeight);
 
-            String text = "Pressione 'I'";
+            String text = "Press 'I'";
             layout.setText(font, text);
             font.draw(batch, text, backpackX + (backpackWidth - layout.width) / 2, backpackY + 20);
         }
