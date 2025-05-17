@@ -572,6 +572,14 @@ public class ProceduralMapScreen implements Screen {
 
             // 10) Entidades (veados, canibais, materiais)
             for (Deer deer : deers) {
+                if (ambient instanceof Jungle) {
+                    Jungle jungle = (Jungle) ambient;
+                    int deerTileX = (int) (deer.getPosition().x / TILE_SIZE);
+                    int deerTileY = (int) (deer.getPosition().y / TILE_SIZE);
+                    if (jungle.isTallGrass(deerTileX, deerTileY)) {
+                        continue; // Pula o desenho do Deer se estiver no mato alto
+                    }
+                }
                 Sprite s = deer.getSprites().get("idle");
                 if (s != null) {
                     s.setSize(50, 50);
