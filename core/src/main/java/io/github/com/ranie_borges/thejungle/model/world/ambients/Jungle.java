@@ -67,7 +67,7 @@ public class Jungle extends Ambient {
                 boolean isWall = rand.nextFloat() < localDensity;
                 map[y][x] = isBorder ? 1 : (isWall ? 1 : 0);
 
-                tallGrass[y][x] = !isWall && isDenseArea;
+                tallGrass[y][x] = !isWall && isDenseArea && !isBorder;
             }
         }
 

@@ -139,6 +139,7 @@ public class ProceduralMapScreen implements Screen {
             if (ambient.getName().toLowerCase().contains("cave")) {
                 generateCaveDoors();
             }
+
             resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
             deers = Creature.regenerateCreatures(
@@ -507,11 +508,13 @@ public class ProceduralMapScreen implements Screen {
                 if (ambient instanceof Cave) {
                     materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
                 } else if (ambient instanceof Jungle || ambient instanceof LakeRiver || ambient instanceof Ruins) {
-                    materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS,
-                        TILE_SIZE);
+                    materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
+
+                    materiaisNoMapa.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                 } else {
                     materiaisNoMapa = new ArrayList<>();
                 }
+
                 autosaveGame();
             }
             character.updateStateTime(delta);
@@ -585,21 +588,8 @@ public class ProceduralMapScreen implements Screen {
                     s.draw(batch);
                 }
             }
-            for (Material m : materiaisNoMapa) {
-                Sprite s = m.getSprites().get("idle");
-                if (s != null) {
-                    if ("Tree".equals(m.getName())) { // Verifica se é uma árvore
-                        s.setSize(128, 128); // Define o tamanho apenas para árvores
-                    } else {
-                        s.setSize(32, 32); // Define tamanho padrão para outros materiais
-                    }
-                    s.setPosition(
-                        m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
-                        m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2
-                    );
-                    s.draw(batch);
-                }
-            }
+
+
 
             TextureRegion frame = character.getCurrentFrame();
             batch.draw(
@@ -608,6 +598,7 @@ public class ProceduralMapScreen implements Screen {
                 character.getPosition().y + offsetY,
                 frame.getRegionWidth(),
                 frame.getRegionHeight());
+
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient;
                 Texture grassOverlay = jungle.getTallGrassTexture();
@@ -619,6 +610,28 @@ public class ProceduralMapScreen implements Screen {
                             batch.draw(grassOverlay, dx, dy, TILE_SIZE, TILE_SIZE);
                         }
                     }
+                }
+            }
+
+
+
+            for (Material m : materiaisNoMapa) {
+                Sprite s = m.getSprites().get("idle");
+                if (s != null) {
+                    if ("Tree".equals(m.getName())) {
+                        s.setSize(128, 128);
+                        s.setPosition(
+                            m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f,
+                            m.getPosition().y + offsetY
+                        );
+                    } else {
+                        s.setSize(32, 32);
+                        s.setPosition(
+                            m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f,
+                            m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2f
+                        );
+                    }
+                    s.draw(batch);
                 }
             }
 

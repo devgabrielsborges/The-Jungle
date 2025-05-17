@@ -554,6 +554,12 @@ public abstract class Character implements ICharacter {
         Iterator<Material> iterator = materiais.iterator();
         while (iterator.hasNext()) {
             Material material = iterator.next();
+
+            // Verifica se o material é uma árvore e impede a coleta
+            if ("Tree".equals(material.getName())) { //quebrar arvores
+                return false;
+            }
+
             float dist = getPosition().dst(material.getPosition());
 
             // Considera coleta se estiver a menos de 24px (ajuste fino)
