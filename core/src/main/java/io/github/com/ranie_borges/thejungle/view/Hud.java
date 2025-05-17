@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle.view;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
@@ -14,12 +15,14 @@ public class Hud {
     private final Texture classIcon;
     private final BitmapFont font;
     private final GlyphLayout layout;
+    private final Texture backpackTexture;
 
-    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font) {
+    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font, Texture backpackTexture) {
         this.sidebarTexture = sidebarTexture;
         this.classIcon = classIcon;
         this.font = font;
         this.layout = new GlyphLayout();
+        this.backpackTexture = new Texture(Gdx.files.internal("Gameplay/backpack.png"));
     }
 
     public void render(SpriteBatch batch, ShapeRenderer shapeRenderer, Character character, GameState gameState, int width, int height) {
@@ -47,6 +50,17 @@ public class Hud {
         font.draw(batch, "Energy", barX, baseY - spacing * 4 + 45);
         font.draw(batch, "Days: " + gameState.getDaysSurvived(), width - sidebarWidth + 20, height - 60.0f);
 
+        if (backpackTexture != null) {
+            float backpackX = width - 250; // Ajuste para o canto direito com margem de 10px
+            float backpackY = 30; // Margem inferior
+            float backpackWidth = 200; // Largura ajustada
+            float backpackHeight = 200; // Altura ajustada
+            batch.draw(backpackTexture, backpackX, backpackY, backpackWidth, backpackHeight);
+
+            String text = "Pressione 'I'";
+            layout.setText(font, text);
+            font.draw(batch, text, backpackX + (backpackWidth - layout.width) / 2, backpackY + 20);
+        }
         batch.end();
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);

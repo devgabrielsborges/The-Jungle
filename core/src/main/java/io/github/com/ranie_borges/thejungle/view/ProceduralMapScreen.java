@@ -171,7 +171,7 @@ public class ProceduralMapScreen implements Screen {
         }
         character.updateStateTime(0f);
         this.craftingBar = new CraftingBar();
-        hud = new io.github.com.ranie_borges.thejungle.view.Hud(sidebarTexture, classIcon, font);
+        hud = new io.github.com.ranie_borges.thejungle.view.Hud(sidebarTexture, classIcon, font,backpackIcon);
         inventoryUI = new InventoryUI(inventoryBackground, font);
 
     }
