@@ -447,9 +447,12 @@ public class ProceduralMapScreen implements Screen {
                 delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient; // cast explícito
-                int tileX = (int) (character.getPosition().x / TILE_SIZE);
-                int tileY = (int) (character.getPosition().y / TILE_SIZE);
+                float centerX = character.getPosition().x + TILE_SIZE / 2f;
+                float centerY = character.getPosition().y + TILE_SIZE / 2f;
+                int tileX = (int) (centerX / TILE_SIZE);
+                int tileY = (int) (centerY / TILE_SIZE);
                 character.setInTallGrass(jungle.isTallGrass(tileX, tileY));
+
             }
 
             if (passedThroughDoor) {
