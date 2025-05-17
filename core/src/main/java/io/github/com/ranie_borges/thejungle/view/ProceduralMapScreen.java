@@ -164,6 +164,7 @@ public class ProceduralMapScreen implements Screen {
                 Cannibal::canSpawnIn);
 
             materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
+            materiaisNoMapa = Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
 
         } catch (Exception e) {
             logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage());
@@ -587,10 +588,15 @@ public class ProceduralMapScreen implements Screen {
             for (Material m : materiaisNoMapa) {
                 Sprite s = m.getSprites().get("idle");
                 if (s != null) {
-                    s.setSize(32, 32);
+                    if ("Tree".equals(m.getName())) { // Verifica se é uma árvore
+                        s.setSize(128, 128); // Define o tamanho apenas para árvores
+                    } else {
+                        s.setSize(32, 32); // Define tamanho padrão para outros materiais
+                    }
                     s.setPosition(
                         m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
-                        m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
+                        m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2
+                    );
                     s.draw(batch);
                 }
             }

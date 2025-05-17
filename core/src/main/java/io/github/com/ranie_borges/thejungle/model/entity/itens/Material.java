@@ -141,6 +141,30 @@ public class Material extends Item {
         }
         return materiais;
     }
+    public static List<Material> spawnTrees(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+        List<Material> materiais = new ArrayList<>();
+        int materiaisGerados = 0;
+        int tentativas = 0;
+
+        while (materiaisGerados < quantidade && tentativas < 1000) {
+            int x = (int) (Math.random() * mapWidth);
+            int y = (int) (Math.random() * mapHeight);
+
+            if (mapa[y][x] == tileGrass) {
+                Material tree = new Material("Tree", 5.0f, 10.0f, "Wood", 2.0f);
+                Map<String, Sprite> sprites = new HashMap<>();
+                Sprite treeSprite = new Sprite(new Texture("Gameplay/tree.png"));
+                treeSprite.setSize(128, 128); // Define o tamanho apenas para a árvore
+                sprites.put("idle", treeSprite);
+                tree.setSprites(sprites);
+                tree.setPosition(x * tileSize, y * tileSize);
+                materiais.add(tree);
+                materiaisGerados++;
+            }
+            tentativas++;
+        }
+        return materiais;
+    }
     private static Map<String, Sprite> loadSprites(String path) {
         Map<String, Sprite> sprites = new HashMap<>();
         Texture texture = new Texture(Gdx.files.internal(path));
