@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle.view.ui;
+package io.github.com.ranie_borges.thejungle.view;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -10,10 +10,10 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 
 public class Hud {
-    private Texture sidebarTexture;
-    private Texture classIcon;
-    private BitmapFont font;
-    private GlyphLayout layout;
+    private final Texture sidebarTexture;
+    private final Texture classIcon;
+    private final BitmapFont font;
+    private final GlyphLayout layout;
 
     public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font) {
         this.sidebarTexture = sidebarTexture;
@@ -24,26 +24,30 @@ public class Hud {
 
     public void render(SpriteBatch batch, ShapeRenderer shapeRenderer, Character character, GameState gameState, int width, int height) {
         float barX = 30;
-        float baseY = height - 450;
+        float baseY = height - 450.0f;
         float spacing = 60;
-        float SIDEBAR_WIDTH = 300;
+        float sidebarWidth = 300;
 
-        batch.draw(sidebarTexture, 0, 0, SIDEBAR_WIDTH, height);
-        batch.draw(sidebarTexture, width - SIDEBAR_WIDTH, 0, SIDEBAR_WIDTH, height);
+        batch.draw(sidebarTexture, 0, 0, sidebarWidth, height);
+        batch.draw(sidebarTexture, width - sidebarWidth, 0, sidebarWidth, height);
 
         layout.setText(font, character.getName());
-        font.draw(batch, character.getName(), SIDEBAR_WIDTH / 2f - layout.width / 2f, height - 380);
+        font.draw(batch, character.getName(), sidebarWidth / 2f - layout.width / 2f, height - 380.0f);
 
         layout.setText(font, gameState.getCurrentAmbient().getName().toUpperCase());
-        font.draw(batch, layout, width - SIDEBAR_WIDTH + (SIDEBAR_WIDTH - layout.width) / 2f, height - 20);
+        font.draw(batch, layout, width - sidebarWidth + (sidebarWidth - layout.width) / 2f, height - 20.0f);
 
-        batch.draw(classIcon, 20, height - 360, 260, 300);
+        batch.draw(classIcon, 20, height - 360.0f, 260, 300);
+
+        font.setColor(Color.WHITE);
         font.draw(batch, "Life", barX, baseY + 45);
         font.draw(batch, "Hunger", barX, baseY - spacing + 45);
         font.draw(batch, "Thirst", barX, baseY - spacing * 2 + 45);
         font.draw(batch, "Sanity", barX, baseY - spacing * 3 + 45);
         font.draw(batch, "Energy", barX, baseY - spacing * 4 + 45);
-        font.draw(batch, "Days: " + gameState.getDaysSurvived(), width - SIDEBAR_WIDTH + 20, height - 60);
+        font.draw(batch, "Days: " + gameState.getDaysSurvived(), width - sidebarWidth + 20, height - 60.0f);
+
+        batch.end();
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         drawBar(shapeRenderer, Color.RED, character.getLife() / 100f, barX, baseY);

@@ -16,7 +16,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
-import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -34,7 +33,6 @@ import java.util.Random;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.Input;
 
-
 public class ProceduralMapScreen implements Screen {
     private static final Logger logger = LoggerFactory.getLogger(ProceduralMapScreen.class);
     private final int TILE_SIZE = 32;
@@ -50,7 +48,7 @@ public class ProceduralMapScreen implements Screen {
 
     // Ambient rotation fields
     private int currentAmbientUseCount = 0;
-    private final int MAX_AMBIENT_USES = 2 + (int)(Math.random()); // Random 2-3 uses before switching
+    private final int MAX_AMBIENT_USES = 2 + (int) (Math.random()); // Random 2-3 uses before switching
     private boolean playerSpawned = false;
 
     private int[][] map;
@@ -85,13 +83,8 @@ public class ProceduralMapScreen implements Screen {
     private CraftingBar craftingBar;
     private FrameBuffer lightBuffer;
 
-    private io.github.com.ranie_borges.thejungle.view.ui.Hud hud;
+    private io.github.com.ranie_borges.thejungle.view.Hud hud;
     private InventoryUI inventoryUI;
-
-
-
-
-
 
     public ProceduralMapScreen(Character character, Ambient ambient) {
         this.character = character;
@@ -116,10 +109,13 @@ public class ProceduralMapScreen implements Screen {
     @Override
     public void show() {
         try {
-            floorTexture = ambient.getFloorTexture() != null ? ambient.getFloorTexture() : new Texture("GameScreen/chao.png");
-            wallTexture = ambient.getWallTexture() != null ? ambient.getWallTexture() : new Texture("GameScreen/parede.png");
+            floorTexture = ambient.getFloorTexture() != null ? ambient.getFloorTexture()
+                : new Texture("GameScreen/chao.png");
+            wallTexture = ambient.getWallTexture() != null ? ambient.getWallTexture()
+                : new Texture("GameScreen/parede.png");
             playerTexture = new Texture("sprites/character/personagem_luta.png");
-            sidebarTexture = ambient.getSidebarTexture() != null ? ambient.getSidebarTexture() : new Texture("Gameplay/sidebar.jpg");
+            sidebarTexture = ambient.getSidebarTexture() != null ? ambient.getSidebarTexture()
+                : new Texture("Gameplay/sidebar.jpg");
             classIcon = new Texture(getIconPathForClass(character.getCharacterType()));
             inventoryBackground = new Texture(Gdx.files.internal("Gameplay/backpackInside.png"));
             backpackIcon = new Texture(Gdx.files.internal("Gameplay/backpack.png"));
@@ -133,7 +129,8 @@ public class ProceduralMapScreen implements Screen {
 
             generateMap();
             if (!playerSpawned) {
-                playerSpawned = character.setInitialSpawn(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, TILE_GRASS, TILE_CAVE, ambient.getName());
+                playerSpawned = character.setInitialSpawn(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, TILE_GRASS, TILE_CAVE,
+                    ambient.getName());
             }
 
             character.loadPlayerAnimations();
@@ -153,8 +150,7 @@ public class ProceduralMapScreen implements Screen {
                 TILE_SIZE,
                 Deer::new,
                 ambient,
-                Deer::canSpawnIn
-            );
+                Deer::canSpawnIn);
 
             cannibals = Creature.regenerateCreatures(
                 3,
@@ -165,8 +161,7 @@ public class ProceduralMapScreen implements Screen {
                 TILE_SIZE,
                 Cannibal::new,
                 ambient,
-                Cannibal::canSpawnIn
-            );
+                Cannibal::canSpawnIn);
 
             materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
 
@@ -176,7 +171,7 @@ public class ProceduralMapScreen implements Screen {
         }
         character.updateStateTime(0f);
         this.craftingBar = new CraftingBar();
-        hud = new io.github.com.ranie_borges.thejungle.view.ui.Hud(sidebarTexture, classIcon, font);
+        hud = new io.github.com.ranie_borges.thejungle.view.Hud(sidebarTexture, classIcon, font);
         inventoryUI = new InventoryUI(inventoryBackground, font);
 
     }
@@ -218,7 +213,8 @@ public class ProceduralMapScreen implements Screen {
             map = new int[MAP_HEIGHT][MAP_WIDTH];
             for (int y = 0; y < MAP_HEIGHT; y++) {
                 for (int x = 0; x < MAP_WIDTH; x++) {
-                    map[y][x] = (x == 0 || y == 0 || x == MAP_WIDTH - 1 || y == MAP_HEIGHT - 1) ? TILE_WALL : TILE_GRASS;
+                    map[y][x] = (x == 0 || y == 0 || x == MAP_WIDTH - 1 || y == MAP_HEIGHT - 1) ? TILE_WALL
+                        : TILE_GRASS;
                 }
             }
         }
@@ -228,9 +224,12 @@ public class ProceduralMapScreen implements Screen {
 
     // Update textures when changing ambient
     private void updateTextures(Ambient newAmbient) {
-        if (floorTexture != null) floorTexture.dispose();
-        if (wallTexture != null) wallTexture.dispose();
-        if (sidebarTexture != null) sidebarTexture.dispose();
+        if (floorTexture != null)
+            floorTexture.dispose();
+        if (wallTexture != null)
+            wallTexture.dispose();
+        if (sidebarTexture != null)
+            sidebarTexture.dispose();
 
         floorTexture = newAmbient.getFloorTexture();
         wallTexture = newAmbient.getWallTexture();
@@ -265,15 +264,18 @@ public class ProceduralMapScreen implements Screen {
 
     private String getIconPathForClass(String rawClass) {
         switch (rawClass) {
-            case "Survivor": return "StatsScreen/desempregadoFundo.png";
-            case "Hunter": return "StatsScreen/cacadorFundo.png";
-            case "Lumberjack": return "StatsScreen/lenhadorFundo.png";
-            case "Doctor": return "StatsScreen/medicoFundo.png";
-            default: return "StatsScreen/desempregadoFundo.png";
+            case "Survivor":
+                return "StatsScreen/desempregadoFundo.png";
+            case "Hunter":
+                return "StatsScreen/cacadorFundo.png";
+            case "Lumberjack":
+                return "StatsScreen/lenhadorFundo.png";
+            case "Doctor":
+                return "StatsScreen/medicoFundo.png";
+            default:
+                return "StatsScreen/desempregadoFundo.png";
         }
     }
-
-
 
     private void generateCaveDoors() {
         int doorsPlaced = 0;
@@ -296,7 +298,8 @@ public class ProceduralMapScreen implements Screen {
                     boolean hasCaveNearby = false;
                     for (int dy = -1; dy <= 1; dy++) {
                         for (int dx = -1; dx <= 1; dx++) {
-                            if (dx == 0 && dy == 0) continue;
+                            if (dx == 0 && dy == 0)
+                                continue;
                             int nx = x + dx;
                             int ny = y + dy;
                             if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
@@ -306,7 +309,8 @@ public class ProceduralMapScreen implements Screen {
                                 }
                             }
                         }
-                        if (hasCaveNearby) break;
+                        if (hasCaveNearby)
+                            break;
                     }
                     if (!hasCaveNearby) {
                         map[y][x] = TILE_WALL;
@@ -324,14 +328,15 @@ public class ProceduralMapScreen implements Screen {
             (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE);
     }
 
-
     private boolean isValidSpawnTile(int x, int y) {
-        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return false;
+        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+            return false;
         return map[y][x] == TILE_GRASS;
     }
 
     private boolean isValidCaveSpawnTile(int x, int y) {
-        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return false;
+        if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+            return false;
         return map[y][x] == TILE_CAVE;
     }
 
@@ -364,8 +369,8 @@ public class ProceduralMapScreen implements Screen {
     private void addDoors(int doorsToAdd) {
         int attempts = 0;
         while (doorsToAdd > 0 && attempts < 1000) { // Limite de tentativas
-            int x = (int)(Math.random() * MAP_WIDTH);
-            int y = (int)(Math.random() * MAP_HEIGHT);
+            int x = (int) (Math.random() * MAP_WIDTH);
+            int y = (int) (Math.random() * MAP_HEIGHT);
 
             // Condições para colocar porta:
             if (map[y][x] == TILE_WALL && isAdjacentToCave(x, y)) {
@@ -378,30 +383,29 @@ public class ProceduralMapScreen implements Screen {
 
     // Verificar se a parede está encostada na área acessível (TILE_CAVE)
     private boolean isAdjacentToCave(int x, int y) {
-        if (x > 0 && map[y][x - 1] == TILE_CAVE) return true;
-        if (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_CAVE) return true;
-        if (y > 0 && map[y - 1][x] == TILE_CAVE) return true;
-        if (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE) return true;
+        if (x > 0 && map[y][x - 1] == TILE_CAVE)
+            return true;
+        if (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_CAVE)
+            return true;
+        if (y > 0 && map[y - 1][x] == TILE_CAVE)
+            return true;
+        if (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE)
+            return true;
         return false;
     }
-
-
 
     private void updateCharacterStats(float delta) {
         float hungerDepletion = 0.01f * delta;
         float thirstDepletion = 0.015f * delta;
         float energyDepletion = 0.005f * delta;
 
-
         character.setHunger(Math.max(0, character.getHunger() - hungerDepletion));
         character.setThirsty(Math.max(0, character.getThirsty() - thirstDepletion));
         character.setEnergy(Math.max(0, character.getEnergy() - energyDepletion));
 
-
         if (character.getHunger() <= 10 || character.getThirsty() <= 10) {
             character.setLife(Math.max(0, character.getLife() - 0.05f * delta));
         }
-
 
         autosaveTimer += delta;
         if (autosaveTimer >= AUTOSAVE_INTERVAL) {
@@ -410,13 +414,11 @@ public class ProceduralMapScreen implements Screen {
         }
     }
 
-
     private void autosaveGame() {
         try {
             gameState.setCharacter(character);
             gameState.setCurrentAmbient(ambient);
             gameState.setCurrentMap(map);
-
 
             boolean success = saveManager.saveGame(gameState, "autosave");
             if (success) {
@@ -429,34 +431,24 @@ public class ProceduralMapScreen implements Screen {
         }
     }
 
-
-
-
-
-
-
     @Override
     public void render(float delta) {
         lightBuffer.begin();
 
-// limpa só o buffer de luz
+        // limpa só o buffer de luz
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-
 
         try {
             // 1) Atualiza movimentação do personagem
             boolean passedThroughDoor = character.tryMove(
-                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT
-            );
+                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient; // cast explícito
                 int tileX = (int) (character.getPosition().x / TILE_SIZE);
                 int tileY = (int) (character.getPosition().y / TILE_SIZE);
                 character.setInTallGrass(jungle.isTallGrass(tileX, tileY));
             }
-
 
             if (passedThroughDoor) {
                 generateMap();
@@ -483,7 +475,9 @@ public class ProceduralMapScreen implements Screen {
                 if (!spawnEncontrado) {
                     // Fallback para o meio do mapa
                     character.getPosition().set((MAP_WIDTH / 2) * TILE_SIZE, (MAP_HEIGHT / 2) * TILE_SIZE);
-                    logger.warn("Não foi possível encontrar um spawn seguro após {} tentativas. Usando fallback central.", maxTentativas);
+                    logger.warn(
+                        "Não foi possível encontrar um spawn seguro após {} tentativas. Usando fallback central.",
+                        maxTentativas);
                 }
                 if (ambient.getName().toLowerCase().contains("cave")) {
                     generateCaveDoors();
@@ -497,8 +491,7 @@ public class ProceduralMapScreen implements Screen {
                     TILE_SIZE,
                     Deer::new,
                     ambient,
-                    Deer::canSpawnIn
-                );
+                    Deer::canSpawnIn);
                 cannibals = Creature.regenerateCreatures(
                     3,
                     map,
@@ -508,13 +501,13 @@ public class ProceduralMapScreen implements Screen {
                     TILE_SIZE,
                     Cannibal::new,
                     ambient,
-                    Cannibal::canSpawnIn
-                );
+                    Cannibal::canSpawnIn);
                 // Materiais
                 if (ambient instanceof Cave) {
                     materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
                 } else if (ambient instanceof Jungle || ambient instanceof LakeRiver || ambient instanceof Ruins) {
-                    materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
+                    materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS,
+                        TILE_SIZE);
                 } else {
                     materiaisNoMapa = new ArrayList<>();
                 }
@@ -545,8 +538,6 @@ public class ProceduralMapScreen implements Screen {
             // 4) Clear e begin batch
             ScreenUtils.clear(0, 0, 0, 1);
             batch.begin();
-
-
 
             // 8) Desenha o mapa
             for (int y = 0; y < MAP_HEIGHT; y++) {
@@ -579,8 +570,7 @@ public class ProceduralMapScreen implements Screen {
                     s.setSize(50, 50);
                     s.setPosition(
                         deer.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
-                        deer.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2
-                    );
+                        deer.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
                     s.draw(batch);
                 }
             }
@@ -590,8 +580,7 @@ public class ProceduralMapScreen implements Screen {
                     s.setSize(40, 40);
                     s.setPosition(
                         c.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
-                        c.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2
-                    );
+                        c.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
                     s.draw(batch);
                 }
             }
@@ -601,13 +590,10 @@ public class ProceduralMapScreen implements Screen {
                     s.setSize(32, 32);
                     s.setPosition(
                         m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
-                        m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2
-                    );
+                        m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
                     s.draw(batch);
                 }
             }
-
-
 
             TextureRegion frame = character.getCurrentFrame();
             batch.draw(
@@ -615,8 +601,7 @@ public class ProceduralMapScreen implements Screen {
                 character.getPosition().x + offsetX,
                 character.getPosition().y + offsetY,
                 frame.getRegionWidth(),
-                frame.getRegionHeight()
-            );
+                frame.getRegionHeight());
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient;
                 Texture grassOverlay = jungle.getTallGrassTexture();
@@ -630,7 +615,6 @@ public class ProceduralMapScreen implements Screen {
                     }
                 }
             }
-
 
             batch.end();
             lightBuffer.end();
@@ -649,8 +633,7 @@ public class ProceduralMapScreen implements Screen {
             batch.draw(bufferTexture,
                 0, 0,
                 Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
-                0, 0, 1, 1
-            );
+                0, 0, 1, 1);
             batch.end();
 
             if (character.isInTallGrass()) {
@@ -674,17 +657,20 @@ public class ProceduralMapScreen implements Screen {
                 Gdx.gl.glBlendFunc(Gdx.gl.GL_SRC_ALPHA, Gdx.gl.GL_ONE_MINUS_SRC_ALPHA);
             }
 
-
-
-
             // 12) Inventário e game-over
             if (showInventory) {
+                inventoryUI.render(batch, shapeRenderer, character);
                 craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             }
 
-            if (character.getLife() <= 0) gameOver();
-            hud.render(batch, shapeRenderer, character, gameState, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            if (character.getLife() <= 0)
+                gameOver();
 
+            // Draw HUD last so it appears on top
+            batch.begin();
+            hud.render(batch, shapeRenderer, character, gameState,
+                Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            batch.end();
 
         } catch (Exception e) {
             logger.error("Error in render: {}", e.getMessage());
@@ -694,12 +680,10 @@ public class ProceduralMapScreen implements Screen {
             character.tryCollectNearbyMaterial(materiaisNoMapa);
         }
         if (showInventory) {
+            inventoryUI.render(batch, shapeRenderer, character);
         }
 
     }
-
-
-
 
     private void gameOver() {
         saveManager.saveGame(gameState, "final_save_day_" + gameState.getDaysSurvived());
@@ -712,35 +696,47 @@ public class ProceduralMapScreen implements Screen {
         offsetY = (height - (MAP_HEIGHT * TILE_SIZE)) / 2f;
     }
 
+    @Override
+    public void pause() {
+    }
 
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
+    @Override
+    public void resume() {
+    }
 
+    @Override
+    public void hide() {
+    }
 
     @Override
     public void dispose() {
         try {
             autosaveGame();
-            if (floorTexture != null) floorTexture.dispose();
-            if (wallTexture != null) wallTexture.dispose();
-            if (playerTexture != null) playerTexture.dispose();
-            if (sidebarTexture != null) sidebarTexture.dispose();
-            if (classIcon != null) classIcon.dispose();
-            if (inventoryBackground != null) inventoryBackground.dispose();
-            if (backpackIcon != null) backpackIcon.dispose();
-            if (batch != null) batch.dispose();
-            if (font != null) font.dispose();
-            if (shapeRenderer != null) shapeRenderer.dispose();
+            if (floorTexture != null)
+                floorTexture.dispose();
+            if (wallTexture != null)
+                wallTexture.dispose();
+            if (playerTexture != null)
+                playerTexture.dispose();
+            if (sidebarTexture != null)
+                sidebarTexture.dispose();
+            if (classIcon != null)
+                classIcon.dispose();
+            if (inventoryBackground != null)
+                inventoryBackground.dispose();
+            if (backpackIcon != null)
+                backpackIcon.dispose();
+            if (batch != null)
+                batch.dispose();
+            if (font != null)
+                font.dispose();
+            if (shapeRenderer != null)
+                shapeRenderer.dispose();
         } catch (Exception e) {
             logger.error("Error disposing resources: {}", e.getMessage());
         }
-        if (craftingBar != null) craftingBar.dispose();
+        if (craftingBar != null)
+            craftingBar.dispose();
 
     }
 }
-
-
-
-
-
