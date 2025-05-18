@@ -1,6 +1,7 @@
 package io.github.com.ranie_borges.thejungle.view;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
@@ -59,9 +60,12 @@ public class InventoryUI {
         }
         renderer.end();
 
-        // Draw items in slots
+        boolean usedOne = false;
+
         batch.begin();
         for (int i = 0; i < character.getInventory().size && i < cols * rows; i++) {
+            if (usedOne) break;
+
             Item item = character.getInventory().get(i);
             if (item != null) {
                 int row = i / cols;
@@ -70,17 +74,61 @@ public class InventoryUI {
                 float sx = startX + col * (slotSize + padding);
                 float sy = startY + (rows - 1 - row) * (slotSize + padding);
 
-                // Draw item icon centered in slot
+                // Ícone
                 Texture icon = item.getIconTexture();
                 if (icon != null) {
                     batch.draw(icon, sx + 4, sy + 4, slotSize - 8, slotSize - 8);
                 }
 
-                // Draw quantity in consistent position (bottom right)
                 layout.setText(font, "x" + item.getQuantity());
                 font.draw(batch, layout, sx + slotSize - layout.width - 4, sy + 14);
+
+                // Hover
+                float mouseX = Gdx.input.getX();
+                float mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+                boolean isHovering = mouseX >= sx && mouseX <= sx + slotSize &&
+                    mouseY >= sy && mouseY <= sy + slotSize;
+
+                if (isHovering && "Medicinal".equalsIgnoreCase(item.getName())) {
+                    float boxWidth = 160;
+                    float boxHeight = 28;
+                    float boxX = sx + (slotSize - boxWidth) / 2;
+                    float boxY = sy + slotSize + 10;
+
+                    batch.setColor(0, 0, 0, 0.7f);
+                    batch.draw(background, boxX, boxY, boxWidth, boxHeight);
+                    batch.setColor(1, 1, 1, 1);
+
+                    layout.setText(font, "[E] Use medicinal plants");
+                    font.draw(batch, layout, boxX + (boxWidth - layout.width) / 2, boxY + 18);
+
+                    if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+                        character.useItem(item);
+                        usedOne = true; // ✅ marca que usou
+                    }
+                }
+                if (isHovering && "Berry".equalsIgnoreCase(item.getName())) {
+                    float boxWidth = 140;
+                    float boxHeight = 28;
+                    float boxX = sx + (slotSize - boxWidth) / 2;
+                    float boxY = sy + slotSize + 10;
+
+                    batch.setColor(0, 0, 0, 0.7f);
+                    batch.draw(background, boxX, boxY, boxWidth, boxHeight);
+                    batch.setColor(1, 1, 1, 1);
+
+                    layout.setText(font, "[E] Comer amora");
+                    font.draw(batch, layout, boxX + (boxWidth - layout.width) / 2, boxY + 18);
+
+                    if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+                        character.useItem(item);
+                        usedOne = true;
+                    }
+                }
             }
         }
         batch.end();
+
+
     }
 }

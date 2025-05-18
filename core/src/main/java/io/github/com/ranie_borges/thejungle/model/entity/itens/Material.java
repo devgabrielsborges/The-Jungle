@@ -210,10 +210,39 @@ public class Material extends Item {
     public static Material createMedicinalPlant() {
         Material plant = new Material("Medicinal", 0.2f, 1.0f, "Plant", 0.9f);
         Map<String, Sprite> sprites = new HashMap<>();
-        Texture texture = new Texture(Gdx.files.internal("scenarios/jungle/medicineHerb.png"));
+        Texture texture = new Texture(Gdx.files.internal("scenarios/jungle/medicinal.png"));
         sprites.put("idle", new Sprite(texture));
         plant.setSprites(sprites);
         return plant;
+    }
+    public static List<Material> spawnBerryBushes(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+        List<Material> materiais = new ArrayList<>();
+        int gerados = 0;
+        int tentativas = 0;
+
+        while (gerados < quantidade && tentativas < 1000) {
+            int x = (int) (Math.random() * mapWidth);
+            int y = (int) (Math.random() * mapHeight);
+
+            if (mapa[y][x] == tileGrass) {
+                Material bush = createBerryBush();
+                bush.setPosition(x * tileSize, y * tileSize);
+                materiais.add(bush);
+                gerados++;
+            }
+
+            tentativas++;
+        }
+
+        return materiais;
+    }
+    public static Material createBerryBush() {
+        Material berryBush = new Material("Berry", 0.2f, 1.0f, "Berry", 0.2f);
+        Map<String, Sprite> sprites = new HashMap<>();
+        Texture texture = new Texture(Gdx.files.internal("scenarios/jungle/berry.png"));
+        sprites.put("idle", new Sprite(texture));
+        berryBush.setSprites(sprites);
+        return berryBush;
     }
 
 

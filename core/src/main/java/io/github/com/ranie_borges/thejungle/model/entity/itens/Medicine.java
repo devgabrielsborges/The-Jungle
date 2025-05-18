@@ -14,6 +14,9 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
  * Represents a medicine item used for healing.
  */
 public class Medicine extends Item {
+    private static final Texture bgHud = new Texture(Gdx.files.internal("GameScreen/boxhud.png"));
+
+
     private double healRatio;
 
     public Medicine(String name, float weight, float durability, double healRatio) {
@@ -67,25 +70,24 @@ public class Medicine extends Item {
     public static Medicine createAntibiotic() {
         return new Medicine("Antibiotic", 0.4f, 1.0f, 50.0);
     }
-    public static void renderUseOption(SpriteBatch batch, Material plant, Character player) {
+    public static void renderUseOption(SpriteBatch batch, Material plant, Character player, float offsetX, float offsetY) {
         if (plant == null || !"Plant".equalsIgnoreCase(plant.getType()) || !"Medicinal".equalsIgnoreCase(plant.getName()))
             return;
 
         Vector2 pos = plant.getPosition();
-        float boxX = pos.x;
-        float boxY = pos.y + 40;
+        float boxX = pos.x + offsetX;
+        float boxY = pos.y + offsetY + 40;
 
-        // Desenha fundo da caixa (você pode substituir com NinePatch ou ShapeRenderer se quiser)
-        Texture bg = new Texture("GameScreen/boxhud.png");
         batch.setColor(1, 1, 1, 0.7f);
-        batch.draw(bg, boxX, boxY, 160, 30);
-        batch.setColor(1, 1, 1, 1); // reset
+        batch.draw(bgHud, boxX, boxY, 160, 30);
+        batch.setColor(1, 1, 1, 1);
 
-        BitmapFont font = new BitmapFont();
+        BitmapFont font = new BitmapFont(); // melhor ainda: passar a font por parâmetro
         font.setColor(Color.WHITE);
+        font.getData().setScale(1.2f);
         font.draw(batch, "[E] Usar planta medicinal", boxX + 10, boxY + 20);
+        font.dispose();
 
-        // Se o jogador pressionar E, converte e usa
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             try {
                 Medicine med = fromMedicinalPlant(plant);
@@ -96,9 +98,9 @@ public class Medicine extends Item {
                 System.out.println("Erro ao tentar usar planta medicinal: " + e.getMessage());
             }
         }
-
-        font.dispose();
-        bg.dispose(); // descarrega o fundo da UI se não for manter ele carregado
     }
+
+
+
 
 }

@@ -189,8 +189,16 @@ public class ProceduralMapScreen implements Screen {
                 ambient,
                 Cannibal::canSpawnIn);
 
-            materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
-            materiaisNoMapa = Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
+            materiaisNoMapa = new ArrayList<>();
+            if (ambient instanceof Cave) {
+                materiaisNoMapa.addAll(Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE));
+            } else if (ambient instanceof Jungle || ambient instanceof LakeRiver) {
+                materiaisNoMapa.addAll(Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                materiaisNoMapa.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                materiaisNoMapa.addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                materiaisNoMapa.addAll(Material.spawnBerryBushes(4, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+            }
+
 
         } catch (Exception e) {
             logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage());
@@ -689,16 +697,17 @@ public class ProceduralMapScreen implements Screen {
                 if ("Medicinal".equalsIgnoreCase(m.getName())) {
                     float mx = Gdx.input.getX();
                     float my = Gdx.graphics.getHeight() - Gdx.input.getY();
-                    float px = m.getPosition().x;
-                    float py = m.getPosition().y;
+                    float px = m.getPosition().x + offsetX;
+                    float py = m.getPosition().y + offsetY;
 
-                    // Aqui você pode ajustar 32x32 se o sprite da planta tiver outro tamanho
                     if (mx >= px && mx <= px + 32 && my >= py && my <= py + 32) {
-                        Medicine.renderUseOption(batch, m, character);
+                        Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
                     }
                 }
             }
-            batch.end();
+
+
+                batch.end();
             lightBuffer.end();
 
             // Desenha o buffer final na tela

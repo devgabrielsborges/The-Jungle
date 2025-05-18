@@ -12,6 +12,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.controller.CraftController;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Food;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
@@ -573,21 +574,23 @@ public abstract class Character implements ICharacter {
             // Considera coleta se estiver a menos de 24px (ajuste fino)
             if (dist < 24f) {
                 if (isInventoryFull()) {
-                    System.out.println(getName() + ": inventário cheio!");
                     return false;
                 }
 
                 if (!canCarryMore(material.getWeight())) {
-                    System.out.println(getName() + ": muito pesado para carregar " + material.getName());
                     return false;
                 }
 
                 // Permite coleta de plantas medicinais
                 if ("Medicinal".equals(material.getType())) {
-                    System.out.println(getName() + ": coletou uma planta medicinal!");
                 }
 
                 insertItemInInventory(material);
+                iterator.remove();
+                return true;
+            }
+            if ("Berry".equals(material.getName())) {
+                insertItemInInventory(new Food("Berry", 0.2f, 100f, 15, "Fruit", 5)); // ou Food.createBerry() se preferir
                 iterator.remove();
                 return true;
             }
@@ -926,42 +929,54 @@ public abstract class Character implements ICharacter {
     public void useItem(Item item) {
         try {
             if (item == null) {
-                logger.warn("{}: Tried to use a null item.", getName());
                 System.out.println(getName() + " tentou usar um item inexistente!");
                 return;
             }
 
             if (!inventory.contains(item, true)) {
-                logger.warn("{}: Tried to use an item not in inventory: {}", getName(), item.getName());
                 System.out.println(getName() + " tentou usar um item que não está no inventário: " + item.getName());
                 return;
             }
 
+            // ✅ PLANTA MEDICINAL CRUA
+            if (item instanceof Material) {
+                Material material = (Material) item;
+
+                if ("Medicinal".equalsIgnoreCase(material.getType())) {
+                    Medicine med = Medicine.fromMedicinalPlant(material);
+                    heal(med); // Aplica cura
+
+                    // Reduz só 1 unidade
+                    material.setQuantity(material.getQuantity() - 1);
+
+                    if (material.getQuantity() <= 0) {
+                        inventory.removeValue(material, true);
+                    }
+
+                    System.out.println(getName() + " usou 1 planta medicinal!");
+                    return;
+                }
+                if (item instanceof Food) {
+                    Food food = (Food) item;
+                    food.useItem();
+                    setHunger(Math.min(getHunger() + food.getNutritionalValue(), 100f));
+                }
+            }
+
+            // ✅ OUTROS ITENS (como Medicine mesmo ou ferramentas)
             if (item instanceof Medicine) {
                 heal((Medicine) item);
-                if (item instanceof Material) {
-                    Material material = (Material) item;
-                    if ("Medicinal".equalsIgnoreCase(material.getType())) {
-                        Medicine medicine = Medicine.fromMedicinalPlant(material);
-                        heal(medicine);
-                        inventory.removeValue(item, true);
-                        System.out.println(getName() + " preparou e usou uma planta medicinal como remédio!");
-                    }
-                }
-
             } else {
                 item.useItem();
                 System.out.println(getName() + " usou o item: " + item.getName());
-                logger.info("{} used item: {}", getName(), item.getName());
             }
 
-
-
+            // Se acabou a durabilidade
             if (item.getDurability() <= 0) {
                 inventory.removeValue(item, true);
                 System.out.println("O item " + item.getName() + " quebrou ou foi consumido completamente!");
-                logger.info("{}: Item {} removed from inventory after use.", getName(), item.getName());
             }
+
         } catch (Exception e) {
             logger.error("{}: Error while using item: {}", getName(), e.getMessage());
         }
