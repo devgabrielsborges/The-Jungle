@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
@@ -105,6 +106,26 @@ public class ProceduralMapScreen implements Screen {
         gameState.setCharacter(character);
         gameState.setCurrentAmbient(ambient);
     }
+    private void renderSnakeAlertScreen() {
+        ScreenUtils.clear(0, 0, 0, 1);
+        batch.begin();
+
+        Texture image = SnakeEventManager.getSnakeBiteImage();
+        float imgX = (Gdx.graphics.getWidth() - image.getWidth()) / 2f;
+        float imgY = (Gdx.graphics.getHeight() - image.getHeight()) / 2f;
+        batch.draw(image, imgX, imgY);
+
+        font.getData().setScale(2f);
+        String msg = "You were bitten by a snake!\nPress [SPACE] to continue.";
+        layout.setText(font, msg, Color.WHITE, Gdx.graphics.getWidth(), 1, true);
+
+        float textX = (Gdx.graphics.getWidth() - layout.width) / 2f;
+        float textY = imgY - 20; // slightly below image
+        font.setColor(Color.RED);
+        font.draw(batch, layout, textX, textY);
+
+        batch.end();
+    }
 
     @Override
     public void show() {
@@ -129,8 +150,11 @@ public class ProceduralMapScreen implements Screen {
 
             generateMap();
             if (!playerSpawned) {
-                playerSpawned = character.setInitialSpawn(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, TILE_GRASS, TILE_CAVE,
-                    ambient.getName());
+                playerSpawned = character.setInitialSpawn(
+                    map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE,
+                    TILE_GRASS, TILE_CAVE, ambient.getName(), ambient
+                );
+
             }
 
             character.loadPlayerAnimations();
@@ -435,9 +459,16 @@ public class ProceduralMapScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        lightBuffer.begin();
+        SnakeEventManager.handleInput();
 
-        // limpa só o buffer de luz
+        if (SnakeEventManager.isWaitingForSpace()) {
+            Gdx.gl.glClearColor(0, 0, 0, 1);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            renderSnakeAlertScreen();
+            return;
+        }
+
+        lightBuffer.begin();
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -447,6 +478,7 @@ public class ProceduralMapScreen implements Screen {
                 delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient; // cast explícito
+                ((Jungle) ambient).checkSnakeBite(character);
                 float centerX = character.getPosition().x + TILE_SIZE / 2f;
                 float centerY = character.getPosition().y + TILE_SIZE / 2f;
                 int tileX = (int) (centerX / TILE_SIZE);
@@ -645,6 +677,13 @@ public class ProceduralMapScreen implements Screen {
                     s.draw(batch);
                 }
             }
+            SnakeEventManager.update(delta);
+            if (SnakeEventManager.isAlertActive()) {
+                Texture t = SnakeEventManager.getSnakeBiteImage();
+                batch.draw(t,
+                    (Gdx.graphics.getWidth() - t.getWidth()) / 2f,
+                    (Gdx.graphics.getHeight() - t.getHeight()) / 2f);
+            }
 
             batch.end();
             lightBuffer.end();
@@ -769,4 +808,5 @@ public class ProceduralMapScreen implements Screen {
             craftingBar.dispose();
 
     }
+
 }

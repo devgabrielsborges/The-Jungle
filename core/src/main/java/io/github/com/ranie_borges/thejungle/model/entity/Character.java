@@ -19,6 +19,8 @@ import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
 import org.slf4j.Logger;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Tool;
 import org.slf4j.LoggerFactory;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -170,7 +172,11 @@ public abstract class Character implements ICharacter {
         playerWalkRight = loadAnimation("personagem_andando_direita.png", 0.1f, 4);
 
     }
-    public boolean setInitialSpawn(int[][] map, int mapWidth, int mapHeight, int tileSize, int tileGrass, int tileCave, String ambientName) {
+    public boolean setInitialSpawn(
+        int[][] map, int mapWidth, int mapHeight, int tileSize,
+        int tileGrass, int tileCave, String ambientName,
+        io.github.com.ranie_borges.thejungle.model.world.Ambient ambient) {
+
         try {
             int x = 0, y = 0;
             int attempts = 0;
@@ -184,8 +190,8 @@ public abstract class Character implements ICharacter {
 
                 int tileType = map[y][x];
                 boolean isValidTile = (
-                    tileType == tileGrass ||
-                        (ambientName.equalsIgnoreCase("Cave") && tileType == tileCave)
+                    (tileType == tileGrass || (ambientName.equalsIgnoreCase("Cave") && tileType == tileCave))
+                        && !(ambient instanceof Jungle && ((Jungle) ambient).isTallGrass(x, y))
                 );
 
                 if (isValidTile) {
@@ -307,7 +313,9 @@ public abstract class Character implements ICharacter {
         }
     }
     public boolean tryMove(float delta, int[][] map, int tileSize, int tileWall, int tileDoor, int tileCave, int mapWidth, int mapHeight) {
-        float speed = getSpeed() > 0 ? getSpeed() : 100f;
+        float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
+        float speedMultiplier = isInTallGrass() ? 0.5f : 1.0f;
+        float speed = baseSpeed * speedMultiplier;
         float deltaX = 0, deltaY = 0;
 
         if (Gdx.input.isKeyPressed(Input.Keys.W)) deltaY = speed * delta;
