@@ -555,6 +555,7 @@ public class ProceduralMapScreen implements Screen {
                     materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
                     materiaisNoMapa.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                     materiaisNoMapa.addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                    materiaisNoMapa.addAll(Material.spawnBerryBushes(4, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE)); // Adicionado
                 }else {
                     materiaisNoMapa = new ArrayList<>();
                 }
@@ -695,6 +696,18 @@ public class ProceduralMapScreen implements Screen {
             }
             for (Material m : materiaisNoMapa) {
                 if ("Medicinal".equalsIgnoreCase(m.getName())) {
+                    float mx = Gdx.input.getX();
+                    float my = Gdx.graphics.getHeight() - Gdx.input.getY();
+                    float px = m.getPosition().x + offsetX;
+                    float py = m.getPosition().y + offsetY;
+
+                    if (mx >= px && mx <= px + 32 && my >= py && my <= py + 32) {
+                        Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
+                    }
+                }
+            }
+            for (Material m : materiaisNoMapa) {
+                if ("berry".equalsIgnoreCase(m.getName())) {
                     float mx = Gdx.input.getX();
                     float my = Gdx.graphics.getHeight() - Gdx.input.getY();
                     float px = m.getPosition().x + offsetX;
