@@ -564,8 +564,8 @@ public abstract class Character implements ICharacter {
             Material material = iterator.next();
 
             // Verifica se o material é uma árvore e impede a coleta
-            if ("Tree".equals(material.getName())) { //quebrar arvores
-                return false;
+            if ("Tree".equals(material.getName())) { // Impede coleta de árvores
+                continue; // Pula para o próximo material
             }
 
             float dist = getPosition().dst(material.getPosition());
@@ -580,6 +580,11 @@ public abstract class Character implements ICharacter {
                 if (!canCarryMore(material.getWeight())) {
                     System.out.println(getName() + ": muito pesado para carregar " + material.getName());
                     return false;
+                }
+
+                // Permite coleta de plantas medicinais
+                if ("Medicinal".equals(material.getType())) {
+                    System.out.println(getName() + ": coletou uma planta medicinal!");
                 }
 
                 insertItemInInventory(material);
@@ -934,11 +939,23 @@ public abstract class Character implements ICharacter {
 
             if (item instanceof Medicine) {
                 heal((Medicine) item);
+                if (item instanceof Material) {
+                    Material material = (Material) item;
+                    if ("Medicinal".equalsIgnoreCase(material.getType())) {
+                        Medicine medicine = Medicine.fromMedicinalPlant(material);
+                        heal(medicine);
+                        inventory.removeValue(item, true);
+                        System.out.println(getName() + " preparou e usou uma planta medicinal como remédio!");
+                    }
+                }
+
             } else {
                 item.useItem();
                 System.out.println(getName() + " usou o item: " + item.getName());
                 logger.info("{} used item: {}", getName(), item.getName());
             }
+
+
 
             if (item.getDurability() <= 0) {
                 inventory.removeValue(item, true);
@@ -949,8 +966,6 @@ public abstract class Character implements ICharacter {
             logger.error("{}: Error while using item: {}", getName(), e.getMessage());
         }
     }
-
-
     public double getAttackDamage() {
         return attackDamage;
     }

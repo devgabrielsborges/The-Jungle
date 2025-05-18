@@ -6,11 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -165,6 +161,27 @@ public class Material extends Item {
         }
         return materiais;
     }
+    public static List<Material> spawnMedicinalPlants(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+        List<Material> materiais = new ArrayList<>();
+        int gerados = 0;
+        int tentativas = 0;
+
+        while (gerados < quantidade && tentativas < 1000) {
+            int x = (int) (Math.random() * mapWidth);
+            int y = (int) (Math.random() * mapHeight);
+
+            if (mapa[y][x] == tileGrass) {
+                Material planta = createMedicinalPlant();
+                planta.setPosition(x * tileSize, y * tileSize);
+                materiais.add(planta);
+                gerados++;
+            }
+
+            tentativas++;
+        }
+
+        return materiais;
+    }
     private static Map<String, Sprite> loadSprites(String path) {
         Map<String, Sprite> sprites = new HashMap<>();
         Texture texture = new Texture(Gdx.files.internal(path));
@@ -190,6 +207,15 @@ public class Material extends Item {
         spear.setSprites(loadSprites("icons/spear.png"));
         return spear;
     }
+    public static Material createMedicinalPlant() {
+        Material plant = new Material("Medicinal", 0.2f, 1.0f, "Plant", 0.9f);
+        Map<String, Sprite> sprites = new HashMap<>();
+        Texture texture = new Texture(Gdx.files.internal("scenarios/jungle/medicineHerb.png"));
+        sprites.put("idle", new Sprite(texture));
+        plant.setSprites(sprites);
+        return plant;
+    }
+
 
 
 }

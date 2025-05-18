@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Drinkable;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Food;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 
@@ -38,8 +39,10 @@ public class Jungle extends Ambient {
         setResources(Set.of(
             new Drinkable("Stream Water", 0.1f, 0.8f, true, 5f),
             new Food("Wild Berries", 0.5f, 1.2f, 15, "Fruit", 3),
-            new Material("Pebble", 0.4f, 1.0f, "Stone", 0.7f)
+            new Material("Pebble", 0.4f, 1.0f, "Stone", 0.7f),
+            Material.createMedicinalPlant()
         ));
+
     }
 
     public boolean isTallGrass(int x, int y) {
@@ -55,7 +58,7 @@ public class Jungle extends Ambient {
         int tileY = (int)(pos.y / 32f);
 
         if (isTallGrass(tileX, tileY)) {
-            float chance = 0.01f; // probabilidade de picada
+            float chance = 0; // probabilidade de picada
             if (random.nextFloat() < chance) {
                 character.setLife(character.getLife() - 20f); // dano
                 character.setSanity(character.getSanity() - 10f); // opcional
@@ -107,6 +110,7 @@ public class Jungle extends Ambient {
         addDoors(map, mapWidth, mapHeight, rand);
         return map;
     }
+
 
     @Override
     public void explore() {

@@ -16,7 +16,7 @@ public class SnakeEventManager {
     private static final float BITE_COOLDOWN_DURATION = 5f;
 
     public static void triggerSnakeBite() {
-        if (biteCooldown > 0) return; // evita nova mordida durante cooldown
+        if (biteCooldown > 0) return;
 
         showAlert = true;
         waitForSpace = true;

@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -542,11 +543,11 @@ public class ProceduralMapScreen implements Screen {
                 // Materiais
                 if (ambient instanceof Cave) {
                     materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
-                } else if (ambient instanceof Jungle || ambient instanceof LakeRiver || ambient instanceof Ruins) {
+                } else if (ambient instanceof Jungle || ambient instanceof LakeRiver) {
                     materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
-
                     materiaisNoMapa.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
-                } else {
+                    materiaisNoMapa.addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                }else {
                     materiaisNoMapa = new ArrayList<>();
                 }
 
@@ -684,7 +685,19 @@ public class ProceduralMapScreen implements Screen {
                     (Gdx.graphics.getWidth() - t.getWidth()) / 2f,
                     (Gdx.graphics.getHeight() - t.getHeight()) / 2f);
             }
+            for (Material m : materiaisNoMapa) {
+                if ("Medicinal".equalsIgnoreCase(m.getName())) {
+                    float mx = Gdx.input.getX();
+                    float my = Gdx.graphics.getHeight() - Gdx.input.getY();
+                    float px = m.getPosition().x;
+                    float py = m.getPosition().y;
 
+                    // Aqui você pode ajustar 32x32 se o sprite da planta tiver outro tamanho
+                    if (mx >= px && mx <= px + 32 && my >= py && my <= py + 32) {
+                        Medicine.renderUseOption(batch, m, character);
+                    }
+                }
+            }
             batch.end();
             lightBuffer.end();
 
