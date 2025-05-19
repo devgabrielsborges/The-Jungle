@@ -106,6 +106,15 @@ public abstract class Character implements ICharacter {
 
     private boolean inTallGrass = false;
 
+    //agua envenenada
+    private boolean poisonedFromWater = false;
+    private float poisonTimer = 0f;
+    private int poisonTicks = 0;
+
+    //popup dela
+    private String popupMessage = null;
+    private float popupTimer = 0f;
+
 
 
 
@@ -313,7 +322,10 @@ public abstract class Character implements ICharacter {
             logger.error("{}: Erro ao mover personagem: {}", name, e.getMessage());
         }
     }
-    public boolean tryMove(float delta, int[][] map, int tileSize, int tileWall, int tileDoor, int tileCave, int mapWidth, int mapHeight) {
+    public boolean tryMove(float delta, int[][] map, int tileSize,
+                           int tileWall, int tileDoor, int tileCave, int tileWater,
+                           int mapWidth, int mapHeight)
+    {
         float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
         float speedMultiplier = isInTallGrass() ? 0.5f : 1.0f;
         float speed = baseSpeed * speedMultiplier;
@@ -333,7 +345,7 @@ public abstract class Character implements ICharacter {
         if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
             int tileType = map[tileY][tileX];
 
-            if (tileType != tileWall) {
+            if (tileType != tileWall && tileType != tileWater) {
                 move(deltaX, deltaY);
                 updateStats(delta);
                 updateStateTime(delta);
@@ -345,6 +357,28 @@ public abstract class Character implements ICharacter {
         updateStateTime(delta);
         return false;
     }
+    public void drinkWaterFromRiver() {
+        if (Math.random() < 0.3) {
+            poisonedFromWater = true;
+            poisonTimer = 0f;
+            poisonTicks = 0;
+            System.out.println(getName() + " bebeu água contaminada e foi infectado!");
+            showPopup("THE WATER WAS CONTAMINATED", 3f);
+        } else {
+            float recovered = 12f;
+            setThirsty(Math.min(getThirsty() + recovered, 100f));
+            System.out.println(getName() + " bebeu água limpa e recuperou " + recovered + " de sede!");
+        }
+    }
+
+    public void showPopup(String message, float duration) {
+        this.popupMessage = message;
+        this.popupTimer = duration;
+    }
+    public String getPopupMessage() {
+        return popupMessage;
+    }
+
 
     public void updateStats(float delta) {
         try {
@@ -365,6 +399,30 @@ public abstract class Character implements ICharacter {
         } catch (Exception e) {
             logger.error("{}: Erro ao atualizar atributos: {}", name, e.getMessage());
         }
+        // Se infectado por água contaminada
+        if (poisonedFromWater) {
+            poisonTimer += delta;
+
+            if (poisonTimer >= 3f && poisonTicks < 5) {
+                poisonTimer = 0f;
+                poisonTicks++;
+                setLife(Math.max(0, getLife() - 1f));
+                System.out.println(getName() + " sofreu 1 de dano pela infecção da água!");
+
+                if (poisonTicks >= 5) {
+                    poisonedFromWater = false;
+                    System.out.println(getName() + " se recuperou da infecção da água.");
+                }
+            }
+        }
+        if (popupMessage != null) {
+            popupTimer -= delta;
+            if (popupTimer <= 0f) {
+                popupMessage = null;
+            }
+        }
+
+
     }
     public void updateStateTime(float delta) {
         stateTime += delta;

@@ -484,7 +484,7 @@ public class ProceduralMapScreen implements Screen {
         try {
             // 1) Atualiza movimentação do personagem
             boolean passedThroughDoor = character.tryMove(
-                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
+                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, TILE_WATER, MAP_WIDTH, MAP_HEIGHT);
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient; // cast explícito
                 ((Jungle) ambient).checkSnakeBite(character);
@@ -603,6 +603,13 @@ public class ProceduralMapScreen implements Screen {
                             batch.draw(floorTexture, dx, dy);
                             batch.setColor(Color.WHITE);
                             break;
+                        case TILE_WATER:
+                            if (ambient instanceof LakeRiver) {
+                                batch.draw(((LakeRiver) ambient).getWaterTexture(), dx, dy);
+                            } else {
+                                batch.draw(wallTexture, dx, dy); // fallback
+                            }
+                            break;
                         case TILE_DOOR:
                             batch.setColor(0, 0, 0, 1f);
                             batch.draw(floorTexture, dx, dy);
@@ -719,7 +726,14 @@ public class ProceduralMapScreen implements Screen {
                 }
             }
 
-
+            if (character.getPopupMessage() != null) {
+                font.setColor(Color.RED);
+                font.getData().setScale(1.8f);
+                layout.setText(font, character.getPopupMessage());
+                float x = (Gdx.graphics.getWidth() - layout.width) / 2f;
+                float y = Gdx.graphics.getHeight() - 100;
+                font.draw(batch, layout, x, y);
+            }
                 batch.end();
             lightBuffer.end();
 
@@ -782,6 +796,28 @@ public class ProceduralMapScreen implements Screen {
         // 13) Pega item no mapa
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             character.tryCollectNearbyMaterial(materiaisNoMapa);
+            // Verifica se está ao lado do rio
+            int tileX = (int)((character.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE);
+            int tileY = (int)((character.getPosition().y + TILE_SIZE / 2f) / TILE_SIZE);
+
+            boolean isNextToWater = false;
+
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    int nx = tileX + dx;
+                    int ny = tileY + dy;
+                    if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
+                        if (map[ny][nx] == TILE_WATER) {
+                            isNextToWater = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (isNextToWater) {
+                character.drinkWaterFromRiver();
+            }
         }
         if (showInventory) {
             inventoryUI.render(batch, shapeRenderer, character);
