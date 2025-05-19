@@ -19,51 +19,42 @@ import io.github.com.ranie_borges.thejungle.core.Main;
 public class LoadingScreen implements Screen {
 
     private final Main game;
-    private Stage stage;
-    private AnimatedBackground animatedBackground;
-    private Music backgroundMusic;
-    private Skin skin;
+    private final Stage stage;
+    private final AnimatedBackground animatedBackground;
+    private final Music backgroundMusic;
+    private final Skin skin;
 
     public LoadingScreen(Main game) {
         this.game = game;
 
-        // Cria o Stage com um viewport responsivo e define o input processor
         stage = new Stage(new ScreenViewport());
         Gdx.input.setInputProcessor(stage);
 
-        // Carrega a skin (verifique se o caminho está correto)
         skin = new Skin(Gdx.files.internal("mainMenu/lgdxs-ui.json"));
 
-        // Configura o fundo animado utilizando a spritesheet
         animatedBackground = new AnimatedBackground("LoadingScreen/airplane.png", 0.1f, 1600, 900);
         animatedBackground.setSize(stage.getWidth(), stage.getHeight());
-        // O fundo é exibido imediatamente
         animatedBackground.getColor().a = 1f;
         stage.addActor(animatedBackground);
         animatedBackground.toBack();
 
-        // Configura e inicia a música de fundo
         backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("LoadingScreen/planecrashsound.mp3"));
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
-        // Cria um Label que exibirá o texto "Carregando..."
         Label infoLabel = new Label("press backspace to skip...", skin);
         infoLabel.getColor().a = 0f; // Inicia invisível
-        // Após 5 segundos, o Label aparece com fade in em 2 segundos
         infoLabel.addAction(sequence(delay(5f), fadeIn(2f)));
 
-        // Cria uma Table para posicionar o Label no canto inferior direito
         Table table = new Table();
         table.setFillParent(true);
-        table.bottom().right().pad(10); // margem de 10 pixels
+        table.bottom().right().pad(10);
         table.add(infoLabel);
         stage.addActor(table);
     }
 
     @Override
     public void show() {
-        // Garante que o stage esteja totalmente visível
         stage.getRoot().getColor().a = 1f;
     }
 
