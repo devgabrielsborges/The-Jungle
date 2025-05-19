@@ -7,17 +7,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.Texture;
-
 
 public abstract class Item implements IItem {
     private String name;
     private float weight;
     private float durability;
     private Map<String, Sprite> sprites;
-    private Vector2 position = new Vector2();
-
+    private final Vector2 position = new Vector2();
 
     protected Item(String name, float weight, float durability) {
         this.name = name;
@@ -60,6 +57,7 @@ public abstract class Item implements IItem {
         this.sprites = sprites != null ? new HashMap<>(sprites) : new HashMap<>();
 
     }
+
     public Vector2 getPosition() {
         return position;
     }
@@ -67,6 +65,7 @@ public abstract class Item implements IItem {
     public void setPosition(float x, float y) {
         this.position.set(x, y);
     }
+
     private static final Map<String, Texture> ICON_CACHE = new HashMap<>();
 
     public Texture getIconTexture() {
@@ -85,6 +84,7 @@ public abstract class Item implements IItem {
 
         return ICON_CACHE.get(iconKey);
     }
+
     private int quantity = 1;
 
     public int getQuantity() {
@@ -92,15 +92,11 @@ public abstract class Item implements IItem {
     }
 
     public void setQuantity(int quantity) {
-        this.quantity = Math.max(1, quantity);
+        this.quantity = Math.max(0, quantity);
     }
 
     public void addQuantity(int amount) {
         this.quantity += amount;
     }
 
-
-
-
 }
-
