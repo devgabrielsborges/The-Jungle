@@ -327,7 +327,7 @@ public abstract class Character implements ICharacter {
                            int mapWidth, int mapHeight) {
 
         float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
-        float speedMultiplier = isInTallGrass() ? 0.5f : 1.0f;
+        float speedMultiplier = (isInTallGrass() || isInWetGrass(map, tileWetGrass, tileSize, mapWidth, mapHeight)) ? 0.75f : 1.0f;
         float speed = baseSpeed * speedMultiplier;
 
         float deltaX = 0, deltaY = 0;
@@ -343,8 +343,8 @@ public abstract class Character implements ICharacter {
         int spriteH = getSpriteHeight(); // 32
 
         // Hitbox centralizada manualmente (ajustada)
-        float hitboxMarginX = 6f; // menor valor possível que não encosta em parede lateral invisível
-        float hitboxMarginY = 2f; // sobe/desce com mais liberdade sem encostar antes
+        float hitboxMarginX = (32 - 12) / 2f - 1f; // = 9f - 1f = 8f
+        float hitboxMarginY = (32 - 26) / 2f - 1f; // = 3f - 1f = 2f
 
         int[][] corners = {
             { (int) ((nextX + hitboxMarginX) / tileSize), (int) ((nextY + hitboxMarginY) / tileSize) }, // topo-esquerdo
@@ -373,6 +373,7 @@ public abstract class Character implements ICharacter {
         int centerY = (int) ((nextY + spriteH / 2f) / tileSize);
         return map[centerY][centerX] == tileDoor;
     }
+
 
     public void drinkWaterFromRiver() {
         if (Math.random() < 0.3) {
@@ -459,6 +460,14 @@ public abstract class Character implements ICharacter {
     }
     public TextureRegion getCurrentFrame() {
         return getFrameForCurrentState(stateTime);
+    }
+    public boolean isInWetGrass(int[][] map, int tileWetGrass, int tileSize, int mapWidth, int mapHeight) {
+        int centerX = (int) ((getPosition().x + getSpriteWidth() / 2f) / tileSize);
+        int centerY = (int) ((getPosition().y + getSpriteHeight() / 2f) / tileSize);
+
+        if (centerX < 0 || centerX >= mapWidth || centerY < 0 || centerY >= mapHeight) return false;
+
+        return map[centerY][centerX] == tileWetGrass;
     }
 
     public String getName() {
