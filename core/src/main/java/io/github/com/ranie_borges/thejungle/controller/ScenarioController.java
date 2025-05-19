@@ -8,6 +8,7 @@ import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 import io.github.com.ranie_borges.thejungle.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,7 +125,7 @@ public class ScenarioController {
      * Start game with a specific character
      */
     public void startGameWithCharacter(Character character) {
-        setScreen(new ProceduralMapScreen(character,  new Jungle()));
+        setScreen(new ProceduralMapScreen(character,  new LakeRiver()));
     }
 
     /**

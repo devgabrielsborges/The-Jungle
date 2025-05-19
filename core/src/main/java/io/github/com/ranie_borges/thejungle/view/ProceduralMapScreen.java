@@ -24,6 +24,8 @@ import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
+
 import io.github.com.ranie_borges.thejungle.model.world.ambients.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +82,7 @@ public class ProceduralMapScreen implements Screen {
 
     private List<Deer> deers;
     private List<Cannibal> cannibals;
+    private List<Fish> fishes;
     private List<Material> materiaisNoMapa;
 
     private float stateTime = 0;
@@ -190,6 +193,18 @@ public class ProceduralMapScreen implements Screen {
                 Cannibal::new,
                 ambient,
                 Cannibal::canSpawnIn);
+
+            fishes = Creature.regenerateCreatures(
+                3,                // quantidade de peixes
+                map,               // mapa atual
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_WATER,        // define a área de água
+                TILE_SIZE,
+                Fish::new,         // construtor padrão de Fish
+                ambient,           // ambient atual
+                Fish::canSpawnIn   // condição de spawn para peixes
+            );
 
             materiaisNoMapa = new ArrayList<>();
             if (ambient instanceof Cave) {
@@ -657,7 +672,17 @@ public class ProceduralMapScreen implements Screen {
                     s.draw(batch);
                 }
             }
-
+            for (Fish fish : fishes) {
+                Sprite s = fish.getSprites().get("idle");
+                if (s != null) {
+                    s.setSize(40, 40); // Ajuste o tamanho se necessário
+                    s.setPosition(
+                        fish.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
+                        fish.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2
+                    );
+                    s.draw(batch);
+                }
+            }
 
 
             TextureRegion frame = character.getCurrentFrame();
@@ -826,6 +851,30 @@ public class ProceduralMapScreen implements Screen {
 
             if (isNextToWater) {
                 character.drinkWaterFromRiver();
+            }
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            if (character.hasSpear()) {
+                int playerTileX = (int) (character.getPosition().x / TILE_SIZE);
+                int playerTileY = (int) (character.getPosition().y / TILE_SIZE);
+
+                Iterator<Fish> fishIterator = fishes.iterator();
+                while (fishIterator.hasNext()) {
+                    Fish fish = fishIterator.next();
+                    int fishTileX = (int) (fish.getPosition().x / TILE_SIZE);
+                    int fishTileY = (int) (fish.getPosition().y / TILE_SIZE);
+                    // Verifica se está alinhado em x ou em y
+                    if (playerTileX == fishTileX || playerTileY == fishTileY) {
+                        fishIterator.remove();
+                        // Exemplo: adiciona o peixe ao inventário ou executa outra ação
+                        character.addToInventory(fish);
+                        logger.info("Peixe capturado!");
+                        // Se quiser apenas capturar um peixe por pressionamento, comente o break se desejar pegar todos
+                        break;
+                    }
+                }
+            } else {
+                logger.info("É necessário ter uma lança para capturar o peixe.");
             }
         }
         if (showInventory) {
