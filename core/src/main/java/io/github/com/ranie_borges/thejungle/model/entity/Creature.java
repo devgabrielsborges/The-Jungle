@@ -20,7 +20,7 @@ public abstract class Creature implements ICreature {
     private Clime climeSpawn;
     private Set<Item> drops;
     private Map<String, Sprite> sprites;
-    private Vector2 position = new Vector2();
+    private final Vector2 position = new Vector2();
 
     protected Creature(
         String name,
