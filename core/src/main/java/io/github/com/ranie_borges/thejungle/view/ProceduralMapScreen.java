@@ -16,6 +16,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
@@ -25,6 +26,7 @@ import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.*;
+import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,22 +37,12 @@ import java.util.Random;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.Input;
 
-public class ProceduralMapScreen implements Screen {
+import static io.github.com.ranie_borges.thejungle.model.world.Ambient.MAX_AMBIENT_USES;
+
+public class ProceduralMapScreen implements Screen, UI {
     private static final Logger logger = LoggerFactory.getLogger(ProceduralMapScreen.class);
-    private final int TILE_SIZE = 32;
-    private final int MAP_WIDTH = 30;
-    private final int MAP_HEIGHT = 20;
-    private final int SIDEBAR_WIDTH = 300;
-
-    private static final int TILE_GRASS = 0;
-    private static final int TILE_WALL = 1;
-    private static final int TILE_DOOR = 2;
-    private static final int TILE_CAVE = 3;
-    private static final int TILE_WATER = 4;
-
-    // Ambient rotation fields
     private int currentAmbientUseCount = 0;
-    private final int MAX_AMBIENT_USES = 2 + (int) (Math.random()); // Random 2-3 uses before switching
+     // Random 2-3 uses before switching
     private boolean playerSpawned = false;
 
     private int[][] map;
@@ -59,10 +51,10 @@ public class ProceduralMapScreen implements Screen {
     private SpriteBatch batch;
     private ShapeRenderer shapeRenderer;
     private BitmapFont font;
-    private GlyphLayout layout;
+    private GlyphLayout layout; // Already present
 
     private float offsetX, offsetY;
-    private Vector2 playerPos;
+    private Vector2 playerPos; // Already present
     private Character character;
     private Ambient ambient;
     private boolean showInventory = false;
@@ -86,7 +78,12 @@ public class ProceduralMapScreen implements Screen {
     private FrameBuffer lightBuffer;
 
     private io.github.com.ranie_borges.thejungle.view.Hud hud;
-    private InventoryUI inventoryUI;
+    private CharacterUI characterUI;
+
+    // Added for interaction prompts
+    private static Texture bgHudShared;
+    private BitmapFont promptFont;
+    private GlyphLayout promptLayoutInstance; // Reusable GlyphLayout for prompts
 
     public ProceduralMapScreen(Character character, Ambient ambient) {
         this.character = character;
@@ -107,6 +104,7 @@ public class ProceduralMapScreen implements Screen {
         gameState.setCharacter(character);
         gameState.setCurrentAmbient(ambient);
     }
+
     private void renderSnakeAlertScreen() {
         ScreenUtils.clear(0, 0, 0, 1);
         batch.begin();
@@ -132,15 +130,25 @@ public class ProceduralMapScreen implements Screen {
     public void show() {
         try {
             floorTexture = ambient.getFloorTexture() != null ? ambient.getFloorTexture()
-                : new Texture("GameScreen/chao.png");
+                    : new Texture("GameScreen/chao.png");
             wallTexture = ambient.getWallTexture() != null ? ambient.getWallTexture()
-                : new Texture("GameScreen/parede.png");
+                    : new Texture("GameScreen/parede.png");
             playerTexture = new Texture("sprites/character/personagem_luta.png");
             sidebarTexture = ambient.getSidebarTexture() != null ? ambient.getSidebarTexture()
-                : new Texture("Gameplay/sidebar.jpg");
+                    : new Texture("Gameplay/sidebar.jpg");
             classIcon = new Texture(getIconPathForClass(character.getCharacterType()));
             inventoryBackground = new Texture(Gdx.files.internal("Gameplay/backpackInside.png"));
             backpackIcon = new Texture(Gdx.files.internal("Gameplay/backpack.png"));
+
+            // Initialize shared resources for prompts
+            if (bgHudShared == null || bgHudShared.toString().contains("unknown")) { // Basic check if disposed or never
+                                                                                     // loaded
+                bgHudShared = new Texture(Gdx.files.internal("GameScreen/boxhud.png"));
+            }
+            promptFont = new BitmapFont();
+            promptFont.setColor(Color.WHITE);
+            promptFont.getData().setScale(1.2f);
+            promptLayoutInstance = new GlyphLayout();
 
             batch = new SpriteBatch();
             shapeRenderer = new ShapeRenderer();
@@ -152,9 +160,8 @@ public class ProceduralMapScreen implements Screen {
             generateMap();
             if (!playerSpawned) {
                 playerSpawned = character.setInitialSpawn(
-                    map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE,
-                    TILE_GRASS, TILE_CAVE, ambient.getName(), ambient
-                );
+                        map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE,
+                        TILE_GRASS, TILE_CAVE, ambient.getName(), ambient);
 
             }
 
@@ -168,37 +175,38 @@ public class ProceduralMapScreen implements Screen {
             resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
             deers = Creature.regenerateCreatures(
-                5,
-                map,
-                MAP_WIDTH,
-                MAP_HEIGHT,
-                TILE_GRASS,
-                TILE_SIZE,
-                Deer::new,
-                ambient,
-                Deer::canSpawnIn);
+                    5,
+                    map,
+                    MAP_WIDTH,
+                    MAP_HEIGHT,
+                    TILE_GRASS,
+                    TILE_SIZE,
+                    Deer::new,
+                    ambient,
+                    Deer::canSpawnIn);
 
             cannibals = Creature.regenerateCreatures(
-                3,
-                map,
-                MAP_WIDTH,
-                MAP_HEIGHT,
-                TILE_CAVE,
-                TILE_SIZE,
-                Cannibal::new,
-                ambient,
-                Cannibal::canSpawnIn);
+                    3,
+                    map,
+                    MAP_WIDTH,
+                    MAP_HEIGHT,
+                    TILE_CAVE,
+                    TILE_SIZE,
+                    Cannibal::new,
+                    ambient,
+                    Cannibal::canSpawnIn);
 
             materiaisNoMapa = new ArrayList<>();
             if (ambient instanceof Cave) {
                 materiaisNoMapa.addAll(Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE));
             } else if (ambient instanceof Jungle || ambient instanceof LakeRiver) {
-                materiaisNoMapa.addAll(Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                materiaisNoMapa
+                        .addAll(Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                 materiaisNoMapa.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
-                materiaisNoMapa.addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                materiaisNoMapa
+                        .addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                 materiaisNoMapa.addAll(Material.spawnBerryBushes(4, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
             }
-
 
         } catch (Exception e) {
             logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage());
@@ -206,8 +214,8 @@ public class ProceduralMapScreen implements Screen {
         }
         character.updateStateTime(0f);
         this.craftingBar = new CraftingBar();
-        hud = new io.github.com.ranie_borges.thejungle.view.Hud(sidebarTexture, classIcon, font,backpackIcon);
-        inventoryUI = new InventoryUI(inventoryBackground, font);
+        hud = new io.github.com.ranie_borges.thejungle.view.Hud(sidebarTexture, classIcon, font, backpackIcon);
+        characterUI = new CharacterUI(inventoryBackground, font);
 
     }
 
@@ -238,9 +246,9 @@ public class ProceduralMapScreen implements Screen {
             gameState.setCurrentMap(map);
 
             logger.info("Map generated for ambient: {} (use {}/{})",
-                ambient.getName(),
-                currentAmbientUseCount,
-                MAX_AMBIENT_USES);
+                    ambient.getName(),
+                    currentAmbientUseCount,
+                    MAX_AMBIENT_USES);
 
         } catch (Exception e) {
             logger.error("Error generating map: {}", e.getMessage());
@@ -249,7 +257,7 @@ public class ProceduralMapScreen implements Screen {
             for (int y = 0; y < MAP_HEIGHT; y++) {
                 for (int x = 0; x < MAP_WIDTH; x++) {
                     map[y][x] = (x == 0 || y == 0 || x == MAP_WIDTH - 1 || y == MAP_HEIGHT - 1) ? TILE_WALL
-                        : TILE_GRASS;
+                            : TILE_GRASS;
                 }
             }
         }
@@ -278,11 +286,11 @@ public class ProceduralMapScreen implements Screen {
 
         // Define all available ambient types
         Ambient[] ambients = {
-            new Jungle(),
-            new Cave(),
-            new LakeRiver(),
-            new Mountain(),
-            new Ruins()
+                new Jungle(),
+                new Cave(),
+                new LakeRiver(),
+                new Mountain(),
+                new Ruins()
         };
 
         // Filter out current ambient
@@ -358,9 +366,9 @@ public class ProceduralMapScreen implements Screen {
     // Verifica se o tile ao lado é CAVE (chão jogável)
     private boolean hasAdjacentCave(int y, int x) {
         return (x > 0 && map[y][x - 1] == TILE_CAVE) ||
-            (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_CAVE) ||
-            (y > 0 && map[y - 1][x] == TILE_CAVE) ||
-            (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE);
+                (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_CAVE) ||
+                (y > 0 && map[y - 1][x] == TILE_CAVE) ||
+                (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE);
     }
 
     private boolean isValidSpawnTile(int x, int y) {
@@ -377,14 +385,14 @@ public class ProceduralMapScreen implements Screen {
 
     private boolean isValidPosition(int x, int y) {
         return x > 0 && x < MAP_WIDTH - 1 && y > 0 && y < MAP_HEIGHT - 1 &&
-            (map[y][x] == TILE_GRASS || (ambient.getName().equals("Cave") && map[y][x] == TILE_CAVE));
+                (map[y][x] == TILE_GRASS || (ambient.getName().equals("Cave") && map[y][x] == TILE_CAVE));
     }
 
     private boolean hasAdjacentFloor(int y, int x) {
         return (y > 0 && map[y - 1][x] == TILE_GRASS) ||
-            (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_GRASS) ||
-            (x > 0 && map[y][x - 1] == TILE_GRASS) ||
-            (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_GRASS);
+                (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_GRASS) ||
+                (x > 0 && map[y][x - 1] == TILE_GRASS) ||
+                (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_GRASS);
     }
 
     // Método para contar quantas portas existem
@@ -466,6 +474,26 @@ public class ProceduralMapScreen implements Screen {
         }
     }
 
+    // Helper method to render interaction prompts
+    private void renderInteractionPrompt(SpriteBatch batch, Material material, String text, float offsetX,
+            float offsetY) {
+        Vector2 pos = material.getPosition();
+        float boxWidth = 160;
+        float boxHeight = 30;
+        // Center the box above the material's tile
+        float boxX = pos.x + offsetX + (TILE_SIZE / 2f) - (boxWidth / 2f);
+        float boxY = pos.y + offsetY + TILE_SIZE; // Position it above the tile
+
+        batch.setColor(1, 1, 1, 0.7f);
+        batch.draw(bgHudShared, boxX, boxY, boxWidth, boxHeight);
+        batch.setColor(1, 1, 1, 1);
+
+        promptLayoutInstance.setText(promptFont, text);
+        promptFont.draw(batch, promptLayoutInstance, boxX + (boxWidth - promptLayoutInstance.width) / 2f,
+                boxY + boxHeight - (boxHeight - promptLayoutInstance.height) / 2f - 2); // Adjusted for vertical
+                                                                                        // centering
+    }
+
     @Override
     public void render(float delta) {
         SnakeEventManager.handleInput();
@@ -478,13 +506,13 @@ public class ProceduralMapScreen implements Screen {
         }
 
         lightBuffer.begin();
-        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClearColor(0, 0, 0, 1); // Clear light buffer with black
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         try {
             // 1) Atualiza movimentação do personagem
             boolean passedThroughDoor = character.tryMove(
-                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
+                    delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient; // cast explícito
                 ((Jungle) ambient).checkSnakeBite(character);
@@ -522,41 +550,44 @@ public class ProceduralMapScreen implements Screen {
                     // Fallback para o meio do mapa
                     character.getPosition().set((MAP_WIDTH / 2) * TILE_SIZE, (MAP_HEIGHT / 2) * TILE_SIZE);
                     logger.warn(
-                        "Não foi possível encontrar um spawn seguro após {} tentativas. Usando fallback central.",
-                        maxTentativas);
+                            "Não foi possível encontrar um spawn seguro após {} tentativas. Usando fallback central.",
+                            maxTentativas);
                 }
                 if (ambient.getName().toLowerCase().contains("cave")) {
                     generateCaveDoors();
                 }
                 deers = Creature.regenerateCreatures(
-                    5,
-                    map,
-                    MAP_WIDTH,
-                    MAP_HEIGHT,
-                    TILE_GRASS,
-                    TILE_SIZE,
-                    Deer::new,
-                    ambient,
-                    Deer::canSpawnIn);
+                        5,
+                        map,
+                        MAP_WIDTH,
+                        MAP_HEIGHT,
+                        TILE_GRASS,
+                        TILE_SIZE,
+                        Deer::new,
+                        ambient,
+                        Deer::canSpawnIn);
                 cannibals = Creature.regenerateCreatures(
-                    3,
-                    map,
-                    MAP_WIDTH,
-                    MAP_HEIGHT,
-                    TILE_CAVE,
-                    TILE_SIZE,
-                    Cannibal::new,
-                    ambient,
-                    Cannibal::canSpawnIn);
+                        3,
+                        map,
+                        MAP_WIDTH,
+                        MAP_HEIGHT,
+                        TILE_CAVE,
+                        TILE_SIZE,
+                        Cannibal::new,
+                        ambient,
+                        Cannibal::canSpawnIn);
                 // Materiais
                 if (ambient instanceof Cave) {
                     materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
                 } else if (ambient instanceof Jungle || ambient instanceof LakeRiver) {
-                    materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
+                    materiaisNoMapa = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS,
+                            TILE_SIZE);
                     materiaisNoMapa.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
-                    materiaisNoMapa.addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
-                    materiaisNoMapa.addAll(Material.spawnBerryBushes(4, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE)); // Adicionado
-                }else {
+                    materiaisNoMapa.addAll(
+                            Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                    materiaisNoMapa
+                            .addAll(Material.spawnBerryBushes(4, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE)); // Adicionado
+                } else {
                     materiaisNoMapa = new ArrayList<>();
                 }
 
@@ -578,15 +609,16 @@ public class ProceduralMapScreen implements Screen {
             int mouseX = Gdx.input.getX();
             int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
             boolean mouseOverBackpack = mouseX >= bx && mouseX <= bx + size
-                && mouseY >= by && mouseY <= by + size;
+                    && mouseY >= by && mouseY <= by + size;
             if ((Gdx.input.justTouched() && mouseOverBackpack)
-                || Gdx.input.isKeyJustPressed(Input.Keys.I)) {
+                    || Gdx.input.isKeyJustPressed(Input.Keys.I)) {
                 showInventory = !showInventory;
             }
 
             // 4) Clear e begin batch
-            ScreenUtils.clear(0, 0, 0, 1);
-            batch.begin();
+            // ScreenUtils.clear(0, 0, 0, 1); // This was clearing the main screen, now
+            // lightBuffer is cleared above.
+            batch.begin(); // Main scene batch
 
             // 8) Desenha o mapa
             for (int y = 0; y < MAP_HEIGHT; y++) {
@@ -626,8 +658,8 @@ public class ProceduralMapScreen implements Screen {
                 if (s != null) {
                     s.setSize(50, 50);
                     s.setPosition(
-                        deer.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
-                        deer.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
+                            deer.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
+                            deer.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
                     s.draw(batch);
                 }
             }
@@ -636,21 +668,19 @@ public class ProceduralMapScreen implements Screen {
                 if (s != null) {
                     s.setSize(40, 40);
                     s.setPosition(
-                        c.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
-                        c.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
+                            c.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2,
+                            c.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2);
                     s.draw(batch);
                 }
             }
 
-
-
             TextureRegion frame = character.getCurrentFrame();
             batch.draw(
-                frame,
-                character.getPosition().x + offsetX,
-                character.getPosition().y + offsetY,
-                frame.getRegionWidth(),
-                frame.getRegionHeight());
+                    frame,
+                    character.getPosition().x + offsetX,
+                    character.getPosition().y + offsetY,
+                    frame.getRegionWidth(),
+                    frame.getRegionHeight());
 
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient;
@@ -666,23 +696,19 @@ public class ProceduralMapScreen implements Screen {
                 }
             }
 
-
-
             for (Material m : materiaisNoMapa) {
                 Sprite s = m.getSprites().get("idle");
                 if (s != null) {
                     if ("Tree".equals(m.getName())) {
                         s.setSize(128, 128);
                         s.setPosition(
-                            m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f,
-                            m.getPosition().y + offsetY
-                        );
+                                m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f,
+                                m.getPosition().y + offsetY);
                     } else {
                         s.setSize(32, 32);
                         s.setPosition(
-                            m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f,
-                            m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2f
-                        );
+                                m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f,
+                                m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2f);
                     }
                     s.draw(batch);
                 }
@@ -691,65 +717,65 @@ public class ProceduralMapScreen implements Screen {
             if (SnakeEventManager.isAlertActive()) {
                 Texture t = SnakeEventManager.getSnakeBiteImage();
                 batch.draw(t,
-                    (Gdx.graphics.getWidth() - t.getWidth()) / 2f,
-                    (Gdx.graphics.getHeight() - t.getHeight()) / 2f);
+                        (Gdx.graphics.getWidth() - t.getWidth()) / 2f,
+                        (Gdx.graphics.getHeight() - t.getHeight()) / 2f);
             }
-            for (Material m : materiaisNoMapa) {
-                if ("Medicinal".equalsIgnoreCase(m.getName())) {
-                    float mx = Gdx.input.getX();
-                    float my = Gdx.graphics.getHeight() - Gdx.input.getY();
-                    float px = m.getPosition().x + offsetX;
-                    float py = m.getPosition().y + offsetY;
 
-                    if (mx >= px && mx <= px + 32 && my >= py && my <= py + 32) {
-                        Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
+            // Interaction Prompts
+            for (Material m : materiaisNoMapa) {
+                float playerDistToMaterial = character.getPosition().dst(m.getPosition());
+                boolean playerIsNear = playerDistToMaterial < TILE_SIZE * 1.5f; // Player needs to be close
+
+                if (playerIsNear) {
+                    float materialScreenX = m.getPosition().x + offsetX;
+                    float materialScreenY = m.getPosition().y + offsetY;
+
+                    // Check if mouse is hovering over the material's specific tile area
+                    boolean mouseIsOverMaterial = mouseX >= materialScreenX && mouseX <= materialScreenX + TILE_SIZE &&
+                            mouseY >= materialScreenY && mouseY <= materialScreenY + TILE_SIZE;
+
+                    if (mouseIsOverMaterial) {
+                        if ("Medicinal".equalsIgnoreCase(m.getName()) && "Plant".equalsIgnoreCase(m.getType())) {
+                            // This existing call handles its own 'E' press, which might be an issue
+                            // if you want a single global 'E' press handler.
+                            // For now, leaving as is per original structure for medicinal plants.
+                            Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
+                        } else if ("Berry".equalsIgnoreCase(m.getName())) {
+                            // Display "Collect Berry" prompt. Actual collection on global 'E' key press.
+                            renderInteractionPrompt(batch, m, "[E] Collect Berry", offsetX, offsetY);
+                        }
+                        // Add other interaction prompts here (e.g., for trees, rocks)
                     }
                 }
             }
-            for (Material m : materiaisNoMapa) {
-                if ("berry".equalsIgnoreCase(m.getName())) {
-                    float mx = Gdx.input.getX();
-                    float my = Gdx.graphics.getHeight() - Gdx.input.getY();
-                    float px = m.getPosition().x + offsetX;
-                    float py = m.getPosition().y + offsetY;
 
-                    if (mx >= px && mx <= px + 32 && my >= py && my <= py + 32) {
-                        Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
-                    }
-                }
-            }
-
-
-                batch.end();
+            batch.end();
             lightBuffer.end();
 
-            // Desenha o buffer final na tela
             batch.begin();
             Texture bufferTexture = lightBuffer.getColorBufferTexture();
             bufferTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
             bufferTexture.setWrap(Texture.TextureWrap.ClampToEdge, Texture.TextureWrap.ClampToEdge);
             batch.draw(lightBuffer.getColorBufferTexture(),
-                0, 0,
-                Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
-                0, 1, 1, 0 // ⬅️ FLIP vertical: Y vai de 1 para 0
+                    0, 0,
+                    Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
+                    0, 1, 1, 0 // ⬅️ FLIP vertical: Y vai de 1 para 0
             );
 
             batch.draw(bufferTexture,
-                0, 0,
-                Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
-                0, 0, 1, 1);
+                    0, 0,
+                    Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
+                    0, 0, 1, 1);
             batch.end();
 
             if (character.isInTallGrass()) {
                 Gdx.gl.glEnable(Gdx.gl.GL_BLEND);
 
-                // Tela toda preta
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
                 shapeRenderer.setColor(0f, 0f, 0f, 0.65f); // transparência de sombra
                 shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
                 shapeRenderer.end();
 
-                // Círculo de visibilidade
                 Gdx.gl.glBlendFunc(Gdx.gl.GL_DST_COLOR, Gdx.gl.GL_ZERO);
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
                 shapeRenderer.setColor(1, 1, 1, 1); // branco = revela
@@ -761,30 +787,32 @@ public class ProceduralMapScreen implements Screen {
                 Gdx.gl.glBlendFunc(Gdx.gl.GL_SRC_ALPHA, Gdx.gl.GL_ONE_MINUS_SRC_ALPHA);
             }
 
-            // 12) Inventário e game-over
             if (showInventory) {
-                inventoryUI.render(batch, shapeRenderer, character);
+                characterUI.renderInventory(batch, shapeRenderer, character);
                 craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             }
 
             if (character.getLife() <= 0)
                 gameOver();
 
-            // Draw HUD last so it appears on top
             batch.begin();
             hud.render(batch, shapeRenderer, character, gameState,
-                Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                    Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             batch.end();
 
         } catch (Exception e) {
             logger.error("Error in render: {}", e.getMessage());
         }
-        // 13) Pega item no mapa
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            character.tryCollectNearbyMaterial(materiaisNoMapa);
-        }
-        if (showInventory) {
-            inventoryUI.render(batch, shapeRenderer, character);
+            if (!showInventory) {
+                // This collects items from the map, not using inventory items
+                character.tryCollectNearbyMaterial(materiaisNoMapa);
+            } else {
+                Item selectedItem = characterUI.getSelectedItem();
+                if (selectedItem != null) {
+                    character.useItem(selectedItem);
+                }
+            }
         }
 
     }
@@ -836,11 +864,23 @@ public class ProceduralMapScreen implements Screen {
                 font.dispose();
             if (shapeRenderer != null)
                 shapeRenderer.dispose();
+
+            if (bgHudShared != null) {
+                bgHudShared.dispose();
+                bgHudShared = null;
+            }
+            if (promptFont != null) {
+                promptFont.dispose();
+                promptFont = null;
+            }
+
         } catch (Exception e) {
             logger.error("Error disposing resources: {}", e.getMessage());
         }
         if (craftingBar != null)
             craftingBar.dispose();
+        if (lightBuffer != null)
+            lightBuffer.dispose();
 
     }
 
