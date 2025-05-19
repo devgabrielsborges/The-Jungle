@@ -12,6 +12,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.controller.CraftController;
+import io.github.com.ranie_borges.thejungle.model.entity.itens.Food;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
@@ -19,6 +20,8 @@ import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
 import org.slf4j.Logger;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Tool;
 import org.slf4j.LoggerFactory;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -103,6 +106,15 @@ public abstract class Character implements ICharacter {
 
     private boolean inTallGrass = false;
 
+    //agua envenenada
+    private boolean poisonedFromWater = false;
+    private float poisonTimer = 0f;
+    private int poisonTicks = 0;
+
+    //popup dela
+    private String popupMessage = null;
+    private float popupTimer = 0f;
+
 
 
 
@@ -170,7 +182,11 @@ public abstract class Character implements ICharacter {
         playerWalkRight = loadAnimation("personagem_andando_direita.png", 0.1f, 4);
 
     }
-    public boolean setInitialSpawn(int[][] map, int mapWidth, int mapHeight, int tileSize, int tileGrass, int tileCave, String ambientName) {
+    public boolean setInitialSpawn(
+        int[][] map, int mapWidth, int mapHeight, int tileSize,
+        int tileGrass, int tileCave, String ambientName,
+        io.github.com.ranie_borges.thejungle.model.world.Ambient ambient) {
+
         try {
             int x = 0, y = 0;
             int attempts = 0;
@@ -184,8 +200,8 @@ public abstract class Character implements ICharacter {
 
                 int tileType = map[y][x];
                 boolean isValidTile = (
-                    tileType == tileGrass ||
-                        (ambientName.equalsIgnoreCase("Cave") && tileType == tileCave)
+                    (tileType == tileGrass || (ambientName.equalsIgnoreCase("Cave") && tileType == tileCave))
+                        && !(ambient instanceof Jungle && ((Jungle) ambient).isTallGrass(x, y))
                 );
 
                 if (isValidTile) {
@@ -306,10 +322,15 @@ public abstract class Character implements ICharacter {
             logger.error("{}: Erro ao mover personagem: {}", name, e.getMessage());
         }
     }
-    public boolean tryMove(float delta, int[][] map, int tileSize, int tileWall, int tileDoor, int tileCave, int mapWidth, int mapHeight) {
-        float speed = getSpeed() > 0 ? getSpeed() : 100f;
-        float deltaX = 0, deltaY = 0;
+    public boolean tryMove(float delta, int[][] map, int tileSize,
+                           int tileWall, int tileDoor, int tileCave, int tileWater, int tileWetGrass,
+                           int mapWidth, int mapHeight) {
 
+        float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
+        float speedMultiplier = (isInTallGrass() || isInWetGrass(map, tileWetGrass, tileSize, mapWidth, mapHeight)) ? 0.75f : 1.0f;
+        float speed = baseSpeed * speedMultiplier;
+
+        float deltaX = 0, deltaY = 0;
         if (Gdx.input.isKeyPressed(Input.Keys.W)) deltaY = speed * delta;
         if (Gdx.input.isKeyPressed(Input.Keys.S)) deltaY = -speed * delta;
         if (Gdx.input.isKeyPressed(Input.Keys.A)) deltaX = -speed * delta;
@@ -318,24 +339,71 @@ public abstract class Character implements ICharacter {
         float nextX = getPosition().x + deltaX;
         float nextY = getPosition().y + deltaY;
 
-        int tileX = (int) ((nextX + 8) / tileSize);
-        int tileY = (int) ((nextY + 8) / tileSize);
+        int spriteW = getSpriteWidth();  // 16
+        int spriteH = getSpriteHeight(); // 32
 
-        if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
-            int tileType = map[tileY][tileX];
+        // Hitbox centralizada manualmente (ajustada)
+        float hitboxMarginX = (32 - 12) / 2f - 1f; // = 9f - 1f = 8f
+        float hitboxMarginY = (32 - 26) / 2f - 1f; // = 3f - 1f = 2f
 
-            if (tileType != tileWall) {
-                move(deltaX, deltaY);
-                updateStats(delta);
-                updateStateTime(delta);
-                return tileType == tileDoor; // true se for uma porta (trigger para Procedural reagir)
+        int[][] corners = {
+            { (int) ((nextX + hitboxMarginX) / tileSize), (int) ((nextY + hitboxMarginY) / tileSize) }, // topo-esquerdo
+            { (int) ((nextX + spriteW - hitboxMarginX) / tileSize), (int) ((nextY + hitboxMarginY) / tileSize) }, // topo-direito
+            { (int) ((nextX + hitboxMarginX) / tileSize), (int) ((nextY + spriteH - hitboxMarginY) / tileSize) }, // baixo-esquerdo
+            { (int) ((nextX + spriteW - hitboxMarginX) / tileSize), (int) ((nextY + spriteH - hitboxMarginY) / tileSize) }  // baixo-direito
+        };
+
+        for (int[] corner : corners) {
+            int tileX = corner[0];
+            int tileY = corner[1];
+
+            if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) return false;
+
+            int tile = map[tileY][tileX];
+            if (tile == tileWall || tile == tileWater) {
+                return false; // colisão detectada
             }
         }
 
+        move(deltaX, deltaY);
         updateStats(delta);
         updateStateTime(delta);
-        return false;
+
+        int centerX = (int) ((nextX + spriteW / 2f) / tileSize);
+        int centerY = (int) ((nextY + spriteH / 2f) / tileSize);
+        return map[centerY][centerX] == tileDoor;
     }
+
+
+    public void drinkWaterFromRiver() {
+        if (Math.random() < 0.3) {
+            poisonedFromWater = true;
+            poisonTimer = 0f;
+            poisonTicks = 0;
+            System.out.println(getName() + " bebeu água contaminada e foi infectado!");
+            showPopup("THE WATER WAS CONTAMINATED", 3f);
+        } else {
+            float recovered = 12f;
+            setThirsty(Math.min(getThirsty() + recovered, 100f));
+            System.out.println(getName() + " bebeu água limpa e recuperou " + recovered + " de sede!");
+        }
+    }
+
+    public void showPopup(String message, float duration) {
+        this.popupMessage = message;
+        this.popupTimer = duration;
+    }
+    public String getPopupMessage() {
+        return popupMessage;
+    }
+    public int getSpriteWidth() {
+        return getCurrentFrame().getRegionWidth();
+    }
+
+    public int getSpriteHeight() {
+        return getCurrentFrame().getRegionHeight();
+    }
+
 
     public void updateStats(float delta) {
         try {
@@ -356,6 +424,30 @@ public abstract class Character implements ICharacter {
         } catch (Exception e) {
             logger.error("{}: Erro ao atualizar atributos: {}", name, e.getMessage());
         }
+        // Se infectado por água contaminada
+        if (poisonedFromWater) {
+            poisonTimer += delta;
+
+            if (poisonTimer >= 3f && poisonTicks < 5) {
+                poisonTimer = 0f;
+                poisonTicks++;
+                setLife(Math.max(0, getLife() - 1f));
+                System.out.println(getName() + " sofreu 1 de dano pela infecção da água!");
+
+                if (poisonTicks >= 5) {
+                    poisonedFromWater = false;
+                    System.out.println(getName() + " se recuperou da infecção da água.");
+                }
+            }
+        }
+        if (popupMessage != null) {
+            popupTimer -= delta;
+            if (popupTimer <= 0f) {
+                popupMessage = null;
+            }
+        }
+
+
     }
     public void updateStateTime(float delta) {
         stateTime += delta;
@@ -368,6 +460,14 @@ public abstract class Character implements ICharacter {
     }
     public TextureRegion getCurrentFrame() {
         return getFrameForCurrentState(stateTime);
+    }
+    public boolean isInWetGrass(int[][] map, int tileWetGrass, int tileSize, int mapWidth, int mapHeight) {
+        int centerX = (int) ((getPosition().x + getSpriteWidth() / 2f) / tileSize);
+        int centerY = (int) ((getPosition().y + getSpriteHeight() / 2f) / tileSize);
+
+        if (centerX < 0 || centerX >= mapWidth || centerY < 0 || centerY >= mapHeight) return false;
+
+        return map[centerY][centerX] == tileWetGrass;
     }
 
     public String getName() {
@@ -554,21 +654,34 @@ public abstract class Character implements ICharacter {
         Iterator<Material> iterator = materiais.iterator();
         while (iterator.hasNext()) {
             Material material = iterator.next();
+
+            // Verifica se o material é uma árvore e impede a coleta
+            if ("Tree".equals(material.getName())) { // Impede coleta de árvores
+                continue; // Pula para o próximo material
+            }
+
             float dist = getPosition().dst(material.getPosition());
 
             // Considera coleta se estiver a menos de 24px (ajuste fino)
             if (dist < 24f) {
                 if (isInventoryFull()) {
-                    System.out.println(getName() + ": inventário cheio!");
                     return false;
                 }
 
                 if (!canCarryMore(material.getWeight())) {
-                    System.out.println(getName() + ": muito pesado para carregar " + material.getName());
                     return false;
                 }
 
+                // Permite coleta de plantas medicinais
+                if ("Medicinal".equals(material.getType())) {
+                }
+
                 insertItemInInventory(material);
+                iterator.remove();
+                return true;
+            }
+            if ("Berry".equals(material.getName())) {
+                insertItemInInventory(new Food("Berry", 0.2f, 100f, 15, "Fruit", 5)); // ou Food.createBerry() se preferir
                 iterator.remove();
                 return true;
             }
@@ -907,36 +1020,58 @@ public abstract class Character implements ICharacter {
     public void useItem(Item item) {
         try {
             if (item == null) {
-                logger.warn("{}: Tried to use a null item.", getName());
                 System.out.println(getName() + " tentou usar um item inexistente!");
                 return;
             }
 
             if (!inventory.contains(item, true)) {
-                logger.warn("{}: Tried to use an item not in inventory: {}", getName(), item.getName());
                 System.out.println(getName() + " tentou usar um item que não está no inventário: " + item.getName());
                 return;
             }
 
+            // ✅ PLANTA MEDICINAL CRUA
+            if (item instanceof Material) {
+                Material material = (Material) item;
+
+                if ("Medicinal".equalsIgnoreCase(material.getType())) {
+                    Medicine med = Medicine.fromMedicinalPlant(material);
+                    heal(med); // Aplica cura
+
+                    // Reduz só 1 unidade
+                    material.setQuantity(material.getQuantity() - 1);
+
+                    if (material.getQuantity() <= 0) {
+                        inventory.removeValue(material, true);
+                    }
+
+                    System.out.println(getName() + " usou 1 planta medicinal!");
+                    return;
+                }
+                if (item instanceof Food) {
+                    Food food = (Food) item;
+                    food.useItem();
+                    setHunger(Math.min(getHunger() + food.getNutritionalValue(), 100f));
+                }
+            }
+
+            // ✅ OUTROS ITENS (como Medicine mesmo ou ferramentas)
             if (item instanceof Medicine) {
                 heal((Medicine) item);
             } else {
                 item.useItem();
                 System.out.println(getName() + " usou o item: " + item.getName());
-                logger.info("{} used item: {}", getName(), item.getName());
             }
 
+            // Se acabou a durabilidade
             if (item.getDurability() <= 0) {
                 inventory.removeValue(item, true);
                 System.out.println("O item " + item.getName() + " quebrou ou foi consumido completamente!");
-                logger.info("{}: Item {} removed from inventory after use.", getName(), item.getName());
             }
+
         } catch (Exception e) {
             logger.error("{}: Error while using item: {}", getName(), e.getMessage());
         }
     }
-
-
     public double getAttackDamage() {
         return attackDamage;
     }

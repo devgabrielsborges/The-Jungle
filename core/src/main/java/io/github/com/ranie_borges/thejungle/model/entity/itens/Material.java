@@ -6,11 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -141,6 +137,51 @@ public class Material extends Item {
         }
         return materiais;
     }
+    public static List<Material> spawnTrees(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+        List<Material> materiais = new ArrayList<>();
+        int materiaisGerados = 0;
+        int tentativas = 0;
+
+        while (materiaisGerados < quantidade && tentativas < 1000) {
+            int x = (int) (Math.random() * mapWidth);
+            int y = (int) (Math.random() * mapHeight);
+
+            if (mapa[y][x] == tileGrass) {
+                Material tree = new Material("Tree", 5.0f, 10.0f, "Wood", 2.0f);
+                Map<String, Sprite> sprites = new HashMap<>();
+                Sprite treeSprite = new Sprite(new Texture("Gameplay/tree.png"));
+                treeSprite.setSize(128, 128); // Define o tamanho apenas para a árvore
+                sprites.put("idle", treeSprite);
+                tree.setSprites(sprites);
+                tree.setPosition(x * tileSize, y * tileSize);
+                materiais.add(tree);
+                materiaisGerados++;
+            }
+            tentativas++;
+        }
+        return materiais;
+    }
+    public static List<Material> spawnMedicinalPlants(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+        List<Material> materiais = new ArrayList<>();
+        int gerados = 0;
+        int tentativas = 0;
+
+        while (gerados < quantidade && tentativas < 1000) {
+            int x = (int) (Math.random() * mapWidth);
+            int y = (int) (Math.random() * mapHeight);
+
+            if (mapa[y][x] == tileGrass) {
+                Material planta = createMedicinalPlant();
+                planta.setPosition(x * tileSize, y * tileSize);
+                materiais.add(planta);
+                gerados++;
+            }
+
+            tentativas++;
+        }
+
+        return materiais;
+    }
     private static Map<String, Sprite> loadSprites(String path) {
         Map<String, Sprite> sprites = new HashMap<>();
         Texture texture = new Texture(Gdx.files.internal(path));
@@ -166,6 +207,44 @@ public class Material extends Item {
         spear.setSprites(loadSprites("icons/spear.png"));
         return spear;
     }
+    public static Material createMedicinalPlant() {
+        Material plant = new Material("Medicinal", 0.2f, 1.0f, "Plant", 0.9f);
+        Map<String, Sprite> sprites = new HashMap<>();
+        Texture texture = new Texture(Gdx.files.internal("scenarios/jungle/medicinal.png"));
+        sprites.put("idle", new Sprite(texture));
+        plant.setSprites(sprites);
+        return plant;
+    }
+    public static List<Material> spawnBerryBushes(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+        List<Material> materiais = new ArrayList<>();
+        int gerados = 0;
+        int tentativas = 0;
+
+        while (gerados < quantidade && tentativas < 1000) {
+            int x = (int) (Math.random() * mapWidth);
+            int y = (int) (Math.random() * mapHeight);
+
+            if (mapa[y][x] == tileGrass) {
+                Material bush = createBerryBush();
+                bush.setPosition(x * tileSize, y * tileSize);
+                materiais.add(bush);
+                gerados++;
+            }
+
+            tentativas++;
+        }
+
+        return materiais;
+    }
+    public static Material createBerryBush() {
+        Material berryBush = new Material("Berry", 0.2f, 1.0f, "Berry", 0.2f);
+        Map<String, Sprite> sprites = new HashMap<>();
+        Texture texture = new Texture(Gdx.files.internal("scenarios/jungle/berry.png"));
+        sprites.put("idle", new Sprite(texture));
+        berryBush.setSprites(sprites);
+        return berryBush;
+    }
+
 
 
 }
