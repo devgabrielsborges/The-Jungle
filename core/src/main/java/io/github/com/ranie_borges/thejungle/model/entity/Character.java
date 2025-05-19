@@ -323,7 +323,7 @@ public abstract class Character implements ICharacter {
         }
     }
     public boolean tryMove(float delta, int[][] map, int tileSize,
-                           int tileWall, int tileDoor, int tileCave, int tileWater,
+                           int tileWall, int tileDoor, int tileCave, int tileWater, int tileWetGrass,
                            int mapWidth, int mapHeight)
     {
         float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
@@ -344,6 +344,9 @@ public abstract class Character implements ICharacter {
 
         if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
             int tileType = map[tileY][tileX];
+            boolean isWetGrass = (tileType == tileWetGrass);
+            boolean isTallGrass = isInTallGrass();
+
 
             if (tileType != tileWall && tileType != tileWater) {
                 move(deltaX, deltaY);

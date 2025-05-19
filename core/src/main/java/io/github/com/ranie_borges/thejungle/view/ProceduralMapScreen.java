@@ -42,11 +42,13 @@ public class ProceduralMapScreen implements Screen {
     private final int MAP_HEIGHT = 20;
     private final int SIDEBAR_WIDTH = 300;
 
-    private static final int TILE_GRASS = 0;
+    public static final int TILE_GRASS = 0;
     private static final int TILE_WALL = 1;
     private static final int TILE_DOOR = 2;
     private static final int TILE_CAVE = 3;
-    private static final int TILE_WATER = 4;
+    public static final int TILE_WATER = 4;
+    public static final int TILE_WET_GRASS = 5;
+
 
     // Ambient rotation fields
     private int currentAmbientUseCount = 0;
@@ -484,7 +486,7 @@ public class ProceduralMapScreen implements Screen {
         try {
             // 1) Atualiza movimentação do personagem
             boolean passedThroughDoor = character.tryMove(
-                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, TILE_WATER, MAP_WIDTH, MAP_HEIGHT);
+                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, TILE_WATER, TILE_WET_GRASS, MAP_WIDTH, MAP_HEIGHT);
             if (ambient instanceof Jungle) {
                 Jungle jungle = (Jungle) ambient; // cast explícito
                 ((Jungle) ambient).checkSnakeBite(character);
@@ -498,6 +500,8 @@ public class ProceduralMapScreen implements Screen {
 
             if (passedThroughDoor) {
                 generateMap();
+
+                character.setInTallGrass(false);
                 // Garante spawn seguro do personagem após trocar de mapa
                 boolean spawnEncontrado = false;
                 int tentativas = 0;
@@ -612,6 +616,11 @@ public class ProceduralMapScreen implements Screen {
                             break;
                         case TILE_DOOR:
                             batch.setColor(0, 0, 0, 1f);
+                            batch.draw(floorTexture, dx, dy);
+                            batch.setColor(Color.WHITE);
+                            break;
+                        case TILE_WET_GRASS:
+                            batch.setColor(0.4f, 0.8f, 0.4f, 1f);
                             batch.draw(floorTexture, dx, dy);
                             batch.setColor(Color.WHITE);
                             break;

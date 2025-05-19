@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static io.github.com.ranie_borges.thejungle.model.enums.AmbientAttribute.HUMID_CLIMATE;
+import static io.github.com.ranie_borges.thejungle.view.ProceduralMapScreen.*;
 
 public class LakeRiver extends Ambient {
 
@@ -48,18 +49,14 @@ public class LakeRiver extends Ambient {
         int[][] map = new int[mapHeight][mapWidth];
         Random rand = new Random();
 
-        // Valores dos tiles
-        final int TILE_WALL = 1;
-        final int TILE_GRASS = 0;
-        final int TILE_WATER = 4;
-
-        // Margens com parede
+        // Basic terrain
         for (int y = 0; y < mapHeight; y++) {
             for (int x = 0; x < mapWidth; x++) {
-                map[y][x] = (x == 0 || y == 0 || x == mapWidth - 1 || y == mapHeight - 1) ? TILE_WALL : TILE_GRASS;
+                map[y][x] = (x == 0 || y == 0 || x == mapWidth - 1 || y == mapHeight - 1) ? 1 : 0;
             }
         }
 
+        // Add a river or lake
         boolean isLake = rand.nextBoolean();
 
         if (isLake) {
@@ -72,7 +69,7 @@ public class LakeRiver extends Ambient {
                     int dx = x - lakeX;
                     int dy = y - lakeY;
                     if (dx * dx + dy * dy < lakeRadius * lakeRadius) {
-                        map[y][x] = TILE_WATER;
+                        map[y][x] = TILE_WATER; // Agora você deve garantir que TILE_WATER = 4
                     }
                 }
             }
@@ -88,16 +85,41 @@ public class LakeRiver extends Ambient {
                     }
                 }
 
-                // Faz o rio serpenteado
                 if (rand.nextFloat() < 0.3 && riverY > 5 && riverY < mapHeight - 6) {
                     riverY += rand.nextBoolean() ? 1 : -1;
                 }
             }
         }
 
+        // ✅ Adiciona portas
         addDoors(map, mapWidth, mapHeight, rand);
+
+        // ✅ Transforma a grama ao redor da água em TILE_WET_GRASS
+        for (int y = 1; y < mapHeight - 1; y++) {
+            for (int x = 1; x < mapWidth - 1; x++) {
+                if (map[y][x] == TILE_GRASS) {
+                    boolean nextToWater = false;
+
+                    for (int dy = -1; dy <= 1; dy++) {
+                        for (int dx = -1; dx <= 1; dx++) {
+                            if (map[y + dy][x + dx] == TILE_WATER) {
+                                nextToWater = true;
+                                break;
+                            }
+                        }
+                        if (nextToWater) break;
+                    }
+
+                    if (nextToWater) {
+                        map[y][x] = TILE_WET_GRASS; // Define como grama molhada
+                    }
+                }
+            }
+        }
+
         return map;
     }
+
 
     @Override
     public void explore() {
