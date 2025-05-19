@@ -324,13 +324,13 @@ public abstract class Character implements ICharacter {
     }
     public boolean tryMove(float delta, int[][] map, int tileSize,
                            int tileWall, int tileDoor, int tileCave, int tileWater, int tileWetGrass,
-                           int mapWidth, int mapHeight)
-    {
+                           int mapWidth, int mapHeight) {
+
         float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
         float speedMultiplier = isInTallGrass() ? 0.5f : 1.0f;
         float speed = baseSpeed * speedMultiplier;
-        float deltaX = 0, deltaY = 0;
 
+        float deltaX = 0, deltaY = 0;
         if (Gdx.input.isKeyPressed(Input.Keys.W)) deltaY = speed * delta;
         if (Gdx.input.isKeyPressed(Input.Keys.S)) deltaY = -speed * delta;
         if (Gdx.input.isKeyPressed(Input.Keys.A)) deltaX = -speed * delta;
@@ -339,27 +339,41 @@ public abstract class Character implements ICharacter {
         float nextX = getPosition().x + deltaX;
         float nextY = getPosition().y + deltaY;
 
-        int tileX = (int) ((nextX + 8) / tileSize);
-        int tileY = (int) ((nextY + 8) / tileSize);
+        int spriteW = getSpriteWidth();  // 16
+        int spriteH = getSpriteHeight(); // 32
 
-        if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
-            int tileType = map[tileY][tileX];
-            boolean isWetGrass = (tileType == tileWetGrass);
-            boolean isTallGrass = isInTallGrass();
+        // Hitbox centralizada manualmente (ajustada)
+        float hitboxMarginX = 6f; // menor valor possível que não encosta em parede lateral invisível
+        float hitboxMarginY = 2f; // sobe/desce com mais liberdade sem encostar antes
 
+        int[][] corners = {
+            { (int) ((nextX + hitboxMarginX) / tileSize), (int) ((nextY + hitboxMarginY) / tileSize) }, // topo-esquerdo
+            { (int) ((nextX + spriteW - hitboxMarginX) / tileSize), (int) ((nextY + hitboxMarginY) / tileSize) }, // topo-direito
+            { (int) ((nextX + hitboxMarginX) / tileSize), (int) ((nextY + spriteH - hitboxMarginY) / tileSize) }, // baixo-esquerdo
+            { (int) ((nextX + spriteW - hitboxMarginX) / tileSize), (int) ((nextY + spriteH - hitboxMarginY) / tileSize) }  // baixo-direito
+        };
 
-            if (tileType != tileWall && tileType != tileWater) {
-                move(deltaX, deltaY);
-                updateStats(delta);
-                updateStateTime(delta);
-                return tileType == tileDoor; // true se for uma porta (trigger para Procedural reagir)
+        for (int[] corner : corners) {
+            int tileX = corner[0];
+            int tileY = corner[1];
+
+            if (tileX < 0 || tileX >= mapWidth || tileY < 0 || tileY >= mapHeight) return false;
+
+            int tile = map[tileY][tileX];
+            if (tile == tileWall || tile == tileWater) {
+                return false; // colisão detectada
             }
         }
 
+        move(deltaX, deltaY);
         updateStats(delta);
         updateStateTime(delta);
-        return false;
+
+        int centerX = (int) ((nextX + spriteW / 2f) / tileSize);
+        int centerY = (int) ((nextY + spriteH / 2f) / tileSize);
+        return map[centerY][centerX] == tileDoor;
     }
+
     public void drinkWaterFromRiver() {
         if (Math.random() < 0.3) {
             poisonedFromWater = true;
@@ -380,6 +394,13 @@ public abstract class Character implements ICharacter {
     }
     public String getPopupMessage() {
         return popupMessage;
+    }
+    public int getSpriteWidth() {
+        return getCurrentFrame().getRegionWidth();
+    }
+
+    public int getSpriteHeight() {
+        return getCurrentFrame().getRegionHeight();
     }
 
 
