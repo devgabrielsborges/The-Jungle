@@ -19,12 +19,10 @@ import io.github.com.ranie_borges.thejungle.core.Main;
 public class LetterScreen implements Screen {
 
     private final Main game;
-    private Stage stage;
-    private Texture backgroundTexture;
-    private Music backgroundMusic;
-    private Skin skin;
-
-    private boolean transitioning = false; // evita múltiplas transições
+    private final Stage stage;
+    private final Texture backgroundTexture;
+    private final Music backgroundMusic;
+    private final Skin skin;
 
     public LetterScreen(Main game) {
         this.game = game;

@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 public class CraftingScreen implements Screen {
-    private Stage stage;
-    private Skin skin;
-    private Table table;
+    private final Stage stage;
+    private final Skin skin;
+    private final Table table;
     private List<Recipe> availableRecipes;
-    private Array<Item> inventory;
+    private final Array<Item> inventory;
 
     public CraftingScreen(Array<Item> inventory) {
         this.inventory = inventory;
@@ -63,12 +63,6 @@ public class CraftingScreen implements Screen {
         }
 
         TextButton backButton = new TextButton("Voltar", skin);
-        backButton.addListener(event -> {
-            if (event.toString().equals("touchDown")) {
-                // TODO: voltar para a tela anterior
-            }
-            return true;
-        });
         table.add(backButton).colspan(2).padTop(20);
     }
 
@@ -80,7 +74,6 @@ public class CraftingScreen implements Screen {
                     List<Item> currentItems = new ArrayList<>();
                     for (Item i : inventory) if (i != null) currentItems.add(i);
 
-                    boolean canCraft = recipe.matches(currentItems);
                     if (CraftController.canCraft(recipe.getResultName(), currentItems)) {
                         CraftController.consumeIngredients(recipe, inventory);
                         Item crafted = recipe.craft();
@@ -127,22 +120,6 @@ public class CraftingScreen implements Screen {
     @Override public void dispose() {
         stage.dispose();
         skin.dispose();
-    }
-    private void insertItemInInventory(Array<Item> inventory, Item item) {
-        for (int i = 0; i < inventory.size; i++) {
-            Item slot = inventory.get(i);
-            if (slot != null && slot.getName().equalsIgnoreCase(item.getName())) {
-                slot.addQuantity(item.getQuantity());
-                return;
-            }
-        }
-        for (int i = 0; i < inventory.size; i++) {
-            if (inventory.get(i) == null) {
-                inventory.set(i, item);
-                return;
-            }
-        }
-        inventory.add(item);
     }
 
 }

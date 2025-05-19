@@ -22,6 +22,9 @@ public class Food extends Item {
         this.shelfLife = shelfLife;
         this.spoiled = false;
     }
+    public static Food createBerry() {
+        return new Food("Berry", 0.2f, 100f, 15, "Fruit", 5);
+    }
 
     /**
      * Consumes the food, restoring hunger but potentially causing food poisoning if spoiled

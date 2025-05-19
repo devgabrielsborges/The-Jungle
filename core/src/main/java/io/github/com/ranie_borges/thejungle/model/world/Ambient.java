@@ -24,6 +24,8 @@ public abstract class Ambient implements IAmbients {
     private final float wallDensity;
     private final float itemDensity;
 
+    public static final int MAX_AMBIENT_USES = 3;
+
     protected Ambient(
         String name,
         String description,
