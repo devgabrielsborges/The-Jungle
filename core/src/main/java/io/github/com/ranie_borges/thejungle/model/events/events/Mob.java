@@ -59,8 +59,6 @@ public class Mob extends Event {
     }
 
     /**
-     * @param character
-     * @param ambient
      */
     @Override
     public void execute(Character character, Ambient ambient) {

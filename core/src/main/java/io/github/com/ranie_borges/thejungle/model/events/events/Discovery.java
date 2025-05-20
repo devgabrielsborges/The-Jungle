@@ -59,8 +59,6 @@ public class Discovery extends Event {
     }
 
     /**
-     * @param character
-     * @param ambient
      */
     @Override
     public void execute(Character character, Ambient ambient) {
