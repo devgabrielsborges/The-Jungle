@@ -16,7 +16,7 @@ import java.util.Set;
 
 public class Cannibal extends Creature {
 
-    private Vector2 position = new Vector2(); // <-- Igual ao Deer!
+    private final Vector2 position = new Vector2(); // <-- Igual ao Deer!
 
     protected Cannibal(
         String name,
@@ -55,9 +55,8 @@ public class Cannibal extends Creature {
     }
 
     private static Set<Item> createDrops() {
-        Set<Item> drops = new HashSet<>();
         // Aqui você poderia adicionar itens dropáveis no futuro.
-        return drops;
+        return new HashSet<>();
     }
 
     public Vector2 getPosition() { // <-- Agora igualzinho o Deer
