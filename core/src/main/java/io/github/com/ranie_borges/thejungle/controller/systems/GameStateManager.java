@@ -13,13 +13,12 @@ public class GameStateManager {
     private static final Logger logger = LoggerFactory.getLogger(GameStateManager.class);
 
     private GameState gameState;
-    private SaveManager saveManager;
+    private final SaveManager saveManager;
     private float autosaveTimer = 0f;
-    private final float AUTOSAVE_INTERVAL = 60f; // Autosave every 60 seconds
 
     /**
      * Create a new GameStateManager
-     * 
+     *
      * @param gameState The initial game state
      */
     public GameStateManager(GameState gameState) {
@@ -29,7 +28,7 @@ public class GameStateManager {
 
     /**
      * Update the autosave timer and save if necessary
-     * 
+     *
      * @param delta     Time since last frame
      * @param character Current character
      * @param ambient   Current ambient
@@ -37,6 +36,8 @@ public class GameStateManager {
      */
     public void update(float delta, Character character, Ambient ambient, int[][] map) {
         autosaveTimer += delta;
+        // Autosave every 60 seconds
+        float AUTOSAVE_INTERVAL = 60f;
         if (autosaveTimer >= AUTOSAVE_INTERVAL) {
             autosaveTimer = 0;
             autosave(character, ambient, map);
@@ -45,7 +46,7 @@ public class GameStateManager {
 
     /**
      * Perform an autosave operation
-     * 
+     *
      * @param character Current character
      * @param ambient   Current ambient
      * @param map       Current map
@@ -72,7 +73,7 @@ public class GameStateManager {
 
     /**
      * Manual save with a custom save name
-     * 
+     *
      * @param character Current character
      * @param ambient   Current ambient
      * @param map       Current map

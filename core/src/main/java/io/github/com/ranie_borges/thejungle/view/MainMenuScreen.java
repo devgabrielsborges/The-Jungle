@@ -26,7 +26,6 @@ public class MainMenuScreen implements Screen {
     private final Skin skin;
     private final Music backgroundMusic;
     private final AnimatedBackground animatedBackground;
-    private final SaveManager saveManager;
 
     public MainMenuScreen(Main game) {
 
@@ -86,7 +85,7 @@ public class MainMenuScreen implements Screen {
             }
         });
 
-        saveManager = new SaveManager();
+        SaveManager saveManager = new SaveManager();
 
         if (saveManager.getSaveFiles().length > 0) {
             TextButton continueButton = new TextButton("Continue", skin);

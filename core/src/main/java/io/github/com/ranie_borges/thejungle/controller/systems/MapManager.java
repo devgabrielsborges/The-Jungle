@@ -16,14 +16,14 @@ import java.util.Random;
 public class MapManager implements UI {
     private static final Logger logger = LoggerFactory.getLogger(MapManager.class);
 
-    private Random random = new Random();
+    private final Random random = new Random();
     private Ambient currentAmbient;
     private int[][] map;
     private int currentAmbientUseCount = 0;
 
     /**
      * Create a new MapManager with the given ambient
-     * 
+     *
      * @param ambient The initial ambient
      */
     public MapManager(Ambient ambient) {
@@ -33,7 +33,7 @@ public class MapManager implements UI {
 
     /**
      * Generate a map for the current ambient, or rotate to a new ambient if needed
-     * 
+     *
      * @return The generated map
      */
     public int[][] generateMap() {
@@ -79,7 +79,7 @@ public class MapManager implements UI {
 
     /**
      * Get current map
-     * 
+     *
      * @return The current map array
      */
     public int[][] getMap() {
@@ -88,7 +88,7 @@ public class MapManager implements UI {
 
     /**
      * Get next ambient that is different from current
-     * 
+     *
      * @return A new ambient instance
      */
     private Ambient getNextAmbient() {

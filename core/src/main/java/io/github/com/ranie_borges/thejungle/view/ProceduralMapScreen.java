@@ -14,7 +14,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
-import io.github.com.ranie_borges.thejungle.controller.AmbientController;
 import io.github.com.ranie_borges.thejungle.controller.systems.CharacterManager;
 import io.github.com.ranie_borges.thejungle.controller.systems.GameStateManager;
 import io.github.com.ranie_borges.thejungle.controller.systems.MapManager;
@@ -54,13 +53,11 @@ public class ProceduralMapScreen implements Screen, UI {
     private final ResourceSpawner resourceSpawner;
     private final GameStateManager gameStateManager;
     private final GameRenderHelper renderHelper;
-    private SaveManager saveManager;
 
     // Game state elements
     private final Character character;
     private Ambient ambient;
     private int[][] map;
-    private Vector2 playerPos;
     private List<Material> materiaisNoMapa = new ArrayList<>();
     private List<Deer> deers = new ArrayList<>();
     private List<Cannibal> cannibals = new ArrayList<>();
@@ -79,7 +76,6 @@ public class ProceduralMapScreen implements Screen, UI {
     private SpriteBatch batch;
     private ShapeRenderer shapeRenderer;
     private BitmapFont font;
-    private GlyphLayout layout;
 
     // For interaction prompts
     private static Texture bgHudShared;
@@ -90,7 +86,6 @@ public class ProceduralMapScreen implements Screen, UI {
     private boolean showInventory = false;
     private float blinkTimer = 0f;
     private boolean blinkVisible = true;
-    private final float BLINK_INTERVAL = 0.5f;
 
     private boolean playerSpawned = false;
 
@@ -110,8 +105,8 @@ public class ProceduralMapScreen implements Screen, UI {
 
         this.character = character;
         this.ambient = ambient;
-        this.playerPos = new Vector2();
-        this.saveManager = new SaveManager();
+        Vector2 playerPos = new Vector2();
+        SaveManager saveManager = new SaveManager();
 
         this.gameState = new GameState();
         gameState.setCharacter(character);
@@ -148,7 +143,7 @@ public class ProceduralMapScreen implements Screen, UI {
             font = new BitmapFont();
             font.getData().setScale(2f);
             font.setUseIntegerPositions(true);
-            layout = new GlyphLayout();
+            GlyphLayout layout = new GlyphLayout();
 
             map = mapManager.generateMap();
 
@@ -260,6 +255,7 @@ public class ProceduralMapScreen implements Screen, UI {
             gameStateManager.update(delta, character, ambient, map);
 
             blinkTimer += delta;
+            float BLINK_INTERVAL = 0.5f;
             if (blinkTimer >= BLINK_INTERVAL) {
                 blinkVisible = !blinkVisible;
                 blinkTimer = 0f;

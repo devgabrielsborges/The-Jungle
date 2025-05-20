@@ -29,15 +29,15 @@ import java.util.List;
 public class GameRenderHelper implements UI {
     private static final Logger logger = LoggerFactory.getLogger(GameRenderHelper.class);
 
-    private SpriteBatch batch;
-    private ShapeRenderer shapeRenderer;
-    private BitmapFont font;
-    private GlyphLayout layout;
+    private final SpriteBatch batch;
+    private final ShapeRenderer shapeRenderer;
+    private final BitmapFont font;
+    private final GlyphLayout layout;
 
     // For interaction prompts
     private static Texture bgHudShared;
-    private BitmapFont promptFont;
-    private GlyphLayout promptLayoutInstance;
+    private final BitmapFont promptFont;
+    private final GlyphLayout promptLayoutInstance;
 
     private float offsetX = 0;
     private float offsetY = 0;
@@ -237,8 +237,8 @@ public class GameRenderHelper implements UI {
                 // Fallback in case no sprite is available
                 batch.setColor(0.8f, 0.6f, 0.4f, 1f); // Brown deer color
                 batch.draw(new Texture(Gdx.files.internal("sprites/criaturas/deer.png")),
-                        x + (TILE_SIZE - 50) / 2,
-                        y + (TILE_SIZE - 50) / 2,
+                        x + (float) (TILE_SIZE - 50) / 2,
+                        y + (float) (TILE_SIZE - 50) / 2,
                         50, 50);
                 batch.setColor(1f, 1f, 1f, 1f);
             }
@@ -267,8 +267,8 @@ public class GameRenderHelper implements UI {
                 // Fallback in case no sprite is available
                 batch.setColor(1f, 0.3f, 0.3f, 1f); // Reddish cannibal color
                 batch.draw(new Texture(Gdx.files.internal("sprites/criaturas/cannibal.png")),
-                        x + (TILE_SIZE - 40) / 2,
-                        y + (TILE_SIZE - 40) / 2,
+                        x + (float) (TILE_SIZE - 40) / 2,
+                        y + (float) (TILE_SIZE - 40) / 2,
                         40, 40);
                 batch.setColor(1f, 1f, 1f, 1f);
             }

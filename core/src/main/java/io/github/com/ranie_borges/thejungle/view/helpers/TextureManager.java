@@ -11,7 +11,7 @@ import java.util.Map;
  * Manages textures for the game, allowing for better resource handling
  */
 public class TextureManager {
-    private Map<String, Texture> textureCache;
+    private final Map<String, Texture> textureCache;
     private Texture floorTexture;
     private Texture wallTexture;
     private Texture sidebarTexture;
@@ -46,8 +46,6 @@ public class TextureManager {
      */
     public Texture loadClassIcon(String characterType) {
         switch (characterType) {
-            case "Survivor":
-                return getOrLoadTexture("StatsScreen/desempregadoFundo.png");
             case "Hunter":
                 return getOrLoadTexture("StatsScreen/cacadorFundo.png");
             case "Lumberjack":
