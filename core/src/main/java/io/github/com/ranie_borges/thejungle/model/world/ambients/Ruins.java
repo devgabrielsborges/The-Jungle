@@ -80,8 +80,7 @@ public class Ruins extends Ambient {
                         x == roomX || x == roomX + roomWidth - 1) {
                         map[y][x] = 1;
 
-                        if (rand.nextFloat() < 0.3 && x != 0 && y != 0 &&
-                            x != mapWidth-1 && y != mapHeight-1) {
+                        if (rand.nextFloat() < 0.3 && x != 0 && x != mapWidth - 1 && y != mapHeight - 1) {
                             map[y][x] = 0;
                         }
                     }
