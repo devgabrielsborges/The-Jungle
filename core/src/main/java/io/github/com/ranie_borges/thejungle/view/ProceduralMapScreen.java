@@ -16,6 +16,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -195,15 +197,15 @@ public class ProceduralMapScreen implements Screen {
                 Cannibal::canSpawnIn);
 
             fishes = Creature.regenerateCreatures(
-                3,                // quantidade de peixes
-                map,               // mapa atual
+                3,
+                map,
                 MAP_WIDTH,
                 MAP_HEIGHT,
-                TILE_WATER,        // define a área de água
+                TILE_WATER,
                 TILE_SIZE,
-                Fish::new,         // construtor padrão de Fish
-                ambient,           // ambient atual
-                Fish::canSpawnIn   // condição de spawn para peixes
+                Fish::new,
+                ambient,
+                Fish::canSpawnIn
             );
 
             materiaisNoMapa = new ArrayList<>();
@@ -567,6 +569,17 @@ public class ProceduralMapScreen implements Screen {
                     Cannibal::new,
                     ambient,
                     Cannibal::canSpawnIn);
+                fishes = Creature.regenerateCreatures(
+                    3,
+                    map,
+                    MAP_WIDTH,
+                    MAP_HEIGHT,
+                    TILE_WATER,
+                    TILE_SIZE,
+                    Fish::new,
+                    ambient,
+                    Fish::canSpawnIn
+                );
                 // Materiais
                 if (ambient instanceof Cave) {
                     materiaisNoMapa = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
@@ -854,29 +867,9 @@ public class ProceduralMapScreen implements Screen {
             }
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-            if (character.hasSpear()) {
-                int playerTileX = (int) (character.getPosition().x / TILE_SIZE);
-                int playerTileY = (int) (character.getPosition().y / TILE_SIZE);
-
-                Iterator<Fish> fishIterator = fishes.iterator();
-                while (fishIterator.hasNext()) {
-                    Fish fish = fishIterator.next();
-                    int fishTileX = (int) (fish.getPosition().x / TILE_SIZE);
-                    int fishTileY = (int) (fish.getPosition().y / TILE_SIZE);
-                    // Verifica se está alinhado em x ou em y
-                    if (playerTileX == fishTileX || playerTileY == fishTileY) {
-                        fishIterator.remove();
-                        // Exemplo: adiciona o peixe ao inventário ou executa outra ação
-                        character.addToInventory(fish);
-                        logger.info("Peixe capturado!");
-                        // Se quiser apenas capturar um peixe por pressionamento, comente o break se desejar pegar todos
-                        break;
-                    }
-                }
-            } else {
-                logger.info("É necessário ter uma lança para capturar o peixe.");
-            }
+            character.tryFish(map, MAP_WIDTH, MAP_HEIGHT, TILE_WATER, fishes);
         }
+
         if (showInventory) {
             inventoryUI.render(batch, shapeRenderer, character);
         }

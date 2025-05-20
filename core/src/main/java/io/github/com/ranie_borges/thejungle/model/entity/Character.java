@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Tool;
 import org.slf4j.LoggerFactory;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
+
 
 
 import java.util.ArrayList;
@@ -372,20 +374,79 @@ public abstract class Character implements ICharacter {
         int centerX = (int) ((nextX + spriteW / 2f) / tileSize);
         int centerY = (int) ((nextY + spriteH / 2f) / tileSize);
         return map[centerY][centerX] == tileDoor;
+
+    }
+    public boolean hasSpear() {
+
+        for (Item item : this.getInventory()) {
+            if (item.getName().toLowerCase().contains("spear")) {
+                return true;
+            }
+        }
+        return false;
     }
 
+    public void addToInventory(Item item) {
+        this.getInventory().add(item);
+    }
+    public void tryFish(int[][] map, int mapWidth, int mapHeight, int tileWater, List<Fish> fishes) {
+        if (!hasSpear()) {
+            return;
+        }
 
+        int playerTileX = (int) (getPosition().x / TILE_SIZE);
+        int playerTileY = (int) (getPosition().y / TILE_SIZE);
+
+        // Verifica se o jogador está encostado a um tile de água
+        boolean adjacentToWater = false;
+        for (int dx = -1; dx <= 1 && !adjacentToWater; dx++) {
+            for (int dy = -1; dy <= 1 && !adjacentToWater; dy++) {
+                int checkX = playerTileX + dx;
+                int checkY = playerTileY + dy;
+                if (checkX >= 0 && checkX < mapWidth && checkY >= 0 && checkY < mapHeight) {
+                    if (map[checkY][checkX] == tileWater) {
+                        adjacentToWater = true;
+                    }
+                }
+            }
+        }
+
+        if (adjacentToWater) {
+            Iterator<Fish> fishIterator = fishes.iterator();
+            while (fishIterator.hasNext()) {
+                Fish fish = fishIterator.next();
+                int fishTileX = (int) (fish.getPosition().x / TILE_SIZE);
+                int fishTileY = (int) (fish.getPosition().y / TILE_SIZE);
+                // Verifica se está na mesma coluna OU mesma linha do peixe
+                if (playerTileX == fishTileX || playerTileY == fishTileY) {
+                    fishIterator.remove();
+                    // Cria um item representando a carne do peixe
+                    Item fishMeatItem = new Item("RawFish", 10, 15) {
+                        @Override
+                        public void useItem() {
+                            // Exemplo: restaurar fome ou saúde
+                        }
+                        @Override
+                        public void dropItem() {
+                            // Exemplo: definir comportamento ao dropar o item
+                        }
+                    };
+                    addToInventory(fishMeatItem);
+                    break;
+                }
+            }
+        } else {
+        }
+    }
     public void drinkWaterFromRiver() {
         if (Math.random() < 0.3) {
             poisonedFromWater = true;
             poisonTimer = 0f;
             poisonTicks = 0;
-            System.out.println(getName() + " bebeu água contaminada e foi infectado!");
             showPopup("THE WATER WAS CONTAMINATED", 3f);
         } else {
             float recovered = 12f;
             setThirsty(Math.min(getThirsty() + recovered, 100f));
-            System.out.println(getName() + " bebeu água limpa e recuperou " + recovered + " de sede!");
         }
     }
 

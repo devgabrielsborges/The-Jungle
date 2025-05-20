@@ -14,24 +14,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class Fish extends Creature {
-
     private Vector2 position = new Vector2();
 
-    // Construtor com parâmetros
-    protected Fish(
-        String name,
-        String description,
-        float probability,
-        float lifeRatio,
-        float damage,
-        Clime climeSpawn,
-        Set<Item> drops,
-        Map<String, Sprite> sprites
-    ) {
-        super(name, description, probability, lifeRatio, damage, climeSpawn, drops, sprites);
-    }
-
-    // Construtor padrão similar à classe Deer
     public Fish() {
         super(
             "Peixe",
@@ -49,23 +33,31 @@ public class Fish extends Creature {
     public void attack() {
         System.out.println(getName() + " está atacando!");
     }
-    // Dentro de ProceduralMapScreen.java
 
+    // Atualizado para retornar um drop com o item "Fish Meat"
+    private static Set<Item> createDrops() {
+        Set<Item> drops = new HashSet<>();
+        drops.add(new Item("RawFish", 10, 15) {
+            @Override
+            public void useItem() {
+                // Comportamento ao usar o item (restauração de vida ou fome)
+            }
+            @Override
+            public void dropItem() {
+                // Comportamento ao dropar o item
+            }
+        });
+        return drops;
+    }
 
     public static boolean canSpawnIn(Ambient ambient) {
         return ambient.getName().toLowerCase().contains("lake");
     }
 
-    // Cria os sprites para o peixe
     public static Map<String, Sprite> createSprites() {
         Map<String, Sprite> sprites = new HashMap<>();
         sprites.put("idle", new Sprite(new Texture(Gdx.files.internal("sprites/criaturas/fish.png"))));
         return sprites;
-    }
-
-    // Cria os drops para o peixe (atualmente vazio, similar à classe Deer)
-    private static Set<Item> createDrops() {
-        return new HashSet<>();
     }
 
     public Vector2 getPosition() {
