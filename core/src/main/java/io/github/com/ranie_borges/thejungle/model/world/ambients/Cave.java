@@ -86,8 +86,8 @@ public class Cave extends Ambient {
         for (int i = 0; i < tunnels; i++) {
             double angle = rand.nextDouble() * Math.PI * 2;
             int length = radius + rand.nextInt(radius);
-            int curX = centerX;
-            int curY = centerY;
+            int curX;
+            int curY;
 
             for (int j = 0; j < length; j++) {
                 curX = (int) (centerX + j * Math.cos(angle));
