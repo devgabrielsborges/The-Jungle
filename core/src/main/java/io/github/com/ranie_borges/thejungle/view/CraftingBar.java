@@ -25,7 +25,6 @@ public class CraftingBar {
     private final Map<String, Texture> icons = new HashMap<>();
     private final BitmapFont font = new BitmapFont();
     private final GlyphLayout layout = new GlyphLayout();
-    private int hovered = -1;
 
     public CraftingBar() {
         font.getData().setScale(1.2f);
@@ -47,7 +46,7 @@ public class CraftingBar {
 
         int mouseX = Gdx.input.getX();
         int mouseY = screenHeight - Gdx.input.getY();
-        hovered = -1;
+        int hovered = -1;
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(Color.DARK_GRAY);
@@ -60,20 +59,19 @@ public class CraftingBar {
             String name = recipe.getResultName();
             Texture icon = icons.get(name.toLowerCase());
             float x = startX + i * (slotSize + spacing);
-            float y = barY;
 
             boolean canCraft = CraftController.canCraft(name.toLowerCase(), character.getInventory());
             batch.setColor(canCraft ? Color.WHITE : new Color(0.3f, 0.3f, 0.3f, 1f));
-            batch.draw(icon, x, y, slotSize, slotSize);
+            batch.draw(icon, x, barY, slotSize, slotSize);
             batch.setColor(Color.WHITE);
 
-            if (mouseX >= x && mouseX <= x + slotSize && mouseY >= y && mouseY <= y + slotSize) {
+            if (mouseX >= x && mouseX <= x + slotSize && mouseY >= barY && mouseY <= barY + slotSize) {
                 hovered = i;
 
                 layout.setText(font, name);
-                font.draw(batch, name, x + (slotSize - layout.width) / 2f, y + slotSize + 20);
+                font.draw(batch, name, x + (slotSize - layout.width) / 2f, barY + slotSize + 20);
 
-                float detailY = y + slotSize + 40;
+                float detailY = barY + slotSize + 40;
                 for (Map.Entry<String, Integer> entry : recipe.getRequiredItems().entrySet()) {
                     String req = entry.getKey() + ": " + entry.getValue();
                     layout.setText(font, req);
