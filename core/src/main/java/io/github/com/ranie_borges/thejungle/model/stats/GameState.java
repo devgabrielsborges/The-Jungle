@@ -1,8 +1,8 @@
 package io.github.com.ranie_borges.thejungle.model.stats;
 
 import com.google.gson.annotations.Expose;
-import io.github.com.ranie_borges.thejungle.controller.AmbientController;
 import io.github.com.ranie_borges.thejungle.controller.EventController;
+import io.github.com.ranie_borges.thejungle.controller.AmbientController;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
