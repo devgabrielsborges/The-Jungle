@@ -2,18 +2,18 @@ package io.github.com.ranie_borges.thejungle.core;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import io.github.com.ranie_borges.thejungle.controller.ScenarioController;
+import io.github.com.ranie_borges.thejungle.controller.AmbientController;
 
 public class Main extends Game {
     private SpriteBatch batch;
-    private ScenarioController scenarioController;
+    private AmbientController ambientController;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
 
-        scenarioController = new ScenarioController(this);
-        scenarioController.initializeGame();
+        ambientController = new AmbientController(this);
+        ambientController.initializeGame();
     }
 
     @Override
@@ -31,7 +31,7 @@ public class Main extends Game {
      * Get the scenario controller that manages game screens
      * @return The scenario controller instance
      */
-    public ScenarioController getScenarioController() {
-        return scenarioController;
+    public AmbientController getScenarioController() {
+        return ambientController;
     }
 }
