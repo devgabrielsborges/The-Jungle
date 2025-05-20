@@ -39,7 +39,7 @@ public class Hunter extends Character {
         logger.info("{} strikes {} with {} damage.", getName(), creature.getName(), totalDamage);
 
         float creatureLife = creature.getLifeRatio();
-        creatureLife -= totalDamage;
+        creatureLife -= (float) totalDamage;
         creature.setLifeRatio(Math.max(0, creatureLife));
 
         return creatureLife <= 0;
