@@ -186,26 +186,19 @@ public class AmbientController {
      * Start game with a specific character
      */
     public void startGameWithCharacter(Character character) {
-        // Initialize a new game state
         this.gameState = new GameState();
         this.gameState.setPlayerCharacter(character);
 
-        // Create initial ambient
         Ambient startingAmbient = new Jungle();
         this.gameState.setCurrentAmbient(startingAmbient);
 
-        // Initialize event controller
         this.eventController = new EventController(this.gameState);
         this.gameState.setEventController(this.eventController);
-
-        // Set this scenario controller as the ambient controller for the game state
         this.gameState.setAmbientController(this);
 
-        // Add the starting ambient to the list of ambients
         this.ambients = new HashSet<>();
         this.ambients.add(startingAmbient);
 
-        // Initialize visited ambients list
         this.visitedAmbients = new ArrayList<>();
         this.visitedAmbients.add(startingAmbient);
 
@@ -379,25 +372,6 @@ public class AmbientController {
      */
     public List<Ambient> getVisitedAmbients() {
         return visitedAmbients;
-    }
-
-    /**
-     * Set ambients in the game
-     *
-     * @param ambients The ambients to set
-     */
-    public void setAmbients(Set<Ambient> ambients) {
-        try {
-            if (ambients == null) {
-                logger.error("Cannot set ambients: ambients is null");
-                throw new IllegalArgumentException("Ambients cannot be null");
-            }
-            this.ambients = ambients;
-            logger.debug("Set {} ambients", ambients.size());
-        } catch (Exception e) {
-            logger.error("Failed to set ambients: {}", e.getMessage());
-            throw new AmbientControllerException("Failed to set ambients", e);
-        }
     }
 
     /**

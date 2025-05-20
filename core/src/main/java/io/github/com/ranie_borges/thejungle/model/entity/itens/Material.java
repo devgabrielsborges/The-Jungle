@@ -16,7 +16,7 @@ import java.util.*;
 public class Material extends Item {
     private String type;
     private float resistance;
-    private Vector2 position;
+    private final Vector2 position;
     private Map<String, Sprite> sprites;
 
     public Material(String name, float weight, float durability, String type, float resistance) {

@@ -8,8 +8,8 @@ import java.util.Random;
  * but may cause food poisoning if spoiled
  */
 public class Food extends Item {
-    private int nutritionalValue;
-    private String type;
+    private final int nutritionalValue;
+    private final String type;
     private int shelfLife; // prazo de validade em turnos
     private boolean spoiled;
 

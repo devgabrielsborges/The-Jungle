@@ -16,7 +16,7 @@ import java.util.Set;
 
 public class Deer extends Creature {
 
-    private Vector2 position = new Vector2();
+    private final Vector2 position = new Vector2();
     private Ambient ambient;
 
 

@@ -9,9 +9,9 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 
 public class AnimatedBackground extends Actor {
-    private Animation<TextureRegion> animation;
+    private final Animation<TextureRegion> animation;
     private float stateTime;
-    private Texture spriteSheet;
+    private final Texture spriteSheet;
 
     /**
      * Construtor para criar o fundo animado utilizando uma spritesheet.
@@ -27,7 +27,7 @@ public class AnimatedBackground extends Actor {
 
         // Divide a spritesheet em uma matriz de TextureRegions
         TextureRegion[][] tmp = TextureRegion.split(spriteSheet, frameWidth, frameHeight);
-        Array<TextureRegion> frames = new Array<TextureRegion>();
+        Array<TextureRegion> frames = new Array<>();
 
         // Seleciona os 5 primeiros frames da primeira linha (índice 0)
         if (tmp.length > 0) {
@@ -39,7 +39,7 @@ public class AnimatedBackground extends Actor {
         }
 
         // Cria a animação com os frames selecionados, definindo o modo de loop
-        animation = new Animation<TextureRegion>(frameDuration, frames, Animation.PlayMode.LOOP);
+        animation = new Animation<>(frameDuration, frames, Animation.PlayMode.LOOP);
         stateTime = 0f;
     }
 

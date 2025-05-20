@@ -252,9 +252,6 @@ public abstract class Character implements ICharacter, IInventory {
             case IDLE_UP:
                 currentAnimation = playerIdleUp;
                 break;
-            case IDLE_DOWN:
-                currentAnimation = playerIdleDown;
-                break;
             case IDLE_LEFT:
                 currentAnimation = playerIdleLeft;
                 break;
@@ -556,8 +553,7 @@ public abstract class Character implements ICharacter, IInventory {
             if (dist < collectionRadius) {
                 // Check inventory capacity first, applies to any item
                 if (isInventoryFull()) {
-                    logger.info(
-                            getName() + "'s inventory is full. Cannot collect " + materialOnMap.getName() + ".");
+                    logger.info("{}'s inventory is full. Cannot collect {}.", getName(), materialOnMap.getName());
                     logger.warn("{}: Inventory full, cannot collect {}.", getName(), materialOnMap.getName());
                     return false;
                 }
@@ -565,13 +561,13 @@ public abstract class Character implements ICharacter, IInventory {
                 if ("Berry".equalsIgnoreCase(materialOnMap.getName())) {
                     Food berryItem = Food.createBerry(); // Creates a new Food object
                     if (!canCarryMore(berryItem.getWeight())) {
-                        logger.info(getName() + " cannot carry more weight for a berry.");
+                        logger.info("{} cannot carry more weight for a berry.", getName());
                         logger.warn("{}: Cannot carry more weight for {}.", getName(), berryItem.getName());
                         return false; // Stop if character cannot carry this specific item
                     }
                     insertItemInInventory(berryItem);
                     iterator.remove(); // Remove the berry bush (Material) from the map
-                    logger.info(getName() + " collected a " + berryItem.getName() + ".");
+                    logger.info("{} collected a {}.", getName(), berryItem.getName());
                     logger.info("{}: Collected {}.", getName(), berryItem.getName());
                     return true; // Successfully collected one item
                 }
@@ -580,13 +576,13 @@ public abstract class Character implements ICharacter, IInventory {
                         && "Plant".equalsIgnoreCase(materialOnMap.getType())) {
                     Material medicinalPlantItem = Material.createMedicinalPlant(); // Creates a new Material object
                     if (!canCarryMore(medicinalPlantItem.getWeight())) {
-                        logger.info(getName() + " cannot carry more weight for a medicinal plant.");
+                        logger.info("{} cannot carry more weight for a medicinal plant.", getName());
                         logger.warn("{}: Cannot carry more weight for {}.", getName(), medicinalPlantItem.getName());
                         return false;
                     }
                     insertItemInInventory(medicinalPlantItem);
                     iterator.remove(); // Remove the medicinal plant (Material) from the map
-                    logger.info(getName() + " collected a " + medicinalPlantItem.getName() + ".");
+                    logger.info("{} collected a {}.", getName(), medicinalPlantItem.getName());
                     logger.info("{}: Collected {}.", getName(), medicinalPlantItem.getName());
                     return true; // Successfully collected one item
                 }
@@ -602,14 +598,13 @@ public abstract class Character implements ICharacter, IInventory {
 
                     if (itemToCollect != null) {
                         if (!canCarryMore(itemToCollect.getWeight())) {
-                            logger.info(
-                                    getName() + " cannot carry more weight for " + itemToCollect.getName() + ".");
+                            logger.info("{} cannot carry more weight for {}.", getName(), itemToCollect.getName());
                             logger.warn("{}: Cannot carry more weight for {}.", getName(), itemToCollect.getName());
                             return false; // Stop if character cannot carry this specific item
                         }
                         insertItemInInventory(itemToCollect);
                         iterator.remove(); // Remove the material from the map
-                        logger.info(getName() + " collected a " + itemToCollect.getName() + ".");
+                        logger.info("{} collected a {}.", getName(), itemToCollect.getName());
                         logger.info("{}: Collected {}.", getName(), itemToCollect.getName());
                         return true; // Successfully collected one item
                     }
@@ -682,7 +677,7 @@ public abstract class Character implements ICharacter, IInventory {
         try {
             if (isInventoryFull()) {
                 logger.warn("{}: Inventory full, cannot collect wood.", getName());
-                logger.info(getName() + " tentou cortar uma árvore, mas o inventário está cheio!");
+                logger.info("{} tentou cortar uma árvore, mas o inventário está cheio!", getName());
                 return;
             }
 
@@ -690,7 +685,7 @@ public abstract class Character implements ICharacter, IInventory {
             insertItemInInventory(woodLog);
 
             logger.info("{} cut down a tree and collected a Wood Log.", getName());
-            logger.info(getName() + " cortou uma árvore e coletou uma tora de madeira!");
+            logger.info("{} cortou uma árvore e coletou uma tora de madeira!", getName());
         } catch (Exception e) {
             logger.error("{}: Error while cutting tree: {}", getName(), e.getMessage());
         }
@@ -715,13 +710,13 @@ public abstract class Character implements ICharacter, IInventory {
 
             if (axe == null) {
                 logger.warn("{}: Tried to cut a tree but has no Axe.", getName());
-                logger.info(getName() + " tentou cortar uma árvore, mas não tem um Machado!");
+                logger.info("{} tentou cortar uma árvore, mas não tem um Machado!", getName());
                 return;
             }
 
             if (isInventoryFull()) {
                 logger.warn("{}: Inventory full, cannot collect wood.", getName());
-                logger.info(getName() + " tentou cortar uma árvore, mas o inventário está cheio!");
+                logger.info("{} tentou cortar uma árvore, mas o inventário está cheio!", getName());
                 return;
             }
 
@@ -729,7 +724,7 @@ public abstract class Character implements ICharacter, IInventory {
             insertItemInInventory(Material.createWoodLog());
 
             logger.info("{} used an Axe to cut a tree and collected 2 Wood Logs.", getName());
-            logger.info(getName() + " cortou uma árvore com o Machado e coletou 2 toras de madeira!");
+            logger.info("{} cortou uma árvore com o Machado e coletou 2 toras de madeira!", getName());
 
             axe.useItem();
 
@@ -752,7 +747,7 @@ public abstract class Character implements ICharacter, IInventory {
         try {
             if (resource == null) {
                 logger.warn("{}: Tried to collect a null resource.", getName());
-                logger.info(getName() + " tentou coletar algo, mas não havia nada.");
+                logger.info("{} tentou coletar algo, mas não havia nada.", getName());
                 return;
             }
 
@@ -770,20 +765,20 @@ public abstract class Character implements ICharacter, IInventory {
 
             if (knife == null) {
                 logger.warn("{}: Tried to collect a resource but has no Knife.", getName());
-                logger.info(getName() + " tentou coletar um recurso, mas não tem uma Faca!");
+                logger.info("{} tentou coletar um recurso, mas não tem uma Faca!", getName());
                 return;
             }
 
             if (isInventoryFull()) {
                 logger.warn("{}: Inventory full, cannot collect resource.", getName());
-                logger.info(getName() + " tentou coletar, mas o inventário está cheio!");
+                logger.info("{} tentou coletar, mas o inventário está cheio!", getName());
                 return;
             }
 
             insertItemInInventory(resource);
 
             logger.info("{} used a Knife to collect resource: {}", getName(), resource.getName());
-            logger.info(getName() + " usou a Faca e coletou com sucesso: " + resource.getName());
+            logger.info("{} usou a Faca e coletou com sucesso: {}", getName(), resource.getName());
 
             knife.useItem();
 
@@ -967,7 +962,7 @@ public abstract class Character implements ICharacter, IInventory {
                         getName(), food.getName(), System.identityHashCode(item));
             } else if (item instanceof Medicine) {
                 Medicine medicine = (Medicine) item;
-                float lifeToRestore = (float) (getHealRatioPercentage(medicine) * getLifeMax());
+                float lifeToRestore = getHealRatioPercentage(medicine) * getLifeMax();
                 setLife(Math.min(getLife() + lifeToRestore, getLifeMax()));
                 logger.info("{} healed with '{}' (ID: {}), restored {} life. Dose consumed by medicine.useItem().",
                         getName(), medicine.getName(), System.identityHashCode(item), lifeToRestore);
@@ -1086,7 +1081,7 @@ public abstract class Character implements ICharacter, IInventory {
 
             if (!inventory.contains(item, true)) {
                 logger.warn("{}: Tried to drop an item not in inventory: {}", getName(), item.getName());
-                logger.info(getName() + " tentou dropar um item que não possui: " + item.getName());
+                logger.info("{} tentou dropar um item que não possui: {}", getName(), item.getName());
                 return;
             }
 
@@ -1095,7 +1090,7 @@ public abstract class Character implements ICharacter, IInventory {
             if (currentWeight < 0)
                 currentWeight = 0;
 
-            logger.info(getName() + " dropou o item: " + item.getName());
+            logger.info("{} dropou o item: {}", getName(), item.getName());
             logger.info("{} dropped item: {}", getName(), item.getName());
 
         } catch (Exception e) {

@@ -41,7 +41,7 @@ public class Medicine extends Item {
 
     @Override
     public void dropItem() {
-        logger.info("Você deixou cair o medicamento: " + getName() + ".");
+        logger.info("Você deixou cair o medicamento: {}.", getName());
     }
 
     public double getHealRatio() {

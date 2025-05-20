@@ -39,7 +39,7 @@ public class Doctor extends Character {
         logger.info("{} attacks {} with {} damage.", getName(), creature.getName(), totalDamage);
 
         float creatureLife = creature.getLifeRatio();
-        creatureLife -= totalDamage;
+        creatureLife -= (float) totalDamage;
         creature.setLifeRatio(Math.max(0, creatureLife));
 
         return creatureLife <= 0;
