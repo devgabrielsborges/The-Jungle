@@ -90,7 +90,7 @@ public class CharacterManager implements UI {
 
         if (!spawnFound) {
             // Fallback to center of map
-            character.getPosition().set((MAP_WIDTH / 2) * TILE_SIZE, (MAP_HEIGHT / 2) * TILE_SIZE);
+            character.getPosition().set(((float) MAP_WIDTH / 2) * TILE_SIZE, ((float) MAP_HEIGHT / 2) * TILE_SIZE);
             logger.warn("Couldn't find safe spawn after {} attempts. Using center fallback.", maxAttempts);
         }
 
