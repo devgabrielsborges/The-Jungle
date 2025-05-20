@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.Color;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.interfaces.IInventory;
 
 /**
  * CharacterUI class for rendering character inventory and related UI elements
@@ -167,7 +166,7 @@ public class CharacterUI {
             for (int i = 0; i < character.getInventorySize(); i++) {
                 // Calculate slot position
                 float slotX = startX + (i % cols) * (slotSize + padding);
-                float slotY = startY + (rows - 1 - i / cols) * (slotSize + padding);
+                float slotY = startY + (rows - 1 - (float) i / cols) * (slotSize + padding);
 
                 // Check if click was in this slot
                 if (mouseX >= slotX && mouseX <= slotX + slotSize &&
