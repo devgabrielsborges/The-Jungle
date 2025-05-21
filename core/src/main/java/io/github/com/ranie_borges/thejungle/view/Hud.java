@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.Color;
+import io.github.com.ranie_borges.thejungle.controller.ChatController;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 
@@ -17,15 +18,28 @@ public class Hud {
     private final GlyphLayout layout;
     private final Texture backpackTexture;
 
-    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font, Texture backpackTexture) {
+    private final ChatController chatController;
+
+    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font) {
         this.sidebarTexture = sidebarTexture;
         this.classIcon = classIcon;
         this.font = font;
         this.layout = new GlyphLayout();
         this.backpackTexture = new Texture(Gdx.files.internal("Gameplay/backpack.png"));
+        this.chatController = new ChatController();
     }
 
-    public void render(SpriteBatch batch, ShapeRenderer shapeRenderer, Character character, GameState gameState, int width, int height) {
+    /**
+     * Updates the chat messages (removes expired messages)
+     *
+     * @param delta Time elapsed since last frame
+     */
+    public void update(float delta) {
+        chatController.update(delta);
+    }
+
+    public void render(SpriteBatch batch, ShapeRenderer shapeRenderer, Character character, GameState gameState,
+            int width, int height) {
         float barX = 30;
         float baseY = height - 450.0f;
         float spacing = 60;
@@ -50,8 +64,11 @@ public class Hud {
         font.draw(batch, "Energy", barX, baseY - spacing * 4 + 45);
         font.draw(batch, "Days: " + gameState.getDaysSurvived(), width - sidebarWidth + 20, height - 60.0f);
 
+        chatController.renderChatArea(batch, shapeRenderer, width, height, sidebarWidth);
+        chatController.renderChatMessages(batch, width, sidebarWidth);
+
         if (backpackTexture != null) {
-            float backpackX = width - 250;
+            float backpackX = (float) width - 250;
             float backpackY = 30;
             float backpackWidth = 200;
             float backpackHeight = 200;
@@ -78,4 +95,5 @@ public class Hud {
         renderer.setColor(color);
         renderer.rect(x, y, 240 * Math.min(1, Math.max(0, percent)), 20);
     }
+
 }

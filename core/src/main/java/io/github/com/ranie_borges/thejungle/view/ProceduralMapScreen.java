@@ -178,7 +178,7 @@ public class ProceduralMapScreen implements Screen, UI {
         // Initialize UI components
         character.updateStateTime(0f);
         this.craftingBar = new CraftingBar();
-        hud = new Hud(textureManager.getSidebarTexture(), classIcon, font, backpackIcon);
+        hud = new Hud(textureManager.getSidebarTexture(), classIcon, font);
         characterUI = new CharacterUI(inventoryBackground, font);
     }
 
