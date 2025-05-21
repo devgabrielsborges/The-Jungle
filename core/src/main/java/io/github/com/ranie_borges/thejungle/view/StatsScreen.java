@@ -14,7 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.*;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
+import io.github.com.ranie_borges.thejungle.controller.managers.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Doctor;

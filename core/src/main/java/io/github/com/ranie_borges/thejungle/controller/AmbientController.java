@@ -5,8 +5,8 @@ import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.Ambien
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.InvalidAmbientException;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.ResourceOperationException;
 // Importing SaveManager directly
-import io.github.com.ranie_borges.thejungle.controller.systems.MapManager;
-import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
+import io.github.com.ranie_borges.thejungle.controller.managers.MapManager;
+import io.github.com.ranie_borges.thejungle.controller.managers.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;

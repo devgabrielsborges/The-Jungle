@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle.controller.systems;
+package io.github.com.ranie_borges.thejungle.controller;
 
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
@@ -18,8 +18,8 @@ import java.util.List;
 /**
  * Responsible for spawning resources and creatures in different ambient types
  */
-public class ResourceSpawner implements UI {
-    private static final Logger logger = LoggerFactory.getLogger(ResourceSpawner.class);
+public class ResourceController implements UI {
+    private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
 
     private List<Material> materialsOnMap = new ArrayList<>();
     private List<Deer> deers = new ArrayList<>();
@@ -27,7 +27,7 @@ public class ResourceSpawner implements UI {
 
     /**
      * Spawn resources appropriate for the given ambient
-     * 
+     *
      * @param ambient The ambient to spawn resources in
      * @param map     The current map
      * @return The list of materials placed on the map
@@ -59,7 +59,7 @@ public class ResourceSpawner implements UI {
 
     /**
      * Spawn deer appropriate for the given ambient
-     * 
+     *
      * @param ambient The ambient to spawn creatures in
      * @param map     The current map
      * @return The list of spawned deer
@@ -82,7 +82,7 @@ public class ResourceSpawner implements UI {
 
     /**
      * Spawn cannibals appropriate for the given ambient
-     * 
+     *
      * @param ambient The ambient to spawn creatures in
      * @param map     The current map
      * @return The list of spawned cannibals

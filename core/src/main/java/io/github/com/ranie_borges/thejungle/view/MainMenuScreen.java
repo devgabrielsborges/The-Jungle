@@ -17,7 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
+import io.github.com.ranie_borges.thejungle.controller.managers.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
 
 import java.io.File;

@@ -14,11 +14,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
-import io.github.com.ranie_borges.thejungle.controller.systems.CharacterManager;
-import io.github.com.ranie_borges.thejungle.controller.systems.GameStateManager;
-import io.github.com.ranie_borges.thejungle.controller.systems.MapManager;
-import io.github.com.ranie_borges.thejungle.controller.systems.ResourceSpawner;
-import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
+import io.github.com.ranie_borges.thejungle.controller.managers.CharacterManager;
+import io.github.com.ranie_borges.thejungle.controller.managers.GameStateManager;
+import io.github.com.ranie_borges.thejungle.controller.managers.MapManager;
+import io.github.com.ranie_borges.thejungle.controller.ResourceController;
+import io.github.com.ranie_borges.thejungle.controller.managers.SaveManager;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
@@ -50,7 +50,7 @@ public class ProceduralMapScreen implements Screen, UI {
     private final GameState gameState;
     private final MapManager mapManager;
     private final CharacterManager characterManager;
-    private final ResourceSpawner resourceSpawner;
+    private final ResourceController resourceController;
     private final GameStateManager gameStateManager;
     private final GameRenderHelper renderHelper;
 
@@ -114,7 +114,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         this.mapManager = new MapManager(ambient);
         this.characterManager = new CharacterManager(character, ambient);
-        this.resourceSpawner = new ResourceSpawner();
+        this.resourceController = new ResourceController();
         this.gameStateManager = new GameStateManager(gameState);
         this.renderHelper = new GameRenderHelper();
     }
@@ -164,9 +164,9 @@ public class ProceduralMapScreen implements Screen, UI {
 
             resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
-            deers = resourceSpawner.spawnCreatures(ambient, map);
-            cannibals = resourceSpawner.spawnCannibals(ambient, map);
-            materiaisNoMapa = resourceSpawner.spawnResources(ambient, map);
+            deers = resourceController.spawnCreatures(ambient, map);
+            cannibals = resourceController.spawnCannibals(ambient, map);
+            materiaisNoMapa = resourceController.spawnResources(ambient, map);
 
             lightingManager = new LightingManager();
 
@@ -236,9 +236,9 @@ public class ProceduralMapScreen implements Screen, UI {
                     mapManager.generateCaveDoors();
                 }
 
-                deers = resourceSpawner.spawnCreatures(ambient, map);
-                cannibals = resourceSpawner.spawnCannibals(ambient, map);
-                materiaisNoMapa = resourceSpawner.spawnResources(ambient, map);
+                deers = resourceController.spawnCreatures(ambient, map);
+                cannibals = resourceController.spawnCannibals(ambient, map);
+                materiaisNoMapa = resourceController.spawnResources(ambient, map);
 
                 updateTextures(ambient);
 
