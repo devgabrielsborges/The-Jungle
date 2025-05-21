@@ -1,4 +1,3 @@
-// Jungle.java
 package io.github.com.ranie_borges.thejungle.model.world.ambients;
 
 import com.badlogic.gdx.Gdx;
@@ -8,7 +7,6 @@ import io.github.com.ranie_borges.thejungle.model.entity.itens.Drinkable;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Food;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
-import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 
 import java.util.Random;
 import java.util.Set;
