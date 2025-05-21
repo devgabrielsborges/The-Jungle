@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle.controller.systems;
+package io.github.com.ranie_borges.thejungle.controller.adapters;
 
 import com.google.gson.*;
 import java.lang.reflect.Type;

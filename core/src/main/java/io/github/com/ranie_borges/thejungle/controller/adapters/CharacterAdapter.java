@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle.controller.systems;
+package io.github.com.ranie_borges.thejungle.controller.adapters;
 
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.*;
