@@ -44,7 +44,7 @@ public abstract class Character implements ICharacter, IInventory {
     private float currentWeight = 0f;
 
     @Expose
-    private float maxCarryWeight = 30f; // FiXME peso máximo padrão (pode mudar por profissão depois)
+    private final float maxCarryWeight = 30f; // FiXME peso máximo padrão (pode mudar por profissão depois)
 
     @Expose
     private int inventoryInitialCapacity = 15;
@@ -74,6 +74,10 @@ public abstract class Character implements ICharacter, IInventory {
     private Animation<TextureRegion> playerWalkLeft;
     private Animation<TextureRegion> playerWalkRight;
 
+    public float getMaxCarryWeight() {
+        return this.maxCarryWeight;
+    }
+
     private enum PlayerState {
         IDLE_UP, IDLE_DOWN, IDLE_LEFT, IDLE_RIGHT, WALK_UP, WALK_DOWN, WALK_LEFT, WALK_RIGHT
     }
@@ -92,19 +96,16 @@ public abstract class Character implements ICharacter, IInventory {
     protected Character(
             String name,
             float life,
-            float hunger,
-            float thirsty,
             float energy,
             float sanity,
             float attackDamage,
-            String spritePath,
             float xPosition,
             float yPosition) {
         try {
             this.name = name != null ? name : "Unknown";
             this.life = Math.max(0, life);
-            this.hunger = Math.max(0, hunger);
-            this.thirsty = Math.max(0, thirsty);
+            this.hunger = Math.max(0, (float) 100);
+            this.thirsty = Math.max(0, (float) 100);
             this.energy = Math.max(0, energy);
             this.sanity = Math.max(0, sanity);
             this.attackDamage = Math.max(0, attackDamage);
@@ -114,13 +115,13 @@ public abstract class Character implements ICharacter, IInventory {
             // Load texture with exception handling
             Texture tempTexture;
             try {
-                if (spritePath == null || spritePath.isEmpty()) {
+                if ("sprites/character/personagem_luta.png" == null || "sprites/character/personagem_luta.png".isEmpty()) {
                     throw new IllegalArgumentException("Sprite path cannot be null or empty");
                 }
-                tempTexture = new Texture(Gdx.files.internal(spritePath));
-                logger.debug("Successfully loaded texture: {}", spritePath);
+                tempTexture = new Texture(Gdx.files.internal("sprites/character/personagem_luta.png"));
+                logger.debug("Successfully loaded texture: {}", "sprites/character/personagem_luta.png");
             } catch (Exception e) {
-                logger.error("Failed to load texture {}: {}", spritePath, e.getMessage());
+                logger.error("Failed to load texture {}: {}", "sprites/character/personagem_luta.png", e.getMessage());
                 // Create a fallback 1x1 texture
                 Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
                 pixmap.setColor(1, 0, 1, 0.5f); // Semi-transparent magenta for visual debugging
@@ -538,7 +539,7 @@ public abstract class Character implements ICharacter, IInventory {
         }
     }
 
-    public boolean tryCollectNearbyMaterial(List<Material> materiais) {
+    public void tryCollectNearbyMaterial(List<Material> materiais) {
         Iterator<Material> iterator = materiais.iterator();
         while (iterator.hasNext()) {
             Material materialOnMap = iterator.next();
@@ -555,7 +556,7 @@ public abstract class Character implements ICharacter, IInventory {
                 if (isInventoryFull()) {
                     logger.info("{}'s inventory is full. Cannot collect {}.", getName(), materialOnMap.getName());
                     logger.warn("{}: Inventory full, cannot collect {}.", getName(), materialOnMap.getName());
-                    return false;
+                    return;
                 }
 
                 if ("Berry".equalsIgnoreCase(materialOnMap.getName())) {
@@ -563,13 +564,13 @@ public abstract class Character implements ICharacter, IInventory {
                     if (!canCarryMore(berryItem.getWeight())) {
                         logger.info("{} cannot carry more weight for a berry.", getName());
                         logger.warn("{}: Cannot carry more weight for {}.", getName(), berryItem.getName());
-                        return false; // Stop if character cannot carry this specific item
+                        return; // Stop if character cannot carry this specific item
                     }
                     insertItemInInventory(berryItem);
                     iterator.remove(); // Remove the berry bush (Material) from the map
                     logger.info("{} collected a {}.", getName(), berryItem.getName());
                     logger.info("{}: Collected {}.", getName(), berryItem.getName());
-                    return true; // Successfully collected one item
+                    return; // Successfully collected one item
                 }
                 // Handle Medicinal Plants: creates a Material item
                 else if ("Medicinal".equalsIgnoreCase(materialOnMap.getName())
@@ -578,13 +579,13 @@ public abstract class Character implements ICharacter, IInventory {
                     if (!canCarryMore(medicinalPlantItem.getWeight())) {
                         logger.info("{} cannot carry more weight for a medicinal plant.", getName());
                         logger.warn("{}: Cannot carry more weight for {}.", getName(), medicinalPlantItem.getName());
-                        return false;
+                        return;
                     }
                     insertItemInInventory(medicinalPlantItem);
                     iterator.remove(); // Remove the medicinal plant (Material) from the map
                     logger.info("{} collected a {}.", getName(), medicinalPlantItem.getName());
                     logger.info("{}: Collected {}.", getName(), medicinalPlantItem.getName());
-                    return true; // Successfully collected one item
+                    return; // Successfully collected one item
                 }
                 // Handle other simple materials like Rock or Stick
                 else if ("rock".equalsIgnoreCase(materialOnMap.getName())
@@ -600,19 +601,18 @@ public abstract class Character implements ICharacter, IInventory {
                         if (!canCarryMore(itemToCollect.getWeight())) {
                             logger.info("{} cannot carry more weight for {}.", getName(), itemToCollect.getName());
                             logger.warn("{}: Cannot carry more weight for {}.", getName(), itemToCollect.getName());
-                            return false; // Stop if character cannot carry this specific item
+                            return; // Stop if character cannot carry this specific item
                         }
                         insertItemInInventory(itemToCollect);
                         iterator.remove(); // Remove the material from the map
                         logger.info("{} collected a {}.", getName(), itemToCollect.getName());
                         logger.info("{}: Collected {}.", getName(), itemToCollect.getName());
-                        return true; // Successfully collected one item
+                        return; // Successfully collected one item
                     }
                 }
                 // Add 'else if' blocks here for other specific material types if needed
             }
         }
-        return false; // No material was collected in this pass
     }
 
     public void insertItemInInventory(Item item) {

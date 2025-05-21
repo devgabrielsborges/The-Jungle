@@ -4,21 +4,26 @@ import com.badlogic.gdx.Screen;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.AmbientControllerException;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.InvalidAmbientException;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.ResourceOperationException;
+// Importing SaveManager directly
+import io.github.com.ranie_borges.thejungle.controller.systems.MapManager;
 import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
+import io.github.com.ranie_borges.thejungle.model.stats.AmbientData;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
 import io.github.com.ranie_borges.thejungle.view.*;
+import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -99,80 +104,126 @@ public class AmbientController {
      * Load a saved game and transition to game screen
      */
     public void loadSavedGame() {
-        File[] saveFiles = saveManager.getSaveFiles();
-        logger.info("Found {} save files", saveFiles.length);
+        try {
+            // Show save selection screen or directly load a save
+            // For now, we'll implement a simple method to find the latest save
+            SaveManager saveManager = new SaveManager();
+            File[] saveFiles = saveManager.getSaveFiles();
 
-        if (saveFiles.length > 0) {
-            try {
-                // Get first save file
-                String saveName = String.valueOf(saveFiles[saveFiles.length - 1]);
-                logger.info("Attempting to load save file: {}", saveName);
+            if (saveFiles != null && saveFiles.length > 0) {
+                Arrays.sort(saveFiles, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
 
-                // Load game state
-                this.gameState = saveManager.loadGame(saveName);
-
-                if (this.gameState == null) {
-                    logger.error("Game state is null after loading save: {}", saveName);
-                    startNewGame();
-                    return;
-                }
-
-                if (this.gameState.getPlayerCharacter() == null) {
-                    logger.error("Player character is null in save: {}", saveName);
-                    startNewGame();
-                    return;
-                }
-
-                // Initialize ambient control
-                EventController loadedEventController = this.gameState.getEventController();
-                this.eventController = loadedEventController == null ? new EventController(this.gameState)
-                        : loadedEventController;
-                this.gameState.setEventController(this.eventController);
-
-                // If there was a previous ambient controller, copy its data
-                if (this.gameState.getAmbientController() != null && this.gameState.getAmbientController() != this) {
-                    AmbientController oldController = this.gameState.getAmbientController();
-
-                    try {
-                        // Get data from the old controller
-                        Set<Ambient> oldAmbients = oldController.getAmbients();
-                        if (oldAmbients != null) {
-                            this.ambients = new HashSet<>(oldAmbients);
-                        }
-
-                        List<Ambient> oldVisitedAmbients = oldController.getVisitedAmbients();
-                        if (oldVisitedAmbients != null) {
-                            this.visitedAmbients = new ArrayList<>(oldVisitedAmbients);
-                        }
-
-                        this.globalClime = oldController.getGlobalClime();
-                    } catch (Exception e) {
-                        logger.warn("Could not get data from previous ambient controller", e);
-                    }
-                }
-
-                // Set this scenario controller as the ambient controller for the game state
-                this.gameState.setAmbientController(this);
-
-                Character characterName = this.gameState.getPlayerCharacter();
-                String profession = getProfessionFromCharacter(this.gameState.getPlayerCharacter());
-                Ambient currentAmbient = this.gameState.getCurrentAmbient();
-                logger.info("Successfully loaded character: {}, profession: {}",
-                        characterName.getClass().getSimpleName(), profession);
-
-                setScreen(new ProceduralMapScreen(characterName, currentAmbient));
-            } catch (Exception e) {
-                logger.error("Error loading saved game", e);
+                GameState gameState = saveManager.loadGame(saveFiles[0].getAbsolutePath());
+                setupLoadedGame(gameState);
+            } else {
                 startNewGame();
             }
-        } else {
-            logger.warn("No save files found despite saveExists flag being true");
+        } catch (Exception e) {
+            logger.error("Failed to load saved game: {}", e.getMessage());
             startNewGame();
         }
     }
 
-    private String getProfessionFromCharacter(io.github.com.ranie_borges.thejungle.model.entity.Character character) {
-        return character.getClass().getSimpleName(); // Returns "Survivor", "Hunter", etc.
+    /**
+     * Loads a specific save game by filename
+     *
+     * @param saveName The name of the save file to load
+     */
+    public void loadSpecificSaveGame(String saveName) {
+        try {
+            String fullFilename = saveName.endsWith(".json") ? saveName : saveName + ".json";
+            String savePath = "saves/" + fullFilename;
+
+            logger.info("Loading save game from: {}", savePath);
+            GameState loadedGameState = saveManager.loadGame(savePath);
+
+            if (loadedGameState != null) {
+                setupLoadedGame(loadedGameState);
+            } else {
+                logger.error("Failed to load game state from: {}", savePath);
+                startNewGame();
+            }
+        } catch (Exception e) {
+            logger.error("Failed to load specific save game: {}", e.getMessage(), e);
+            startNewGame();
+        }
+    }
+
+    /**
+     * Setup the game with a loaded game state
+     *
+     * @param gameState The loaded game state
+     */
+    private void setupLoadedGame(GameState gameState) {
+        logger.info("Setting up loaded game from save file");
+        this.gameState = gameState;
+
+        Character player = gameState.getPlayerCharacter();
+
+        Ambient currentAmbient = gameState.getCurrentAmbient();
+        if (currentAmbient == null) {
+            logger.warn("No ambient found in save, creating default Jungle ambient");
+            currentAmbient = new Jungle(); // Default ambient if none loaded
+        } else {
+            logger.info("Loaded ambient: {}", currentAmbient.getName());
+        }
+
+        MapManager mapManager = new MapManager(currentAmbient);
+
+        int[][] mapToLoad = null;
+
+        if (gameState.getCurrentMap() != null && gameState.getCurrentMap().length > 0) {
+            logger.info("Using directly stored current map with dimensions: {}x{}",
+                    gameState.getCurrentMap().length,
+                    gameState.getCurrentMap()[0].length);
+            mapToLoad = gameState.getCurrentMap();
+        }
+        else if (gameState.getVisitedAmbients() != null && gameState.getVisitedAmbients().containsKey(currentAmbient.getName())) {
+
+            AmbientData ambientData = gameState.getVisitedAmbients().get(currentAmbient.getName());
+            if (ambientData != null && ambientData.getMap() != null) {
+                logger.info("Using map from visited ambient data for: {}", currentAmbient.getName());
+                mapToLoad = ambientData.getMap();
+            }
+        }
+
+        if (mapToLoad != null) {
+            mapManager.setCurrentMap(mapToLoad);
+            mapManager.setCurrentAmbient(currentAmbient);
+
+            gameState.setCurrentMap(mapToLoad);
+
+            if (gameState.getVisitedAmbients() != null && gameState.getVisitedAmbients().containsKey(currentAmbient.getName())) {
+
+                AmbientData ambientData = gameState.getVisitedAmbients().get(currentAmbient.getName());
+                if (ambientData != null && ambientData.getRemainingResources() != null) {
+                    logger.info("Restoring {} resources for ambient {}",
+                            ambientData.getRemainingResources().size(),
+                            currentAmbient.getName());
+                    currentAmbient.setResources(new HashSet<>(ambientData.getRemainingResources()));
+                }
+            }
+        } else {
+            logger.warn("No saved map found, generating a new one for ambient: {}",
+                currentAmbient.getName());
+            int[][] newMap = mapManager.generateMap();
+            gameState.setCurrentMap(newMap);
+        }
+
+
+        eventController = gameState.getEventController();
+        if (eventController == null) {
+            eventController = new EventController(gameState);
+            gameState.setEventController(eventController);
+        }
+
+        if (!this.visitedAmbients.contains(currentAmbient)) {
+            this.visitedAmbients.add(currentAmbient);
+        }
+
+        this.ambients.add(currentAmbient);
+
+        setScreen(new ProceduralMapScreen(player, currentAmbient));
     }
 
     /**
@@ -201,6 +252,12 @@ public class AmbientController {
 
         this.visitedAmbients = new ArrayList<>();
         this.visitedAmbients.add(startingAmbient);
+
+        // Initialize the visited maps collection in the GameState with the starting
+        // ambient
+        int[][] map = startingAmbient.generateMap(UI.MAP_WIDTH, UI.MAP_HEIGHT);
+        this.gameState.addVisitedMap(startingAmbient.getName(), map);
+        this.gameState.setCurrentMap(map);
 
         // Start the game with the initial ambient
         setScreen(new ProceduralMapScreen(character, startingAmbient));

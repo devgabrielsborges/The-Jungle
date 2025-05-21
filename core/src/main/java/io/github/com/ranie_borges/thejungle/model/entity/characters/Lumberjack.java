@@ -15,11 +15,8 @@ public class Lumberjack extends Character {
             name,
             120,
             100,
-            100,
-            100,
             90,
             15.0f,
-            "sprites/character/personagem_luta.png",
             xPosition,
             yPosition
         );

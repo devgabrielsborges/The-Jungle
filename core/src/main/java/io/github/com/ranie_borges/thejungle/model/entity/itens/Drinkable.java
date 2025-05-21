@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle.model.entity.itens;
 
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import java.util.Random;
 
@@ -8,7 +9,9 @@ import java.util.Random;
  * Drinking may restore thirst, but also risks contamination and health loss.
  */
 public class Drinkable extends Item {
+    @Expose
     private boolean potable;
+    @Expose
     private float volume;
     private static final Random random = new Random();
 

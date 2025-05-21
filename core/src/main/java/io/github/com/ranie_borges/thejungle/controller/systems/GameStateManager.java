@@ -50,13 +50,22 @@ public class GameStateManager {
      * @param character Current character
      * @param ambient   Current ambient
      * @param map       Current map
-     * @return true if the save was successful
      */
-    public boolean autosave(Character character, Ambient ambient, int[][] map) {
+    public void autosave(Character character, Ambient ambient, int[][] map) {
         try {
-            gameState.setCharacter(character);
+            gameState.setPlayerCharacter(character);
             gameState.setCurrentAmbient(ambient);
             gameState.setCurrentMap(map);
+
+            if (map != null && map.length > 0) {
+                gameState.setMapHeight(map.length);
+                gameState.setMapWidth(map[0].length);
+            }
+
+            if (ambient != null) {
+                String ambientName = ambient.getName();
+                gameState.addVisitedMap(ambientName, map);
+            }
 
             boolean success = saveManager.saveGame(gameState, "autosave");
             if (success) {
@@ -64,10 +73,8 @@ public class GameStateManager {
             } else {
                 logger.warn("Autosave failed");
             }
-            return success;
         } catch (Exception e) {
             logger.error("Error during autosave: {}", e.getMessage());
-            return false;
         }
     }
 
@@ -78,13 +85,22 @@ public class GameStateManager {
      * @param ambient   Current ambient
      * @param map       Current map
      * @param saveName  Name for the save file
-     * @return true if the save was successful
      */
-    public boolean save(Character character, Ambient ambient, int[][] map, String saveName) {
+    public void save(Character character, Ambient ambient, int[][] map, String saveName) {
         try {
-            gameState.setCharacter(character);
+            gameState.setPlayerCharacter(character);
             gameState.setCurrentAmbient(ambient);
             gameState.setCurrentMap(map);
+
+            if (map != null && map.length > 0) {
+                gameState.setMapHeight(map.length);
+                gameState.setMapWidth(map[0].length);
+            }
+
+            if (ambient != null) {
+                String ambientName = ambient.getName();
+                gameState.addVisitedMap(ambientName, map);
+            }
 
             boolean success = saveManager.saveGame(gameState, saveName);
             if (success) {
@@ -92,10 +108,8 @@ public class GameStateManager {
             } else {
                 logger.warn("Save failed for '{}'", saveName);
             }
-            return success;
         } catch (Exception e) {
             logger.error("Error during save: {}", e.getMessage());
-            return false;
         }
     }
 

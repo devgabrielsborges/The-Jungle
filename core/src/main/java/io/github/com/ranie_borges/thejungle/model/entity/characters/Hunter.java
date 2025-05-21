@@ -14,12 +14,9 @@ public class Hunter extends Character {
         super(
             name,
             100,
-            100,
-            100,
             90,
             95,
             12.0f,
-            "sprites/character/personagem_luta.png",
             xPosition,
             yPosition
         );

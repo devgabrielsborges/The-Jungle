@@ -46,7 +46,7 @@ public class CraftingBar {
 
         int mouseX = Gdx.input.getX();
         int mouseY = screenHeight - Gdx.input.getY();
-        int hovered = -1;
+
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(Color.DARK_GRAY);
@@ -66,7 +66,6 @@ public class CraftingBar {
             batch.setColor(Color.WHITE);
 
             if (mouseX >= x && mouseX <= x + slotSize && mouseY >= barY && mouseY <= barY + slotSize) {
-                hovered = i;
 
                 layout.setText(font, name);
                 font.draw(batch, name, x + (slotSize - layout.width) / 2f, barY + slotSize + 20);

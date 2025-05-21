@@ -4,17 +4,19 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
 import java.util.*;
-
 
 /**
  * Represents a basic material used for crafting.
  * Materials have a type, resistance, sprite, and a position in the world.
  */
 public class Material extends Item {
+    @Expose
     private String type;
+    @Expose
     private float resistance;
     private final Vector2 position;
     private Map<String, Sprite> sprites;
@@ -98,7 +100,8 @@ public class Material extends Item {
     }
 
     // --- Método para spawnar materiais aleatoriamente no mapa ---
-    public static List<Material> spawnSmallRocks(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileCave, int tileSize) {
+    public static List<Material> spawnSmallRocks(int quantidade, int[][] mapa, int mapWidth, int mapHeight,
+            int tileCave, int tileSize) {
         List<Material> materiais = new ArrayList<>();
         int materiaisGerados = 0;
         int tentativas = 0;
@@ -118,7 +121,8 @@ public class Material extends Item {
         return materiais;
     }
 
-    public static List<Material> spawnSticksAndRocks(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+    public static List<Material> spawnSticksAndRocks(int quantidade, int[][] mapa, int mapWidth, int mapHeight,
+            int tileGrass, int tileSize) {
         List<Material> materiais = new ArrayList<>();
         int materiaisGerados = 0;
         int tentativas = 0;
@@ -137,7 +141,9 @@ public class Material extends Item {
         }
         return materiais;
     }
-    public static List<Material> spawnTrees(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+
+    public static List<Material> spawnTrees(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass,
+            int tileSize) {
         List<Material> materiais = new ArrayList<>();
         int materiaisGerados = 0;
         int tentativas = 0;
@@ -161,7 +167,9 @@ public class Material extends Item {
         }
         return materiais;
     }
-    public static List<Material> spawnMedicinalPlants(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+
+    public static List<Material> spawnMedicinalPlants(int quantidade, int[][] mapa, int mapWidth, int mapHeight,
+            int tileGrass, int tileSize) {
         List<Material> materiais = new ArrayList<>();
         int gerados = 0;
         int tentativas = 0;
@@ -182,6 +190,7 @@ public class Material extends Item {
 
         return materiais;
     }
+
     private static Map<String, Sprite> loadSprites(String path) {
         Map<String, Sprite> sprites = new HashMap<>();
         Texture texture = new Texture(Gdx.files.internal(path));
@@ -207,6 +216,7 @@ public class Material extends Item {
         spear.setSprites(loadSprites("icons/spear.png"));
         return spear;
     }
+
     public static Material createMedicinalPlant() {
         Material plant = new Material("Medicinal", 0.2f, 1.0f, "Plant", 0.9f);
         Map<String, Sprite> sprites = new HashMap<>();
@@ -215,7 +225,9 @@ public class Material extends Item {
         plant.setSprites(sprites);
         return plant;
     }
-    public static List<Material> spawnBerryBushes(int quantidade, int[][] mapa, int mapWidth, int mapHeight, int tileGrass, int tileSize) {
+
+    public static List<Material> spawnBerryBushes(int quantidade, int[][] mapa, int mapWidth, int mapHeight,
+            int tileGrass, int tileSize) {
         List<Material> materiais = new ArrayList<>();
         int gerados = 0;
         int tentativas = 0;
@@ -236,6 +248,7 @@ public class Material extends Item {
 
         return materiais;
     }
+
     public static Material createBerryBush() {
         Material berryBush = new Material("Berry", 0.2f, 1.0f, "Berry", 0.2f);
         Map<String, Sprite> sprites = new HashMap<>();
@@ -245,7 +258,4 @@ public class Material extends Item {
         return berryBush;
     }
 
-
-
 }
-

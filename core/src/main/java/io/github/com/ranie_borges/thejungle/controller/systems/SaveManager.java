@@ -1,21 +1,18 @@
 package io.github.com.ranie_borges.thejungle.controller.systems;
 
 import com.google.gson.*;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.save.SaveManagerException;
+import io.github.com.ranie_borges.thejungle.controller.systems.AmbientAdapter;
+import io.github.com.ranie_borges.thejungle.controller.systems.CharacterAdapter;
+import io.github.com.ranie_borges.thejungle.controller.systems.ItemAdapter;
+import io.github.com.ranie_borges.thejungle.controller.systems.OffsetDateTimeAdapter;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.characters.Doctor;
-import io.github.com.ranie_borges.thejungle.model.entity.characters.Hunter;
-import io.github.com.ranie_borges.thejungle.model.entity.characters.Lumberjack;
+import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Survivor;
+import io.github.com.ranie_borges.thejungle.model.stats.AmbientData;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Mountain;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Ruins;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,47 +24,18 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SaveManager {
     private static final Logger logger = LoggerFactory.getLogger(SaveManager.class);
     private static final String SAVE_DIRECTORY = "saves/";
     private static final String JSON = ".json";
-    private final Gson gson;
 
     public SaveManager() {
         try {
-            // Create a custom TypeAdapter for OffsetDateTime
-            TypeAdapter<OffsetDateTime> offsetDateTimeAdapter = new TypeAdapter<OffsetDateTime>() {
-                @Override
-                public void write(JsonWriter out, OffsetDateTime value) throws IOException {
-                    if (value == null) {
-                        out.nullValue();
-                    } else {
-                        out.value(value.toString());
-                    }
-                }
-
-                @Override
-                public OffsetDateTime read(JsonReader in) throws IOException {
-                    try {
-                        String dateStr = in.nextString();
-                        return dateStr == null ? null : OffsetDateTime.parse(dateStr);
-                    } catch (DateTimeParseException e) {
-                        logger.error("Failed to parse OffsetDateTime: {}", e.getMessage());
-                        return OffsetDateTime.now();
-                    }
-                }
-            };
-
-            // Configure Gson with runtime type information
-            this.gson = new GsonBuilder()
-                .setPrettyPrinting()
-                .excludeFieldsWithoutExposeAnnotation()
-                .registerTypeAdapter(OffsetDateTime.class, offsetDateTimeAdapter)
-                .registerTypeHierarchyAdapter(Character.class, new CharacterAdapter())
-                .serializeSpecialFloatingPointValues()
-                .create();
-
             // Create save directory if it doesn't exist
             createSaveDirectory();
         } catch (Exception e) {
@@ -88,7 +56,6 @@ public class SaveManager {
             throw new SaveManagerException("Failed to create save directory", e);
         }
     }
-
 
     public boolean saveGame(GameState gameState, String saveName) {
         if (gameState == null) {
@@ -114,20 +81,69 @@ public class SaveManager {
             File saveFile = new File(SAVE_DIRECTORY + filename);
             writer = new FileWriter(saveFile);
 
+            if (gameState.getCurrentAmbient() != null) {
+                String ambientName = gameState.getCurrentAmbient().getName();
+                logger.debug("Saving current ambient: {}", ambientName);
+
+                if (gameState.getCurrentMap() == null) {
+                    logger.warn(
+                            "Current map is null, but we can't get it from the ambient because getMap() doesn't exist");
+
+                    if (gameState.getVisitedAmbients() != null &&
+                            gameState.getVisitedAmbients().containsKey(ambientName)) {
+                        AmbientData ambientData = gameState.getVisitedAmbients().get(ambientName);
+                        if (ambientData != null && ambientData.getMap() != null) {
+                            logger.debug("Found map in visitedAmbients, using it as current map");
+                            gameState.setCurrentMap(ambientData.getMap());
+                        }
+                    }
+                }
+
+                if (gameState.getCurrentMap() != null) {
+                    logger.debug("Saving current map with dimensions {}x{}",
+                            gameState.getCurrentMap().length,
+                            gameState.getCurrentMap()[0].length);
+
+                    // Create or update the ambient data in visitedAmbients
+                    if (!gameState.getVisitedAmbients().containsKey(ambientName)) {
+                        AmbientData ambientData = new AmbientData(gameState.getCurrentMap());
+
+                        // Copy resources
+                        if (gameState.getCurrentAmbient().getResources() != null) {
+                            ambientData.setRemainingResources(
+                                    new ArrayList<>(gameState.getCurrentAmbient().getResources()));
+                        }
+
+                        gameState.getVisitedAmbients().put(ambientName, ambientData);
+                    } else {
+                        // Update existing ambient data
+                        AmbientData ambientData = gameState.getVisitedAmbients().get(ambientName);
+                        ambientData.setMap(gameState.getCurrentMap());
+                        ambientData.incrementVisitCount();
+
+                        // Update resources
+                        if (gameState.getCurrentAmbient().getResources() != null) {
+                            ambientData.setRemainingResources(
+                                    new ArrayList<>(gameState.getCurrentAmbient().getResources()));
+                        }
+                    }
+                }
+            }
+
             Gson gson = new GsonBuilder()
-                .excludeFieldsWithoutExposeAnnotation()
-                .setPrettyPrinting()
-                .create();
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .setPrettyPrinting()
+                    .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter())
+                    .registerTypeAdapter(Item.class, new ItemAdapter())
+                    .registerTypeAdapter(Character.class, new CharacterAdapter())
+                    .registerTypeAdapter(Ambient.class, new AmbientAdapter())
+                    .create();
 
             gson.toJson(gameState, writer);
-
             logger.info("Game saved successfully to: {}", saveFile.getAbsolutePath());
             return true;
-        } catch (JsonIOException e) {
-            logger.error("JSON error while saving game: {}", e.getMessage());
-            return false;
-        } catch (IOException e) {
-            logger.error("I/O error while saving game: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error saving game: {}", e.getMessage());
             return false;
         } finally {
             if (writer != null) {
@@ -159,70 +175,56 @@ public class SaveManager {
             reader = new FileReader(saveFile);
             JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
 
-            // Create game state from JSON
             GameState gameState = new GameState();
 
-            // Load character data
-            if (jsonObject.has("character")) {
-                JsonObject characterObj = jsonObject.getAsJsonObject("character");
-                String name = characterObj.has("name") ? characterObj.get("name").getAsString() : "Unknown";
-                String characterType = characterObj.has("characterType") ?
-                    characterObj.get("characterType").getAsString() : "Survivor";
+            if (jsonObject.has("playerCharacter")) {
+                try {
+                    JsonObject characterObj = jsonObject.getAsJsonObject("playerCharacter");
 
-                // Get position from saved data or default
-                float xPos = 0f, yPos = 0f;
-                if (characterObj.has("position")) {
-                    JsonObject posObj = characterObj.getAsJsonObject("position");
-                    xPos = posObj.has("x") ? posObj.get("x").getAsFloat() : 0f;
-                    yPos = posObj.has("y") ? posObj.get("y").getAsFloat() : 0f;
+                    Character character = new GsonBuilder()
+                            .registerTypeAdapter(Character.class, new CharacterAdapter())
+                            .registerTypeAdapter(Item.class, new ItemAdapter())
+                            .create()
+                            .fromJson(characterObj, Character.class);
+
+                    if (character != null) {
+                        gameState.setPlayerCharacter(character);
+                        logger.debug("Restored character: {}, type: {}",
+                                character.getName(), character.getClass().getSimpleName());
+                    } else {
+                        // Create default character if deserialization failed
+                        gameState.setPlayerCharacter(new Survivor("Default", 0, 0));
+                        logger.warn("Failed to deserialize character, using default Survivor");
+                    }
+                } catch (Exception e) {
+                    logger.error("Error deserializing character: {}", e.getMessage());
+                    gameState.setPlayerCharacter(new Survivor("Error", 0, 0));
                 }
-
-                // Restore character based on type and position
-                Character character = null;
-                switch (characterType) {
-                    case "Doctor":
-                        character = new Doctor(name, xPos, yPos);
-                        break;
-                    case "Hunter":
-                        character = new Hunter(name, xPos, yPos);
-                        break;
-                    case "Lumberjack":
-                        character = new Lumberjack(name, xPos, yPos);
-                        break;
-                    case "Survivor":
-                    default:
-                        character = new Survivor(name, xPos, yPos);
-                        break;
-                }
-
-                // Restore character stats
-                if (characterObj.has("life")) character.setLife(characterObj.get("life").getAsFloat());
-                if (characterObj.has("hunger")) character.setHunger(characterObj.get("hunger").getAsFloat());
-                if (characterObj.has("thirsty")) character.setThirsty(characterObj.get("thirsty").getAsFloat());
-                if (characterObj.has("energy")) character.setEnergy(characterObj.get("energy").getAsFloat());
-                if (characterObj.has("sanity")) character.setSanity(characterObj.get("sanity").getAsFloat());
-
-                gameState.setCharacter(character);
             }
 
-            // Load ambient data
-            if (jsonObject.has("ambientName")) {
-                String ambientName = jsonObject.get("ambientName").getAsString();
-                Ambient ambient;
+            if (jsonObject.has("currentAmbient")) {
+                try {
+                    JsonObject ambientObj = jsonObject.getAsJsonObject("currentAmbient");
 
-                switch (ambientName) {
-                    case "Jungle": ambient = new Jungle(); break;
-                    case "Cave": ambient = new Cave(); break;
-                    case "Lake River": ambient = new LakeRiver(); break;
-                    case "Mountain": ambient = new Mountain(); break;
-                    case "Ruins": ambient = new Ruins(); break;
-                    default: ambient = new Jungle(); break;
+                    Ambient ambient = new GsonBuilder()
+                            .registerTypeAdapter(Ambient.class, new AmbientAdapter())
+                            .create()
+                            .fromJson(ambientObj, Ambient.class);
+
+                    if (ambient != null) {
+                        gameState.setCurrentAmbient(ambient);
+                        logger.debug("Restored current ambient: {}", ambient.getName());
+                    } else {
+                        // Fallback to Jungle if deserialization failed
+                        gameState.setCurrentAmbient(new Jungle());
+                        logger.warn("Failed to deserialize ambient, using default Jungle");
+                    }
+                } catch (Exception e) {
+                    logger.error("Error deserializing ambient: {}", e.getMessage());
+                    gameState.setCurrentAmbient(new Jungle());
                 }
-
-                gameState.setCurrentAmbient(ambient);
             }
 
-            // Load map data
             if (jsonObject.has("currentMap")) {
                 JsonArray mapArray = jsonObject.getAsJsonArray("currentMap");
                 int height = mapArray.size();
@@ -237,11 +239,118 @@ public class SaveManager {
                 }
 
                 gameState.setCurrentMap(map);
+                gameState.setMapWidth(width);
+                gameState.setMapHeight(height);
+            }
+
+            // Load visited
+            if (jsonObject.has("visitedAmbients")) {
+                try {
+                    Map<String, AmbientData> visitedAmbients = new HashMap<>();
+                    JsonObject visitedAmbientsObj = jsonObject.getAsJsonObject("visitedAmbients");
+
+                    for (Map.Entry<String, JsonElement> entry : visitedAmbientsObj.entrySet()) {
+                        String ambientName = entry.getKey();
+                        JsonObject ambientDataObj = entry.getValue().getAsJsonObject();
+
+                        JsonArray mapArray = ambientDataObj.has("map") ? ambientDataObj.getAsJsonArray("map")
+                                : new JsonArray();
+
+                        int height = mapArray.size();
+                        int width = height > 0 ? mapArray.get(0).getAsJsonArray().size() : 0;
+
+                        int[][] map = new int[height][width];
+                        for (int y = 0; y < height; y++) {
+                            JsonArray row = mapArray.get(y).getAsJsonArray();
+                            for (int x = 0; x < width; x++) {
+                                map[y][x] = row.get(x).getAsInt();
+                            }
+                        }
+
+                        AmbientData ambientData = new AmbientData(map);
+
+                        if (ambientDataObj.has("visitCount")) {
+                            for (int i = 1; i < ambientDataObj.get("visitCount").getAsInt(); i++) {
+                                ambientData.incrementVisitCount();
+                            }
+                        }
+
+                        // Set resources if available
+                        if (ambientDataObj.has("remainingResources")) {
+                            JsonArray resourcesArray = ambientDataObj.getAsJsonArray("remainingResources");
+                            List<Item> resources = new ArrayList<>();
+
+                            for (int i = 0; i < resourcesArray.size(); i++) {
+                                JsonElement itemElement = resourcesArray.get(i);
+                                if (!itemElement.isJsonNull()) {
+                                    try {
+                                        Item item = new GsonBuilder()
+                                                .registerTypeAdapter(Item.class, new ItemAdapter())
+                                                .create()
+                                                .fromJson(itemElement, Item.class);
+
+                                        if (item != null) {
+                                            resources.add(item);
+                                        }
+                                    } catch (Exception e) {
+                                        logger.error("Failed to deserialize resource item: {}", e.getMessage());
+                                    }
+                                }
+                            }
+
+                            ambientData.setRemainingResources(resources);
+                        }
+
+                        visitedAmbients.put(ambientName, ambientData);
+                    }
+
+                    gameState.setVisitedAmbients(visitedAmbients);
+                    logger.debug("Loaded {} visited ambients", visitedAmbients.size());
+                } catch (Exception e) {
+                    logger.error("Error loading visited ambients: {}", e.getMessage());
+                    gameState.setVisitedAmbients(new HashMap<>());
+                }
+            }
+            // For backward compatibility with older saves
+            else if (jsonObject.has("visitedMaps")) {
+                JsonObject visitedMapsObj = jsonObject.getAsJsonObject("visitedMaps");
+                Map<String, AmbientData> visitedAmbients = new HashMap<>();
+
+                for (Map.Entry<String, JsonElement> entry : visitedMapsObj.entrySet()) {
+                    String ambientName = entry.getKey();
+                    JsonArray mapArray = entry.getValue().getAsJsonArray();
+                    int height = mapArray.size();
+                    int width = height > 0 ? mapArray.get(0).getAsJsonArray().size() : 0;
+
+                    int[][] map = new int[height][width];
+                    for (int y = 0; y < height; y++) {
+                        JsonArray row = mapArray.get(y).getAsJsonArray();
+                        for (int x = 0; x < width; x++) {
+                            map[y][x] = row.get(x).getAsInt();
+                        }
+                    }
+
+                    visitedAmbients.put(ambientName, new AmbientData(map));
+                }
+
+                gameState.setVisitedAmbients(visitedAmbients);
+                logger.info("Loaded {} visited maps from older save format", visitedAmbients.size());
             }
 
             // Load other game state data
             if (jsonObject.has("daysSurvived"))
                 gameState.setDaysSurvived(jsonObject.get("daysSurvived").getAsInt());
+
+            if (jsonObject.has("offsetDateTime")) {
+                String dateStr = jsonObject.get("offsetDateTime").getAsString();
+                try {
+                    OffsetDateTime dateTime = OffsetDateTime.parse(dateStr);
+                    gameState.setOffsetDateTime(dateTime);
+                } catch (DateTimeParseException e) {
+                    logger.error("Error parsing date: {}", e.getMessage());
+                    gameState.setOffsetDateTime(OffsetDateTime.now());
+                }
+            }
 
             logger.info("Game loaded successfully from: {}", filePath);
             return gameState;
@@ -295,72 +404,8 @@ public class SaveManager {
     }
 
     /**
-     * Custom adapter to handle Character subclasses properly
-     */
-    private static class CharacterAdapter extends TypeAdapter<Character> {
-        private final Gson gson = new GsonBuilder()
-            .excludeFieldsWithoutExposeAnnotation()
-            .create();
-
-        @Override
-        public void write(JsonWriter out, Character character) throws IOException {
-            if (character == null) {
-                out.nullValue();
-                return;
-            }
-
-            out.beginObject();
-            out.name("type").value(character.getCharacterType());
-            out.name("data").value(gson.toJson(character));
-            out.endObject();
-        }
-
-        @Override
-        public Character read(JsonReader in) throws IOException {
-            in.beginObject();
-            String type = null;
-            String data = null;
-
-            while (in.hasNext()) {
-                String name = in.nextName();
-                if (name.equals("type")) {
-                    type = in.nextString();
-                } else if (name.equals("data")) {
-                    data = in.nextString();
-                } else {
-                    in.skipValue();
-                }
-            }
-
-            in.endObject();
-
-            if (type == null || data == null) {
-                return null;
-            }
-
-            try {
-                switch (type) {
-                    case "Survivor":
-                        return gson.fromJson(data, Survivor.class);
-                    case "Hunter":
-                        return gson.fromJson(data, Hunter.class);
-                    case "Lumberjack":
-                        return gson.fromJson(data, Lumberjack.class);
-                    case "Doctor":
-                        return gson.fromJson(data, Doctor.class);
-                    default:
-                        logger.error("Unknown character type: {}", type);
-                        return null;
-                }
-            } catch (JsonSyntaxException e) {
-                logger.error("Failed to deserialize character of type {}: {}", type, e.getMessage());
-                return null;
-            }
-        }
-    }
-
-    /**
      * Returns an array of save files in the save directory
+     *
      * @return Array of save files or empty array if directory doesn't exist
      */
     public File[] getSaveFiles() {

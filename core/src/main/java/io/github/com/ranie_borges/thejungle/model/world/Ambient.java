@@ -1,6 +1,7 @@
 package io.github.com.ranie_borges.thejungle.model.world;
 
 import com.badlogic.gdx.graphics.Texture;
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.AmbientAttribute;
@@ -10,33 +11,47 @@ import io.github.com.ranie_borges.thejungle.model.world.interfaces.IAmbients;
 import java.util.*;
 
 public abstract class Ambient implements IAmbients {
+    @Expose
     private String name;
+    @Expose
     private String description;
+    @Expose
     private float difficult;
 
+    @Expose
     private Set<AmbientAttribute> attributes;
+    @Expose
     private Set<Item> resources;
+    @Expose
     private Map<Event, Double> possibleEvents;
+    @Expose
     private Set<Clime> climes;
-    private final Texture floorTexture;
-    private final Texture wallTexture;
-    private final Texture sidebarTexture;
+    private transient final Texture floorTexture;
+    private transient final Texture wallTexture;
+    private transient final Texture sidebarTexture;
+    @Expose
     private final float wallDensity;
+    @Expose
     private final float itemDensity;
+
+    @Expose
+    private int timesVisited = 0;
+
+    @Expose
+    private float darknessFactor = 1.0f;
 
     public static final int MAX_AMBIENT_USES = 3;
 
     protected Ambient(
-        String name,
-        String description,
-        float difficult,
-        Set<AmbientAttribute> attributes,
-        Texture floorTexture,
-        Texture wallTexture,
-        Texture sidebarTexture,
-        float wallDensity,
-        float itemDensity
-    ) {
+            String name,
+            String description,
+            float difficult,
+            Set<AmbientAttribute> attributes,
+            Texture floorTexture,
+            Texture wallTexture,
+            Texture sidebarTexture,
+            float wallDensity,
+            float itemDensity) {
         setName(name);
         setDescription(description);
         setDifficult(difficult);
@@ -141,12 +156,12 @@ public abstract class Ambient implements IAmbients {
 
         // Collect possible door positions along borders
         for (int x = 2; x < mapWidth - 2; x++) {
-            borderPositions.add(new int[]{0, x});
-            borderPositions.add(new int[]{mapHeight - 1, x});
+            borderPositions.add(new int[] { 0, x });
+            borderPositions.add(new int[] { mapHeight - 1, x });
         }
         for (int y = 2; y < mapHeight - 2; y++) {
-            borderPositions.add(new int[]{y, 0});
-            borderPositions.add(new int[]{y, mapWidth - 1});
+            borderPositions.add(new int[] { y, 0 });
+            borderPositions.add(new int[] { y, mapWidth - 1 });
         }
 
         // Place doors
@@ -157,10 +172,52 @@ public abstract class Ambient implements IAmbients {
             map[y][x] = 2;
 
             // Ensure door connects to walkable space
-            if (x == 0) map[y][1] = 0;
-            else if (x == mapWidth - 1) map[y][mapWidth - 2] = 0;
-            else if (y == 0) map[1][x] = 0;
-            else if (y == mapHeight - 1) map[mapHeight - 2][x] = 0;
+            if (x == 0)
+                map[y][1] = 0;
+            else if (x == mapWidth - 1)
+                map[y][mapWidth - 2] = 0;
+            else if (y == 0)
+                map[1][x] = 0;
+            else if (y == mapHeight - 1)
+                map[mapHeight - 2][x] = 0;
         }
+    }
+
+    /**
+     * Get the darkness factor of this ambient
+     *
+     * @return The darkness factor (higher is darker)
+     */
+    public float getDarknessFactor() {
+        return darknessFactor;
+    }
+
+    /**
+     * Set the darkness factor of this ambient
+     *
+     * @param darknessFactor The darkness factor (higher is darker)
+     */
+    public void setDarknessFactor(float darknessFactor) {
+        this.darknessFactor = darknessFactor;
+    }
+
+    /**
+     * Get the number of times this ambient has been visited
+     *
+     * @return The visit count
+     */
+    public int getTimesVisited() {
+        return timesVisited;
+    }
+
+    /**
+     * Increment the visit counter for this ambient
+     */
+    public void incrementVisitCount() {
+        this.timesVisited++;
+    }
+
+    public float getDifficulty() {
+        return this.difficult;
     }
 }

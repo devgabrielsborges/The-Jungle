@@ -14,12 +14,9 @@ public class Survivor extends Character {
         super(
             name,
             100,
-            100,
-            100,
             80,
             85,
             8.0f,
-            "sprites/character/personagem_luta.png",
             xPosition,
             yPosition
         );

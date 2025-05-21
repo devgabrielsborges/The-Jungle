@@ -1,5 +1,6 @@
 package io.github.com.ranie_borges.thejungle.model.entity.itens;
 
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import java.util.Random;
 
@@ -8,9 +9,13 @@ import java.util.Random;
  * but may cause food poisoning if spoiled
  */
 public class Food extends Item {
+    @Expose
     private final int nutritionalValue;
+    @Expose
     private final String type;
+    @Expose
     private int shelfLife; // prazo de validade em turnos
+    @Expose
     private boolean spoiled;
 
     private static final Random random = new Random();
@@ -22,12 +27,14 @@ public class Food extends Item {
         this.shelfLife = shelfLife;
         this.spoiled = false;
     }
+
     public static Food createBerry() {
         return new Food("Berry", 0.2f, 100f, 15, "Fruit", 5);
     }
 
     /**
-     * Consumes the food, restoring hunger but potentially causing food poisoning if spoiled
+     * Consumes the food, restoring hunger but potentially causing food poisoning if
+     * spoiled
      */
     @Override
     public void useItem() {
@@ -59,19 +66,39 @@ public class Food extends Item {
         }
     }
 
+    /**
+     * Gets the nutritional value of this food
+     * 
+     * @return The nutritional value
+     */
     public int getNutritionalValue() {
         return nutritionalValue;
     }
 
-    public String getType() {
-        return type;
+    /**
+     * Checks if the food is spoiled
+     * 
+     * @return True if the food is spoiled, false otherwise
+     */
+    public boolean isSpoiled() {
+        return spoiled;
     }
 
+    /**
+     * Gets the shelf life of this food
+     * 
+     * @return The shelf life in turns
+     */
     public int getShelfLife() {
         return shelfLife;
     }
 
-    public boolean isSpoiled() {
-        return spoiled;
+    /**
+     * Gets the type of this food
+     * 
+     * @return The food type
+     */
+    public String getFoodType() {
+        return type;
     }
 }

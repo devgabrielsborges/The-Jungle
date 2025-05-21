@@ -1,6 +1,7 @@
 package io.github.com.ranie_borges.thejungle.model.entity;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.IItem;
 
 import java.util.Collections;
@@ -10,11 +11,17 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.graphics.Texture;
 
 public abstract class Item implements IItem {
+    @Expose
     private String name;
+    @Expose
     private float weight;
+    @Expose
     private float durability;
     private Map<String, Sprite> sprites;
     private final Vector2 position = new Vector2();
+
+    @Expose
+    private int quantity = 1;
 
     protected Item(String name, float weight, float durability) {
         this.name = name;
@@ -84,8 +91,6 @@ public abstract class Item implements IItem {
 
         return ICON_CACHE.get(iconKey);
     }
-
-    private int quantity = 1;
 
     public int getQuantity() {
         return quantity;

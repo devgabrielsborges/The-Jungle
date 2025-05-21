@@ -14,12 +14,9 @@ public class Doctor extends Character {
         super(
             name,
             80,
-            100,
-            100,
             60,
             100,
             20,
-            "sprites/character/personagem_luta.png",
             xPosition,
             yPosition
         );
