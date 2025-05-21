@@ -20,6 +20,8 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.com.ranie_borges.thejungle.controller.systems.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
 
+import java.io.File;
+
 public class MainMenuScreen implements Screen {
 
     private final Stage stage;
@@ -49,7 +51,7 @@ public class MainMenuScreen implements Screen {
         backgroundMusic.setLooping(true);
         backgroundMusic.play();
 
-        Table table = new Table();   // for handling the interface elements
+        Table table = new Table(); // for handling the interface elements
         table.setFillParent(true);
         table.center();
         stage.addActor(table);
@@ -60,11 +62,10 @@ public class MainMenuScreen implements Screen {
 
         Image titleImage = new Image(new Texture(Gdx.files.internal(titleImagePath)));
 
-        titleImage.getColor().a = 0f;   // initial opacity for fade in transition
+        titleImage.getColor().a = 0f; // initial opacity for fade in transition
         titleImage.addAction(sequence(delay(titleDelayDuration), fadeIn(titleFadeInDuration)));
         table.add(titleImage).center().padBottom(20);
         table.row();
-
 
         TextButton newGameButton = new TextButton("New Game", skin);
         TextButton exitButton = new TextButton("Exit", skin);
@@ -96,10 +97,18 @@ public class MainMenuScreen implements Screen {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     backgroundMusic.stop();
-                    game.getScenarioController().loadSavedGame();
+
+                    File latestSave = getLatestSaveFile(saveManager);
+                    if (latestSave != null) {
+                        game.getScenarioController().loadSpecificSaveGame(latestSave.getName());
+                    } else {
+                        // Fallback to regular load behavior if we couldn't determine latest save
+                        game.getScenarioController().loadSavedGame();
+                    }
                 }
             });
         }
+
         table.add(newGameButton).width(200f).height(60f).center().padBottom(20);
         table.row();
         table.add(exitButton).width(200f).height(60f).center();
@@ -128,10 +137,12 @@ public class MainMenuScreen implements Screen {
     }
 
     @Override
-    public void pause() throws UnsupportedOperationException{ }
+    public void pause() throws UnsupportedOperationException {
+    }
 
     @Override
-    public void resume() throws UnsupportedOperationException{ }
+    public void resume() throws UnsupportedOperationException {
+    }
 
     @Override
     public void hide() {
@@ -144,5 +155,36 @@ public class MainMenuScreen implements Screen {
         skin.dispose();
         backgroundMusic.dispose();
         animatedBackground.dispose();
+    }
+
+    /**
+     * Finds the most recently modified save file, prioritizing autosave.json if it
+     * exists
+     *
+     * @param saveManager The SaveManager instance
+     * @return The most recent save file or null if no saves exist
+     */
+    private File getLatestSaveFile(SaveManager saveManager) {
+        File[] saveFiles = saveManager.getSaveFiles();
+
+        if (saveFiles == null || saveFiles.length == 0) {
+            return null;
+        }
+
+        for (File file : saveFiles) {
+            if (file.getName().equals("autosave.json")) {
+                return file;
+            }
+        }
+
+        // If no autosave found, get the most recently modified file
+        File mostRecent = saveFiles[0];
+        for (int i = 1; i < saveFiles.length; i++) {
+            if (saveFiles[i].lastModified() > mostRecent.lastModified()) {
+                mostRecent = saveFiles[i];
+            }
+        }
+
+        return mostRecent;
     }
 }
