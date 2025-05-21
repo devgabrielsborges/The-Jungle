@@ -143,7 +143,7 @@ public class ProceduralMapScreen implements Screen, UI {
             font = new BitmapFont();
             font.getData().setScale(2f);
             font.setUseIntegerPositions(true);
-            GlyphLayout layout = new GlyphLayout();
+
 
             map = mapManager.generateMap();
 
@@ -185,8 +185,8 @@ public class ProceduralMapScreen implements Screen, UI {
     private void updateTextures(Ambient newAmbient) {
         textureManager.loadAmbientTextures(newAmbient);
     }
-    private void renderInteractionPrompt(SpriteBatch batch, Material material, String text, float offsetX,
-            float offsetY) {
+    private void renderInteractionPrompt(SpriteBatch batch, Material material, float offsetX,
+                                         float offsetY) {
         Vector2 pos = material.getPosition();
         float boxWidth = 160;
         float boxHeight = 30;
@@ -198,7 +198,7 @@ public class ProceduralMapScreen implements Screen, UI {
         batch.draw(bgHudShared, boxX, boxY, boxWidth, boxHeight);
         batch.setColor(1, 1, 1, 1);
 
-        promptLayoutInstance.setText(promptFont, text);
+        promptLayoutInstance.setText(promptFont, "[E] Collect Berry");
         promptFont.draw(batch, promptLayoutInstance, boxX + (boxWidth - promptLayoutInstance.width) / 2f,
                 boxY + boxHeight - (boxHeight - promptLayoutInstance.height) / 2f - 2); // Adjusted for vertical
                                                                                         // centering
@@ -229,7 +229,6 @@ public class ProceduralMapScreen implements Screen, UI {
 
                 characterManager.setMap(map);
                 characterManager.setCurrentAmbient(ambient);
-                // update visitedAmbientList TODO
 
                 characterManager.safeSpawnCharacter();
 
@@ -341,7 +340,7 @@ public class ProceduralMapScreen implements Screen, UI {
                         if ("Medicinal".equalsIgnoreCase(m.getName()) && "Plant".equalsIgnoreCase(m.getType())) {
                             Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
                         } else if ("Berry".equalsIgnoreCase(m.getName())) {
-                            renderInteractionPrompt(batch, m, "[E] Collect Berry", offsetX, offsetY);
+                            renderInteractionPrompt(batch, m, offsetX, offsetY);
                         }
                     }
                 }

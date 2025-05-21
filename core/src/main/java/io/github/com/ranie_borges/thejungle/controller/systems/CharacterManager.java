@@ -45,7 +45,6 @@ public class CharacterManager implements UI {
         boolean passedThroughDoor = character.tryMove(
                 delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
 
-        // Check for special interactions based on ambient type
         if (currentAmbient instanceof Jungle) {
             Jungle jungle = (Jungle) currentAmbient;
             float centerX = character.getPosition().x + TILE_SIZE / 2f;
@@ -57,7 +56,6 @@ public class CharacterManager implements UI {
             jungle.checkSnakeBite(character);
         }
 
-        // Update animation state time
         character.updateStateTime(delta);
         stateTime += delta;
 
@@ -67,7 +65,7 @@ public class CharacterManager implements UI {
     /**
      * Spawn the character safely on the current map
      */
-    public boolean safeSpawnCharacter() {
+    public void safeSpawnCharacter() {
         boolean spawnFound = false;
         int attempts = 0;
         int maxAttempts = 1000;
@@ -89,12 +87,10 @@ public class CharacterManager implements UI {
         }
 
         if (!spawnFound) {
-            // Fallback to center of map
             character.getPosition().set(((float) MAP_WIDTH / 2) * TILE_SIZE, ((float) MAP_HEIGHT / 2) * TILE_SIZE);
             logger.warn("Couldn't find safe spawn after {} attempts. Using center fallback.", maxAttempts);
         }
 
-        return spawnFound;
     }
 
     /**

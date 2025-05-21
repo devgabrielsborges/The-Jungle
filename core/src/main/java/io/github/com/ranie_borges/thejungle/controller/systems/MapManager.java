@@ -112,7 +112,6 @@ public class MapManager implements UI {
             }
         }
 
-        // Pick a random ambient from available options
         return availableAmbients.get(random.nextInt(availableAmbients.size()));
     }
 
@@ -217,10 +216,31 @@ public class MapManager implements UI {
     }
 
     /**
+     * Sets the current map from a saved game
+     *
+     * @param loadedMap The map to set from a save
+     */
+    public void setCurrentMap(int[][] loadedMap) {
+        if (loadedMap != null && loadedMap.length > 0) {
+            logger.info("Setting map from save with dimensions: {}x{}",
+                    loadedMap.length, loadedMap[0].length);
+
+            this.map = loadedMap;
+            this.currentAmbientUseCount++; // Increment usage counter
+        } else {
+            logger.warn("Attempted to set null or empty map");
+        }
+    }
+
+    /**
      * Set the current ambient
+     *
+     * @param ambient The ambient to set
      */
     public void setCurrentAmbient(Ambient ambient) {
-        this.currentAmbient = ambient;
+        if (ambient != null) {
+            this.currentAmbient = ambient;
+        }
     }
 
     /**
@@ -251,9 +271,7 @@ public class MapManager implements UI {
             return true;
         if (y > 0 && map[y - 1][x] == TILE_CAVE)
             return true;
-        if (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE)
-            return true;
-        return false;
+        return y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE;
     }
 
     /**
