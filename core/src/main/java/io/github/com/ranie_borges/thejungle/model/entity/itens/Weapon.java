@@ -1,26 +1,29 @@
 package io.github.com.ranie_borges.thejungle.model.entity.itens;
 
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
 /**
  * Represents a weapon that can be used for combat
  */
 public class Weapon extends Item {
+    @Expose
     private float damage;
+    @Expose
     private float attackSpeed;
     private final int durabilityLoss;
 
     /**
      * Creates a new weapon
      *
-     * @param name The name of the weapon
-     * @param weight The weight of the weapon
-     * @param durability The initial durability of the weapon
-     * @param damage The base damage inflicted by this weapon
+     * @param name        The name of the weapon
+     * @param weight      The weight of the weapon
+     * @param durability  The initial durability of the weapon
+     * @param damage      The base damage inflicted by this weapon
      * @param attackSpeed The attack speed of this weapon
      */
     public Weapon(String name, float weight, float durability,
-                  float damage, float attackSpeed) {
+            float damage, float attackSpeed) {
         super(name, weight, durability);
         this.damage = Math.max(0, damage);
         this.attackSpeed = Math.max(0, attackSpeed);

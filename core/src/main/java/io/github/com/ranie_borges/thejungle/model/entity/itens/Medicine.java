@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
+import com.google.gson.annotations.Expose;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +20,7 @@ public class Medicine extends Item {
     private static final Logger logger = LoggerFactory.getLogger(Medicine.class);
     private static final Texture bgHud = new Texture(Gdx.files.internal("GameScreen/boxhud.png"));
 
+    @Expose
     private double healRatio;
 
     public Medicine(String name, float weight, float durability, double healRatio) {
@@ -74,7 +76,7 @@ public class Medicine extends Item {
     }
 
     public static void renderUseOption(SpriteBatch batch, Material plant, Character character, float offsetX,
-                                       float offsetY) {
+            float offsetY) {
         if (plant == null || !"Plant".equalsIgnoreCase(plant.getType())
                 || !"Medicinal".equalsIgnoreCase(plant.getName()))
             return;

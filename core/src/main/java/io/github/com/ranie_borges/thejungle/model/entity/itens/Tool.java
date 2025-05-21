@@ -1,26 +1,29 @@
 package io.github.com.ranie_borges.thejungle.model.entity.itens;
 
+import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 
 /**
  * Represents a tool that can be used for work or crafting
  */
 public class Tool extends Item {
+    @Expose
     private float workPower;
+    @Expose
     private float usageSpeed;
     private final int durabilityLoss;
 
     /**
      * Creates a new tool
      *
-     * @param name The name of the tool
-     * @param weight The weight of the tool
+     * @param name       The name of the tool
+     * @param weight     The weight of the tool
      * @param durability The initial durability of the tool
-     * @param workPower The power of work this tool provides
+     * @param workPower  The power of work this tool provides
      * @param usageSpeed The speed at which the tool can be used
      */
     public Tool(String name, float weight, float durability,
-                float workPower, float usageSpeed) {
+            float workPower, float usageSpeed) {
         super(name, weight, durability);
         this.workPower = Math.max(0, workPower);
         this.usageSpeed = Math.max(0, usageSpeed);
