@@ -2,7 +2,7 @@
 package io.github.com.ranie_borges.thejungle.controller;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.scenes.scene2d.Actor; // Import Actor
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -67,7 +67,6 @@ public class TurnController {
         logger.info("--- Advancing to new turn (Day {}) ---", gameState.getDaysSurvived() + 1);
         startPhase();
         actionPhase(); // This will show the ambient selection UI
-        // Moved randomEventPhase() and maintenancePhase() to chooseAmbient()
     }
 
     /**
@@ -132,12 +131,10 @@ public class TurnController {
                 throw new TurnControllerException("MapManager not available from current screen.");
             }
 
-            // --- Log stage state before map updates ---
-            logger.debug("chooseAmbient: Stage actors size BEFORE map update logic: {}", stage.getActors());
+            logger.debug("chooseAmbient: Stage actors size BEFORE map update logic: {}", stage.getActors().size);
             for (Actor actor : stage.getActors()) { // Use Actor for iteration
                 logger.debug("chooseAmbient: Actor on stage BEFORE update: {}", actor.getName() != null ? actor.getName() : actor.getClass().getSimpleName());
             }
-
 
             if (chosenAmbient == null) { // This means "Stay Here" was chosen or dialog was dismissed
                 logger.debug("chooseAmbient: User chose to Stay Here. Regenerating map for current ambient.");
@@ -175,7 +172,7 @@ public class TurnController {
             logger.debug("chooseAmbient: chooseAmbient method completed successfully.");
 
             // --- Log stage state after all logic completes ---
-            logger.debug("chooseAmbient: Stage actors size AFTER map update logic and phases: {}", stage.getActors());
+            logger.debug("chooseAmbient: Stage actors size AFTER map update logic and phases: {}", stage.getActors().size);
             for (Actor actor : stage.getActors()) { // Use Actor for iteration
                 logger.debug("chooseAmbient: Actor on stage AFTER update: {}", actor.getName() != null ? actor.getName() : actor.getClass().getSimpleName());
             }

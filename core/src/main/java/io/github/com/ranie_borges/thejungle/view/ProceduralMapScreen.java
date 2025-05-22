@@ -16,13 +16,10 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
-import io.github.com.ranie_borges.thejungle.controller.AmbientController;
-import io.github.com.ranie_borges.thejungle.controller.EventController;
-import io.github.com.ranie_borges.thejungle.controller.TurnController;
+import io.github.com.ranie_borges.thejungle.controller.*;
 import io.github.com.ranie_borges.thejungle.controller.managers.CharacterManager;
 import io.github.com.ranie_borges.thejungle.controller.managers.GameStateManager;
 import io.github.com.ranie_borges.thejungle.controller.managers.MapManager;
-import io.github.com.ranie_borges.thejungle.controller.ResourceController;
 import io.github.com.ranie_borges.thejungle.controller.managers.SaveManager;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
@@ -58,7 +55,7 @@ public class ProceduralMapScreen implements Screen, UI {
     private final ResourceController resourceController;
     private final GameStateManager gameStateManager;
     private final GameRenderHelper renderHelper;
-    private final TurnController turnController;
+    private TurnController turnController;
 
     // Game state elements
     private final Character character;
@@ -88,6 +85,7 @@ public class ProceduralMapScreen implements Screen, UI {
     // For interaction prompts
     private static Texture bgHudShared;
     private BitmapFont promptFont;
+    private GlyphLayout promptLayoutInstance;
 
     // UI state
     private boolean showInventory = false;
@@ -124,6 +122,7 @@ public class ProceduralMapScreen implements Screen, UI {
         }
 
         this.mapManager = new MapManager(ambient);
+        gameState.setMapManager(this.mapManager);
         this.characterManager = new CharacterManager(character, ambient);
         this.resourceController = new ResourceController();
         this.gameStateManager = new GameStateManager(gameState);
@@ -161,7 +160,7 @@ public class ProceduralMapScreen implements Screen, UI {
             promptFont = new BitmapFont();
             promptFont.setColor(Color.WHITE);
             promptFont.getData().setScale(1.2f);
-            GlyphLayout promptLayoutInstance = new GlyphLayout();
+            promptLayoutInstance = new GlyphLayout();
 
             batch = new SpriteBatch();
             shapeRenderer = new ShapeRenderer();
@@ -197,8 +196,8 @@ public class ProceduralMapScreen implements Screen, UI {
         }
 
         character.updateStateTime(0f);
-        this.craftingBar = new CraftingBar();
-        hud = new Hud(textureManager.getSidebarTexture(), classIcon, font);
+        // Pass the ChatController from GameState to Hud
+        hud = new Hud(textureManager.getSidebarTexture(), classIcon, font, gameState.getChatController());
         characterUI = new CharacterUI(inventoryBackground, font);
     }
 
@@ -233,6 +232,9 @@ public class ProceduralMapScreen implements Screen, UI {
         materiaisNoMapa = resourceController.spawnResources(this.ambient, this.map);
 
         gameStateManager.autosave(character, ambient, map);
+
+        // Add message for new map load
+        gameState.getChatController().addMessage("Entered " + ambient.getName() + ".");
     }
 
     /**
@@ -246,12 +248,14 @@ public class ProceduralMapScreen implements Screen, UI {
 
         if (ambientRotated) {
             logger.info("Ambient cycle complete. Prompting user for next action.");
+            gameState.getChatController().addMessage("Ambient cycle complete! Choose your next path.", Color.GOLD);
             turnController.advanceTurn();
         } else {
             logger.info("Generating next map within the same ambient: {}", ambientOnDoorTile.getName());
             mapManager.generateMapForCurrentAmbient();
             updateScreenMapAndEntities();
             mapTransitionTriggered = false;
+            gameState.getChatController().addMessage("Moved to a new area in " + ambientOnDoorTile.getName() + ".");
         }
     }
 
@@ -271,7 +275,7 @@ public class ProceduralMapScreen implements Screen, UI {
             return;
         }
 
-        if (!mapTransitionTriggered && (stage.getActors().size == 0 || (stage.getActors().size == 1 && stage.getActors().get(0) instanceof com.badlogic.gdx.scenes.scene2d.ui.Table))) {
+        if (!mapTransitionTriggered && stage.getActors().size <= 1) {
             try {
                 boolean passedThroughDoor = characterManager.updateCharacterMovement(delta);
 
@@ -305,7 +309,7 @@ public class ProceduralMapScreen implements Screen, UI {
                     showInventory = !showInventory;
                 }
             } catch (Exception e) {
-                logger.error("Error in game logic update: {}", e.getMessage());
+                logger.error("Error in game logic update: {}", e.getMessage(), e); // Log the full stack trace for better debugging
             }
         }
 

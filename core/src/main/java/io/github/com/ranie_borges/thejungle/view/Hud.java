@@ -1,3 +1,4 @@
+// core/src/main/java/io/github/com/ranie_borges/thejungle/view/Hud.java
 package io.github.com.ranie_borges.thejungle.view;
 
 import com.badlogic.gdx.Gdx;
@@ -20,13 +21,13 @@ public class Hud {
 
     private final ChatController chatController;
 
-    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font) {
+    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font, ChatController chatController) {
         this.sidebarTexture = sidebarTexture;
         this.classIcon = classIcon;
         this.font = font;
         this.layout = new GlyphLayout();
         this.backpackTexture = new Texture(Gdx.files.internal("Gameplay/backpack.png"));
-        this.chatController = new ChatController();
+        this.chatController = chatController;
     }
 
     /**
@@ -39,15 +40,13 @@ public class Hud {
     }
 
     public void render(SpriteBatch batch, ShapeRenderer shapeRenderer, Character character, GameState gameState,
-            int width, int height) {
+                       int width, int height) {
         float barX = 30;
         float baseY = height - 450.0f;
         float spacing = 60;
         float sidebarWidth = 300;
 
-        // Begin the batch before drawing
         batch.begin();
-
         batch.draw(sidebarTexture, 0, 0, sidebarWidth, height);
         batch.draw(sidebarTexture, width - sidebarWidth, 0, sidebarWidth, height);
 
@@ -81,7 +80,6 @@ public class Hud {
             layout.setText(font, text);
             font.draw(batch, text, backpackX + (backpackWidth - layout.width) / 2, backpackY + 20);
         }
-
         batch.end();
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
