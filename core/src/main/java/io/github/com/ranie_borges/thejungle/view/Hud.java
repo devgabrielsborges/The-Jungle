@@ -45,6 +45,9 @@ public class Hud {
         float spacing = 60;
         float sidebarWidth = 300;
 
+        // Begin the batch before drawing
+        batch.begin();
+
         batch.draw(sidebarTexture, 0, 0, sidebarWidth, height);
         batch.draw(sidebarTexture, width - sidebarWidth, 0, sidebarWidth, height);
 
@@ -78,6 +81,7 @@ public class Hud {
             layout.setText(font, text);
             font.draw(batch, text, backpackX + (backpackWidth - layout.width) / 2, backpackY + 20);
         }
+
         batch.end();
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);

@@ -1,10 +1,10 @@
+// core/src/main/java/io/github/com/ranie_borges/thejungle/controller/AmbientController.java
 package io.github.com.ranie_borges.thejungle.controller;
 
 import com.badlogic.gdx.Screen;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.AmbientControllerException;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.InvalidAmbientException;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.ambient.ResourceOperationException;
-// Importing SaveManager directly
 import io.github.com.ranie_borges.thejungle.controller.managers.MapManager;
 import io.github.com.ranie_borges.thejungle.controller.managers.SaveManager;
 import io.github.com.ranie_borges.thejungle.core.Main;
@@ -12,7 +12,6 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 import io.github.com.ranie_borges.thejungle.model.stats.AmbientData;
-import io.github.com.ranie_borges.thejungle.model.events.Event;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
@@ -35,9 +34,6 @@ import java.util.Set;
  * for a separate AmbientController class.
  */
 public class AmbientController {
-    // if have a save -> MainMenu, ProceduralMapScreen
-    // else -> MainMenu, LoadingScreen, LetterScreen, StatsScreen,
-    // ProceduralMapScreen
     private final boolean saveExists;
     private final SaveManager saveManager;
     private Screen actualScreen;
@@ -66,6 +62,26 @@ public class AmbientController {
     }
 
     /**
+     * Get the currently active screen.
+     * @return The current Screen instance.
+     */
+    public Screen getActualScreen() {
+        return actualScreen;
+    }
+
+    /**
+     * Get the MapManager from the currently active ProceduralMapScreen.
+     * @return The MapManager instance, or null if the current screen is not ProceduralMapScreen.
+     */
+    public MapManager getCurrentMapManager() {
+        if (actualScreen instanceof ProceduralMapScreen) {
+            return ((ProceduralMapScreen) actualScreen).getMapManager();
+        }
+        return null;
+    }
+
+
+    /**
      * Initialize the game with MainMenuScreen
      */
     public void initializeGame() {
@@ -80,7 +96,9 @@ public class AmbientController {
             actualScreen.dispose();
         }
         actualScreen = screen;
-        game.setScreen(screen);
+        if (game != null) {
+            game.setScreen(screen);
+        }
     }
 
     /**
@@ -105,8 +123,6 @@ public class AmbientController {
      */
     public void loadSavedGame() {
         try {
-            // Show save selection screen or directly load a save
-            // For now, we'll implement a simple method to find the latest save
             SaveManager saveManager = new SaveManager();
             File[] saveFiles = saveManager.getSaveFiles();
 
@@ -163,7 +179,7 @@ public class AmbientController {
         Ambient currentAmbient = gameState.getCurrentAmbient();
         if (currentAmbient == null) {
             logger.warn("No ambient found in save, creating default Jungle ambient");
-            currentAmbient = new Jungle(); // Default ambient if none loaded
+            currentAmbient = new Jungle();
         } else {
             logger.info("Loaded ambient: {}", currentAmbient.getName());
         }
@@ -174,12 +190,10 @@ public class AmbientController {
 
         if (gameState.getCurrentMap() != null && gameState.getCurrentMap().length > 0) {
             logger.info("Using directly stored current map with dimensions: {}x{}",
-                    gameState.getCurrentMap().length,
-                    gameState.getCurrentMap()[0].length);
+                gameState.getCurrentMap().length,
+                gameState.getCurrentMap()[0].length);
             mapToLoad = gameState.getCurrentMap();
-        }
-        else if (gameState.getVisitedAmbients() != null && gameState.getVisitedAmbients().containsKey(currentAmbient.getName())) {
-
+        } else if (gameState.getVisitedAmbients() != null && gameState.getVisitedAmbients().containsKey(currentAmbient.getName())) {
             AmbientData ambientData = gameState.getVisitedAmbients().get(currentAmbient.getName());
             if (ambientData != null && ambientData.getMap() != null) {
                 logger.info("Using map from visited ambient data for: {}", currentAmbient.getName());
@@ -190,26 +204,25 @@ public class AmbientController {
         if (mapToLoad != null) {
             mapManager.setCurrentMap(mapToLoad);
             mapManager.setCurrentAmbient(currentAmbient);
-
             gameState.setCurrentMap(mapToLoad);
-
             if (gameState.getVisitedAmbients() != null && gameState.getVisitedAmbients().containsKey(currentAmbient.getName())) {
-
                 AmbientData ambientData = gameState.getVisitedAmbients().get(currentAmbient.getName());
                 if (ambientData != null && ambientData.getRemainingResources() != null) {
                     logger.info("Restoring {} resources for ambient {}",
-                            ambientData.getRemainingResources().size(),
-                            currentAmbient.getName());
+                        ambientData.getRemainingResources().size(),
+                        currentAmbient.getName());
                     currentAmbient.setResources(new HashSet<>(ambientData.getRemainingResources()));
                 }
             }
         } else {
             logger.warn("No saved map found, generating a new one for ambient: {}",
                 currentAmbient.getName());
-            int[][] newMap = mapManager.generateMap();
+            // Updated call to generateNextMap and retrieve the map from mapManager.getMap()
+            mapManager.checkAndRotateAmbient(); // This will increment count for initial map if it was 0, but no rotation yet.
+            mapManager.generateMapForCurrentAmbient(); // Call generateMapForCurrentAmbient
+            int[][] newMap = mapManager.getMap(); // Get the generated map
             gameState.setCurrentMap(newMap);
         }
-
 
         eventController = gameState.getEventController();
         if (eventController == null) {
@@ -253,39 +266,12 @@ public class AmbientController {
         this.visitedAmbients = new ArrayList<>();
         this.visitedAmbients.add(startingAmbient);
 
-        // Initialize the visited maps collection in the GameState with the starting
-        // ambient
+        // Generate the initial map and store it in GameState
         int[][] map = startingAmbient.generateMap(UI.MAP_WIDTH, UI.MAP_HEIGHT);
         this.gameState.addVisitedMap(startingAmbient.getName(), map);
         this.gameState.setCurrentMap(map);
 
-        // Start the game with the initial ambient
         setScreen(new ProceduralMapScreen(character, startingAmbient));
-    }
-
-    /**
-     * Generate an event for an ambient
-     *
-     * @param ambient The ambient to generate an event for
-     */
-    public void generateEvent(Ambient ambient) {
-        try {
-            if (ambient == null) {
-                logger.error("Cannot generate event: ambient is null");
-                throw new InvalidAmbientException("Ambient cannot be null");
-            }
-
-            Event event = eventController.drawEvent(ambient);
-            if (event != null) {
-                eventController.applyEvent(event, gameState.getPlayerCharacter(), ambient);
-                logger.info("Applied event {} in ambient {}", event.getName(), ambient.getName());
-            } else {
-                logger.debug("No event generated for ambient {}", ambient.getName());
-            }
-        } catch (Exception e) {
-            logger.error("Failed to generate event: {}", e.getMessage());
-            throw new AmbientControllerException("Error generating event", e);
-        }
     }
 
     /**
@@ -336,11 +322,10 @@ public class AmbientController {
                 throw new InvalidAmbientException("Ambient cannot be null");
             }
 
-            // Implementation will be added later
             logger.warn("Resource regeneration not yet implemented");
             throw new UnsupportedOperationException("Resource regeneration not yet implemented");
         } catch (UnsupportedOperationException e) {
-            throw e; // Re-throw as is
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to regenerate resources: {}", e.getMessage());
             throw new ResourceOperationException("Failed to regenerate resources");

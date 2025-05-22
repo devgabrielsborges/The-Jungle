@@ -243,9 +243,8 @@ public class EventController {
      * Selects a random event compatible with the given ambient
      *
      * @param ambient The ambient to draw an event from
-     * @return The selected event or null if no event occurs
      */
-    public Event generateRandomEvent(Ambient ambient) {
+    public void generateRandomEvent(Ambient ambient) {
         try {
             if (ambient == null) {
                 logger.error("Cannot generate random event: ambient is null");
@@ -261,7 +260,6 @@ public class EventController {
                 logger.debug("No event generated for ambient: {}", ambient.getName());
             }
 
-            return selectedEvent;
         } catch (Exception e) {
             logger.error("Error generating random event: {}", e.getMessage());
             throw new EventControllerException("Error generating random event", e);
