@@ -2,7 +2,6 @@
 package io.github.com.ranie_borges.thejungle.controller;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -21,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -30,194 +28,167 @@ import java.util.stream.Collectors;
 public class TurnController {
     private static final Logger logger = LoggerFactory.getLogger(TurnController.class);
     private final GameState gameState;
-    private final AmbientController ambientController;
+    private final AmbientController ambientController; // Game's main AmbientController
     private final EventController eventController;
 
     private Stage stage;
     private Skin skin;
-    private ProceduralMapScreen gameScreenInstance; // New field to hold reference to ProceduralMapScreen
+    private ProceduralMapScreen gameScreenInstance;
 
     public TurnController(GameState gameState, AmbientController ambientController) {
         this.gameState = gameState;
         this.ambientController = ambientController;
         this.eventController = gameState.getEventController();
         if (this.eventController == null) {
-            logger.warn("EventController not found in GameState, creating a new one.");
-            gameState.setEventController(new EventController(gameState));
+            logger.warn("EventController not found in GameState, creating a new one for TurnController.");
+            gameState.setEventController(this.eventController);
         }
     }
 
-    /**
-     * Sets the UI components (Stage and Skin) and the game screen instance for the TurnController.
-     * This method should be called once the UI components and screen are initialized.
-     * @param stage The Stage instance for UI.
-     * @param skin The Skin instance for UI styling.
-     * @param gameScreenInstance The active ProceduralMapScreen instance.
-     */
     public void setUI(Stage stage, Skin skin, ProceduralMapScreen gameScreenInstance) {
         this.stage = stage;
         this.skin = skin;
         this.gameScreenInstance = gameScreenInstance;
     }
 
-    /**
-     * Advances the game to the next turn. This method is called when an ambient cycle is complete.
-     */
+    public GameState getGameState() {
+        return gameState;
+    }
+
     public void advanceTurn() {
         logger.info("--- Advancing to new turn (Day {}) ---", gameState.getDaysSurvived() + 1);
         startPhase();
-        actionPhase(); // This will show the ambient selection UI
+        actionPhase();
     }
 
-    /**
-     * Placeholder method - maps are now generated based on door traversal or choice.
-     * This method is no longer used for triggering turn advancement logic.
-     */
-    public void mapGenerated() {
-        // This method is intentionally left empty or can be removed if not called from anywhere
-        // Its logic is now integrated into ProceduralMapScreen.handleDoorTraversal and MapManager.checkAndRotateAmbient
-    }
-
-    /**
-     * Phase 1: Start Phase.
-     * Updates ambient conditions and provides a summary of the previous turn (via chat messages).
-     */
     private void startPhase() {
         logger.info("Start Phase: Updating ambient and providing summary.");
-        Ambient currentAmbient = gameState.getCurrentAmbient();
-        if (currentAmbient != null) {
-            ambientController.setGlobalClime(currentAmbient.getClimes().stream().findFirst().orElse(null));
-            logger.info("Current ambient: {} (Clime: {})", currentAmbient.getName(), ambientController.getGlobalClime());
+        Ambient currentAmbientFromGameState = gameState.getCurrentAmbient();
+        if (currentAmbientFromGameState != null && this.ambientController != null) {
+            this.ambientController.setGlobalClime(currentAmbientFromGameState.getClimes().stream().findFirst().orElse(null));
+            logger.info("StartPhase: Ambient for turn (from GameState): {} (Clime: {})",
+                currentAmbientFromGameState.getName(), this.ambientController.getGlobalClime());
+        } else if (currentAmbientFromGameState != null) {
+            logger.info("StartPhase: Ambient for turn (from GameState): {}", currentAmbientFromGameState.getName());
+        } else {
+            logger.warn("StartPhase: currentAmbientFromGameState is null.");
         }
 
         gameState.setDaysSurvived(gameState.getDaysSurvived() + 1);
         gameState.setOffsetDateTime(OffsetDateTime.now());
 
-        ChatController chatController = new ChatController();
-        chatController.addMessage("Day " + gameState.getDaysSurvived() + " begins. You are in " + (currentAmbient != null ? currentAmbient.getName() : "an unknown place") + ".");
-        chatController.addMessage("Last turn summary: [To be implemented: show what happened previously]");
-    }
-
-    /**
-     * Phase 2: Action Phase. Player chooses a main action. This now directly shows the ambient selection UI.
-     */
-    private void actionPhase() {
-        logger.info("Action Phase: Player chooses an action.");
-        if (this.stage != null && this.skin != null && this.gameScreenInstance != null) { // Added check for gameScreenInstance
-            showAmbientSelection(this.stage, this.skin);
-        } else {
-            logger.error("Stage, Skin, or GameScreenInstance not set for TurnController. Cannot show ambient selection dialog.");
+        if (gameState.getChatController() != null) {
+            gameState.getChatController().addMessage("Day " + gameState.getDaysSurvived() + " begins.");
+            // Message about current location will be added by chooseAmbient or updateScreenMapAndEntities
         }
     }
 
-    /**
-     * Handles the player's choice of a new ambient from the dialog.
-     * This method is called after the prompt, and now handles the actual map generation for the chosen ambient.
-     * @param chosenAmbient The Ambient chosen by the player, or null if "Stay Here".
-     */
-    public void chooseAmbient(Ambient chosenAmbient) {
+    private void actionPhase() {
+        logger.info("Action Phase: Player chooses an action.");
+        if (this.stage != null && this.skin != null && this.gameScreenInstance != null) {
+            showAmbientSelection(this.stage, this.skin);
+        } else {
+            logger.error("Stage, Skin, or GameScreenInstance not set. Cannot show ambient selection dialog.");
+            if (this.gameScreenInstance != null) {
+                chooseAmbient(null); // Fallback
+            }
+        }
+    }
+
+    public void chooseAmbient(Ambient chosenAmbientFromDialog) {
         try {
-            logger.debug("chooseAmbient: Method called with chosenAmbient: {}", chosenAmbient != null ? chosenAmbient.getName() : "null (Stay Here)");
+            logger.debug("chooseAmbient: Player choice from dialog: {}", chosenAmbientFromDialog != null ? chosenAmbientFromDialog.getName() : "Stay Here (null)");
 
             ProceduralMapScreen currentScreen = this.gameScreenInstance;
             if (currentScreen == null) {
-                logger.error("chooseAmbient: GameScreenInstance is null! This should not happen.");
+                logger.error("chooseAmbient: GameScreenInstance is null!");
                 throw new TurnControllerException("ProceduralMapScreen instance not available.");
             }
 
-            MapManager mapManager = currentScreen.getMapManager(); // Get MapManager from the current screen
+            MapManager mapManager = currentScreen.getMapManager();
             if (mapManager == null) {
-                logger.error("chooseAmbient: MapManager is null! This should not happen from currentScreen.");
+                logger.error("chooseAmbient: MapManager is null!");
                 throw new TurnControllerException("MapManager not available from current screen.");
             }
+            gameState.setMapManager(mapManager); // Ensure GameState has this mapManager reference
 
-            logger.debug("chooseAmbient: Stage actors size BEFORE map update logic: {}", stage.getActors().size);
-            for (Actor actor : stage.getActors()) { // Use Actor for iteration
-                logger.debug("chooseAmbient: Actor on stage BEFORE update: {}", actor.getName() != null ? actor.getName() : actor.getClass().getSimpleName());
-            }
+            Ambient ambientToGenerateMapFor;
 
-            if (chosenAmbient == null) { // This means "Stay Here" was chosen or dialog was dismissed
-                logger.debug("chooseAmbient: User chose to Stay Here. Regenerating map for current ambient.");
-                mapManager.generateMapForCurrentAmbient();
-                logger.debug("chooseAmbient: Map generated for current ambient.");
-                currentScreen.updateScreenMapAndEntities(); // Update the screen with the new map
-                logger.debug("chooseAmbient: Screen updated after Stay Here.");
-            } else {
-                logger.debug("chooseAmbient: User chose ambient: {}", chosenAmbient.getName());
-                // Apply energy cost (example)
+            if (chosenAmbientFromDialog == null) { // "Stay Here" was chosen
+                // "Stay Here" means continue in the ambient type that *just completed its cycle*.
+                // This was stored by MapManager in ambientBeforeRotation and reflected in GameState by handleDoorTraversal.
+                ambientToGenerateMapFor = mapManager.getAmbientBeforeRotation(); // This is the key
+                if(ambientToGenerateMapFor == null){ // Safety if somehow not set
+                    logger.warn("ambientBeforeRotation was null in MapManager, defaulting to GameState's current or Jungle for 'Stay Here'");
+                    ambientToGenerateMapFor = gameState.getCurrentAmbient() != null ? gameState.getCurrentAmbient() : new Jungle();
+                }
+                logger.info("Player chose to 'Stay Here' in ambient type: {}. Resetting its usage count.", ambientToGenerateMapFor.getName());
+                mapManager.forceSetCurrentAmbient(ambientToGenerateMapFor, true); // true to reset usage count
+            } else { // A new ambient type was chosen from the dialog options
+                logger.info("Player chose to travel to new ambient type: {}", chosenAmbientFromDialog.getName());
                 Character player = gameState.getPlayerCharacter();
                 if (player != null) {
-                    float energyCost = chosenAmbient.getDifficulty() * 5;
+                    float energyCost = chosenAmbientFromDialog.getDifficulty() * 5; // Example cost
                     player.setEnergy(player.getEnergy() - energyCost);
-                    logger.debug("chooseAmbient: Energy reduced by {}. New energy: {}", energyCost, player.getEnergy());
-                    if (player.getEnergy() <= 0) {
-                        logger.warn("chooseAmbient: Player ran out of energy!");
-                    }
+                    logger.debug("Energy reduced by {}. New energy: {}", energyCost, player.getEnergy());
                 }
-
-                logger.debug("chooseAmbient: Setting MapManager's current ambient to chosen: {}", chosenAmbient.getName());
-                mapManager.setCurrentAmbient(chosenAmbient);
-                logger.debug("chooseAmbient: Generating map for chosen ambient: {}", chosenAmbient.getName());
-                mapManager.generateMapForCurrentAmbient();
-                logger.debug("chooseAmbient: Map generated for chosen ambient.");
-                currentScreen.updateScreenMapAndEntities(); // Update the screen with the new map
-                logger.debug("chooseAmbient: Screen updated after choosing new ambient.");
+                mapManager.forceSetCurrentAmbient(chosenAmbientFromDialog, true); // true to reset usage count
+                // ambientToGenerateMapFor = chosenAmbientFromDialog; // Not needed as mapManager is now set
             }
 
-            // Proceed to the next phases regardless of choice (event and maintenance for the new/current state)
-            logger.debug("chooseAmbient: Starting random event phase.");
+            // mapManager.getCurrentAmbient() is now correctly set to the chosen or "stayed" ambient.
+            logger.debug("TurnController: Instructing MapManager to generate map for: {}", mapManager.getCurrentAmbient().getName());
+            mapManager.generateMapForCurrentAmbient();
+
+            // Sync GameState with what MapManager has now set as current
+            gameState.setCurrentAmbient(mapManager.getCurrentAmbient());
+            gameState.setCurrentMap(mapManager.getMap());
+            logger.debug("GameState updated. Current Ambient: {}, Map set.", gameState.getCurrentAmbient().getName());
+
+            currentScreen.updateScreenMapAndEntities(); // This will use the updated GameState/MapManager
+            logger.debug("Screen updated.");
+
             randomEventPhase(gameState.getCurrentAmbient());
-            logger.debug("chooseAmbient: Starting maintenance phase.");
             maintenancePhase();
-            logger.debug("chooseAmbient: chooseAmbient method completed successfully.");
+            logger.debug("chooseAmbient method completed successfully.");
 
-            // --- Log stage state after all logic completes ---
-            logger.debug("chooseAmbient: Stage actors size AFTER map update logic and phases: {}", stage.getActors().size);
-            for (Actor actor : stage.getActors()) { // Use Actor for iteration
-                logger.debug("chooseAmbient: Actor on stage AFTER update: {}", actor.getName() != null ? actor.getName() : actor.getClass().getSimpleName());
+            Gdx.input.setInputProcessor(stage); // Ensure input processor is reset to the stage
+            if (this.gameScreenInstance != null) {
+                this.gameScreenInstance.setMapTransitionTriggered(false);
             }
-
-
-            // Explicitly set input processor back to the stage after dialog is dismissed
-            Gdx.input.setInputProcessor(stage);
 
         } catch (Exception e) {
             logger.error("chooseAmbient: CRITICAL ERROR during ambient choice processing: {}", e.getMessage(), e);
+            if (this.gameScreenInstance != null) { // Attempt to unblock game even on error
+                this.gameScreenInstance.setMapTransitionTriggered(false);
+            }
             throw new TurnControllerException("Failed to choose ambient", e);
         }
     }
 
-    /**
-     * Phase 3: Random Event Phase.
-     * Checks for and executes a random event.
-     * @param currentAmbient The current ambient for event generation.
-     */
-    private void randomEventPhase(Ambient currentAmbient) {
-        logger.info("Random Event Phase: Checking for random events.");
-        if (eventController != null) {
-            eventController.generateRandomEvent(currentAmbient);
+    private void randomEventPhase(Ambient currentAmbientForEvent) {
+        logger.info("Random Event Phase: Checking for random events in {}.", currentAmbientForEvent != null ? currentAmbientForEvent.getName() : "null ambient");
+        if (eventController != null && currentAmbientForEvent != null) {
+            eventController.generateRandomEvent(currentAmbientForEvent);
         } else {
-            logger.warn("EventController is null, cannot generate random events.");
+            logger.warn("EventController is null or currentAmbientForEvent is null, cannot generate random events.");
         }
     }
 
-    /**
-     * Phase 4: Maintenance Phase.
-     * Adjusts hunger, thirst, sanity, and manages resource regeneration/depletion.
-     */
     private void maintenancePhase() {
         logger.info("Maintenance Phase: Adjusting character attributes and resources.");
         Character player = gameState.getPlayerCharacter();
         if (player != null) {
             player.setHunger(Math.max(0, player.getHunger() - 10));
             player.setThirsty(Math.max(0, player.getThirsty() - 15));
-            player.setSanity(Math.max(0, player.getSanity() - 5));
-            player.setEnergy(Math.max(0, player.getEnergy() - 8));
+            player.setSanity(Math.max(0, player.getSanity() - 5)); // Example value
+            player.setEnergy(Math.max(0, player.getEnergy() - 8));   // Example value
 
             if (player.getHunger() <= 0 || player.getThirsty() <= 0 || player.getSanity() <= 0) {
-                player.setLife(Math.max(0, player.getLife() - 5));
-                ChatController chatController = new ChatController();
-                chatController.addMessage("You are suffering from neglect!");
+                player.setLife(Math.max(0, player.getLife() - 5)); // Penalty for neglect
+                if (gameState.getChatController() != null) {
+                    gameState.getChatController().addMessage("You are suffering from neglect!");
+                }
             }
             logger.info("Character stats after maintenance: Life={}, Hunger={}, Thirsty={}, Energy={}, Sanity={}",
                 player.getLife(), player.getHunger(), player.getThirsty(), player.getEnergy(), player.getSanity());
@@ -225,55 +196,73 @@ public class TurnController {
 
         Ambient currentAmbient = gameState.getCurrentAmbient();
         if (currentAmbient != null) {
+            // Resource regeneration/depletion logic would go here if any
             logger.info("Resources in {} after maintenance: {}", currentAmbient.getName(), currentAmbient.getResources().size());
         }
     }
 
-    /**
-     * Presents the player with a choice of 3 random ambients to travel to.
-     * @param stage The Stage to add the dialog to.
-     * @param skin The Skin for the UI elements.
-     */
     public void showAmbientSelection(Stage stage, Skin skin) {
-        Dialog ambientChoiceDialog = new Dialog("Choose Your Next Path", skin) {
+        final Dialog ambientChoiceDialog = new Dialog("Choose Your Next Path", skin) {
             @Override
             protected void result(Object object) {
-                if (object == null) {
-                    chooseAmbient(null);
-                } else if (object instanceof Ambient) {
-                    chooseAmbient((Ambient) object);
-                } else {
-                    logger.warn("Invalid object returned from ambient selection dialog: {}", object);
-                    chooseAmbient(null);
-                }
+                chooseAmbient((Ambient) object); // object can be null for "Stay Here"
             }
         };
-
         ambientChoiceDialog.text("Where do you want to go next? Each path has its own challenges and rewards.");
 
-        List<Ambient> availableAmbients = new ArrayList<>(Arrays.asList(
+        List<Ambient> allPossibleAmbients = Arrays.asList(
             new Cave(), new Jungle(), new LakeRiver(), new Mountain(), new Ruins()
-        ));
+        );
 
-        Ambient currentAmbient = gameState.getCurrentAmbient();
-        List<Ambient> choices = availableAmbients.stream()
-            .filter(a -> !a.getName().equals(currentAmbient.getName()))
+        // This is the ambient type that just completed its 3-map cycle.
+        // It was set in gameState by handleDoorTraversal before advanceTurn was called.
+        // Or more robustly, get it from mapManager.getAmbientBeforeRotation() via gameState's mapManager
+        Ambient ambientCycleCompleted = null;
+        if(gameState.getMapManager() != null){
+            ambientCycleCompleted = gameState.getMapManager().getAmbientBeforeRotation();
+        }
+        if (ambientCycleCompleted == null) { // Fallback if somehow not set
+            logger.warn("ambientBeforeRotation from MapManager was null in showAmbientSelection. Using GameState's current ambient.");
+            ambientCycleCompleted = gameState.getCurrentAmbient();
+        }
+        if (ambientCycleCompleted == null) { // Absolute fallback
+            logger.error("Critical: No ambient context for 'Stay Here' label. Defaulting to Jungle.");
+            ambientCycleCompleted = new Jungle();
+        }
+
+
+        logger.debug("showAmbientSelection: 'Stay Here' button will refer to ambient type: {}", ambientCycleCompleted.getName());
+
+        Ambient finalAmbientCycleCompleted = ambientCycleCompleted;
+        List<Ambient> choices = allPossibleAmbients.stream()
+            .filter(a -> !a.getName().equals(finalAmbientCycleCompleted.getName())) // Offer different ambients
             .collect(Collectors.toList());
 
         if (choices.size() > 3) {
             java.util.Collections.shuffle(choices, new Random());
             choices = choices.subList(0, 3);
-        } else if (choices.isEmpty() && currentAmbient != null) {
-            choices.add(currentAmbient);
         } else if (choices.isEmpty()) {
-            choices.add(new Jungle());
+            for(Ambient defaultChoice : allPossibleAmbients){
+                if(!defaultChoice.getName().equals(ambientCycleCompleted.getName())){
+                    choices.add(defaultChoice);
+                    if(choices.size() >=1) break;
+                }
+            }
+            if(choices.isEmpty() && !allPossibleAmbients.isEmpty()) {
+                choices.add(allPossibleAmbients.get(0)); // Add any if all were same as current
+            }
+            if(choices.isEmpty()) choices.add(new Jungle()); // Absolute fallback
+        }
+        if (choices.size() > 3) {
+            java.util.Collections.shuffle(choices, new Random());
+            choices = choices.subList(0, 3);
         }
 
         for (Ambient ambient : choices) {
             ambientChoiceDialog.button(ambient.getName() + " (Difficulty: " + ambient.getDifficulty() + ")", ambient);
         }
 
-        ambientChoiceDialog.button("Stay Here", null);
+        ambientChoiceDialog.button("Stay Here (in " + ambientCycleCompleted.getName() + ")", null);
 
         ambientChoiceDialog.show(stage);
     }

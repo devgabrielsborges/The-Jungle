@@ -1,4 +1,3 @@
-// core/src/main/java/io/github/com/ranie_borges/thejungle/controller/managers/MapManager.java
 package io.github.com.ranie_borges.thejungle.controller.managers;
 
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -11,9 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * Responsible for managing map generation and map-related operations
- */
 public class MapManager implements UI {
     private static final Logger logger = LoggerFactory.getLogger(MapManager.class);
 
@@ -21,105 +17,112 @@ public class MapManager implements UI {
     private Ambient currentAmbient;
     private int[][] map;
     private int currentAmbientUseCount = 0;
+    private Ambient ambientBeforeRotation; // New field
 
-    /**
-     * Create a new MapManager with the given ambient
-     *
-     * @param ambient The initial ambient
-     */
-    public MapManager(Ambient ambient) {
-        this.currentAmbient = ambient;
+    public MapManager(Ambient initialAmbient) {
+        if (initialAmbient == null) {
+            logger.warn("MapManager initialized with null ambient. Defaulting to Jungle.");
+            this.currentAmbient = new Jungle();
+        } else {
+            this.currentAmbient = initialAmbient;
+        }
+        this.ambientBeforeRotation = this.currentAmbient; // Initialize
     }
 
     /**
      * Checks if the ambient needs to be rotated based on usage count.
-     * Increments the ambient use count and rotates the ambient if the limit is reached.
-     * This method does NOT generate a map.
-     * @return true if the ambient was just rotated (meaning a 3-map cycle completed for the previous ambient).
+     * If rotation occurs, updates currentAmbient and resets use count.
+     * Sets ambientBeforeRotation to the ambient type that just completed its cycle.
+     * @return true if the ambient type was just rotated.
      */
     public boolean checkAndRotateAmbient() {
-        boolean ambientRotated = false;
+        this.ambientBeforeRotation = this.currentAmbient; // Store current before potential change
         currentAmbientUseCount++;
+        boolean ambientRotated = false;
 
         if (currentAmbientUseCount > Ambient.MAX_AMBIENT_USES) {
-            Ambient newAmbient = getNextAmbient();
-            currentAmbient = newAmbient;
-            logger.info("Rotating ambient to: {}", newAmbient.getName());
-            currentAmbientUseCount = 1;
+            Ambient newAmbient = getNextAmbientDifferentFrom(this.currentAmbient); // Ensure it's different
+            setCurrentAmbientInternal(newAmbient, 1); // Internal method to set and reset count
             ambientRotated = true;
+            logger.info("Ambient rotated. Previous: {}, New: {}. Use count reset to 1.",
+                this.ambientBeforeRotation.getName(), this.currentAmbient.getName());
+        } else {
+            logger.info("Ambient {} usage: {}/{}",
+                this.currentAmbient.getName(),
+                currentAmbientUseCount,
+                Ambient.MAX_AMBIENT_USES);
         }
-
-        logger.info("Ambient usage count for {}: {}/{}",
-            currentAmbient.getName(),
-            currentAmbientUseCount,
-            Ambient.MAX_AMBIENT_USES);
-
         return ambientRotated;
     }
 
-    /**
-     * Generates the map for the currently set ambient.
-     * This method does NOT handle ambient rotation or usage count.
-     */
+    // Call this if "Stay Here" is chosen, or a specific ambient is chosen by player
+    private void setCurrentAmbientInternal(Ambient newAmbient, int useCount) {
+        this.currentAmbient = newAmbient;
+        this.currentAmbientUseCount = useCount;
+        logger.info("MapManager current ambient explicitly set to: {} with use count: {}", newAmbient.getName(), useCount);
+    }
+
+
     public void generateMapForCurrentAmbient() {
         try {
+            if (currentAmbient == null) {
+                logger.error("CurrentAmbient is null in MapManager. Cannot generate map.");
+                this.currentAmbient = new Jungle(); // Risky fallback
+            }
             map = currentAmbient.generateMap(MAP_WIDTH, MAP_HEIGHT);
             logger.info("Map generated for ambient: {}", currentAmbient.getName());
         } catch (Exception e) {
-            logger.error("Error generating map for current ambient: {}", e.getMessage());
-            // Fallback map generation
+            logger.error("Error generating map for current ambient ({}): {}", currentAmbient != null ? currentAmbient.getName() : "null", e.getMessage(), e);
             map = new int[MAP_HEIGHT][MAP_WIDTH];
             for (int y = 0; y < MAP_HEIGHT; y++) {
                 for (int x = 0; x < MAP_WIDTH; x++) {
-                    map[y][x] = (x == 0 || y == 0 || x == MAP_WIDTH - 1 || y == MAP_HEIGHT - 1) ? TILE_WALL
-                        : TILE_GRASS;
+                    map[y][x] = (x == 0 || y == 0 || x == MAP_WIDTH - 1 || y == MAP_HEIGHT - 1) ? TILE_WALL : TILE_GRASS;
                 }
             }
         }
     }
 
-    /**
-     * Get current map
-     *
-     * @return The current map array
-     */
     public int[][] getMap() {
         return map;
     }
 
-    /**
-     * Get next ambient that is different from current
-     *
-     * @return A new ambient instance
-     */
-    private Ambient getNextAmbient() {
-        String currentName = currentAmbient.getName();
+    private Ambient getNextAmbientDifferentFrom(Ambient ambientToAvoid) {
+        String avoidName = (ambientToAvoid != null) ? ambientToAvoid.getName() : "";
 
-        Ambient[] ambients = {
-            new Cave(),
-            new Jungle(),
-            new LakeRiver(),
-            new Mountain(),
-            new Ruins()
+        Ambient[] allAmbients = {
+            new Cave(), new Jungle(), new LakeRiver(), new Mountain(), new Ruins()
         };
 
         List<Ambient> availableAmbients = new ArrayList<>();
-        for (Ambient a : ambients) {
-            if (!a.getName().equals(currentName)) {
+        for (Ambient a : allAmbients) {
+            if (!a.getName().equals(avoidName)) {
                 availableAmbients.add(a);
             }
         }
 
         if (availableAmbients.isEmpty()) {
-            return new Jungle();
+            // This case should ideally not happen if there's more than one ambient type.
+            // Fallback to Jungle if it's not the one to avoid, otherwise pick first from allAmbients.
+            if (!"Jungle".equals(avoidName)) return new Jungle();
+            return allAmbients.length > 0 ? allAmbients[0] : new Jungle(); // Absolute fallback
         }
-
         return availableAmbients.get(random.nextInt(availableAmbients.size()));
     }
 
-    /**
-     * Generate additional doors for cave ambients
-     */
+    public Ambient getAmbientBeforeRotation() {
+        return ambientBeforeRotation;
+    }
+
+    public void forceSetCurrentAmbient(Ambient ambient, boolean resetUsageCount) {
+        this.currentAmbient = ambient;
+        if (resetUsageCount) {
+            this.currentAmbientUseCount = 1; // Start fresh count for this ambient type
+        }
+        // ambientBeforeRotation is not changed here as this is a direct override.
+        logger.info("MapManager current ambient forced to: {} (Usage count {}).", ambient.getName(), this.currentAmbientUseCount);
+    }
+
+
     public void generateCaveDoors() {
         int doorsPlaced = 0;
         int attempts = 0;
@@ -134,16 +137,16 @@ public class MapManager implements UI {
             attempts++;
         }
 
-        for (int y = 0; y < MAP_HEIGHT; y++) {
-            for (int x = 0; x < MAP_WIDTH; x++) {
-                if (map[y][x] == TILE_DOOR) {
+        for (int y_coord = 0; y_coord < MAP_HEIGHT; y_coord++) {
+            for (int x_coord = 0; x_coord < MAP_WIDTH; x_coord++) {
+                if (map[y_coord][x_coord] == TILE_DOOR) {
                     boolean hasCaveNearby = false;
                     for (int dy = -1; dy <= 1; dy++) {
                         for (int dx = -1; dx <= 1; dx++) {
                             if (dx == 0 && dy == 0)
                                 continue;
-                            int nx = x + dx;
-                            int ny = y + dy;
+                            int nx = x_coord + dx;
+                            int ny = y_coord + dy;
                             if (nx >= 0 && nx < MAP_WIDTH && ny >= 0 && ny < MAP_HEIGHT) {
                                 if (map[ny][nx] == TILE_CAVE) {
                                     hasCaveNearby = true;
@@ -155,16 +158,13 @@ public class MapManager implements UI {
                             break;
                     }
                     if (!hasCaveNearby) {
-                        map[y][x] = TILE_WALL;
+                        map[y_coord][x_coord] = TILE_WALL;
                     }
                 }
             }
         }
     }
 
-    /**
-     * Check if a tile has an adjacent cave tile
-     */
     public boolean hasAdjacentCave(int y, int x) {
         return (x > 0 && map[y][x - 1] == TILE_CAVE) ||
             (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_CAVE) ||
@@ -172,9 +172,6 @@ public class MapManager implements UI {
             (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE);
     }
 
-    /**
-     * Check if a tile has an adjacent floor tile
-     */
     public boolean hasAdjacentFloor(int y, int x) {
         return (y > 0 && map[y - 1][x] == TILE_GRASS) ||
             (y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_GRASS) ||
@@ -182,70 +179,51 @@ public class MapManager implements UI {
             (x < MAP_WIDTH - 1 && map[y][x + 1] == TILE_GRASS);
     }
 
-    /**
-     * Check if a position is valid for a character to move to
-     */
     public boolean isValidPosition(int x, int y) {
+        if (currentAmbient == null) return false; // Safety check
         return x > 0 && x < MAP_WIDTH - 1 && y > 0 && y < MAP_HEIGHT - 1 &&
             (map[y][x] == TILE_GRASS ||
-                (currentAmbient.getName().equals("Cave") && map[y][x] == TILE_CAVE));
+                (currentAmbient.getName().toLowerCase().contains("cave") && map[y][x] == TILE_CAVE));
     }
 
-    /**
-     * Check if a position is valid for spawning
-     */
     public boolean isValidSpawnTile(int x, int y) {
         if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
             return false;
         return map[y][x] == TILE_GRASS;
     }
 
-    /**
-     * Check if a position is valid for spawning in a cave
-     */
     public boolean isValidCaveSpawnTile(int x, int y) {
         if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
             return false;
         return map[y][x] == TILE_CAVE;
     }
 
-    /**
-     * Get the current ambient
-     */
     public Ambient getCurrentAmbient() {
         return currentAmbient;
     }
 
-    /**
-     * Sets the current map from a saved game
-     *
-     * @param loadedMap The map to set from a save
-     */
     public void setCurrentMap(int[][] loadedMap) {
-        if (loadedMap != null && loadedMap.length > 0) {
-            logger.info("Setting map from save with dimensions: {}x{}",
+        if (loadedMap != null && loadedMap.length > 0 && loadedMap[0].length > 0) {
+            logger.info("MapManager: Setting map from external source with dimensions: {}x{}",
                 loadedMap.length, loadedMap[0].length);
-
             this.map = loadedMap;
         } else {
-            logger.warn("Attempted to set null or empty map");
+            logger.warn("MapManager: Attempted to set null or empty map. Map not changed.");
         }
     }
 
-    /**
-     * Set the current ambient
-     *
-     * @param ambient The ambient to set
-     */
-    public void setCurrentAmbient(Ambient ambient) {
+    // Renamed from setCurrentAmbient to avoid confusion with internal logic
+    public void externallySetCurrentAmbient(Ambient ambient) {
         if (ambient != null) {
             this.currentAmbient = ambient;
+            this.currentAmbientUseCount = 0; // Or 1 if it counts as the first use
+            this.ambientBeforeRotation = ambient; // Align this as well
+            logger.info("MapManager: Current ambient externally set to: {}. Usage count reset.", ambient.getName());
+        } else {
+            logger.warn("MapManager: Attempted to externally set a null ambient.");
         }
     }
 
-    /**
-     * Add doors at valid positions
-     */
     public void addDoors(int doorsToAdd) {
         int attempts = 0;
         while (doorsToAdd > 0 && attempts < 1000) {
@@ -260,9 +238,6 @@ public class MapManager implements UI {
         }
     }
 
-    /**
-     * Check if a wall is adjacent to a cave tile
-     */
     public boolean isAdjacentToCave(int x, int y) {
         if (x > 0 && map[y][x - 1] == TILE_CAVE)
             return true;
@@ -273,18 +248,19 @@ public class MapManager implements UI {
         return y < MAP_HEIGHT - 1 && map[y + 1][x] == TILE_CAVE;
     }
 
-    /**
-     * Count the number of doors in the map
-     */
     public int countDoors() {
         int count = 0;
-        for (int y = 0; y < MAP_HEIGHT; y++) {
-            for (int x = 0; x < MAP_WIDTH; x++) {
-                if (map[y][x] == TILE_DOOR) {
+        for (int y_coord = 0; y_coord < MAP_HEIGHT; y_coord++) {
+            for (int x_coord = 0; x_coord < MAP_WIDTH; x_coord++) {
+                if (map[y_coord][x_coord] == TILE_DOOR) {
                     count++;
                 }
             }
         }
         return count;
+    }
+
+    public int getCurrentAmbientUseCount() {
+        return currentAmbientUseCount;
     }
 }
