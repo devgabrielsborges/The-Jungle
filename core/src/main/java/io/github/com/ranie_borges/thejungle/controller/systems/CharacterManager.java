@@ -42,32 +42,37 @@ public class CharacterManager implements UI {
         if (character == null)
             return false;
 
-        boolean passedThroughDoor = character.tryMove(
+        boolean passedThroughDoor = character.tryMove( // Certifique-se que a chamada para tryMove inclua 'currentAmbient'
             delta,
             map,
-            TILE_SIZE,
-            TILE_WALL,
+            TILE_SIZE,    // Ou UI.TILE_SIZE se TILE_SIZE não for campo direto aqui
+            TILE_WALL,    // Ou UI.TILE_WALL etc.
             TILE_DOOR,
             TILE_CAVE,
             TILE_WATER,
             TILE_WETGRASS,
-            MAP_WIDTH,
-            MAP_HEIGHT);
+            MAP_WIDTH,    // Ou UI.MAP_WIDTH etc.
+            MAP_HEIGHT,
+            currentAmbient // <<< AQUI você passa o ambiente atual
+        );
 
+        // ... resto do método ...
         if (currentAmbient instanceof Jungle) {
             Jungle jungle = (Jungle) currentAmbient;
-            float centerX = character.getPosition().x + TILE_SIZE / 2f;
-            float centerY = character.getPosition().y + TILE_SIZE / 2f;
-            int tileX = (int) (centerX / TILE_SIZE);
-            int tileY = (int) (centerY / TILE_SIZE);
-            character.setInTallGrass(jungle.isTallGrass(tileX, tileY));
+            float centerX = character.getPosition().x + TILE_SIZE / 2f; // Use TILE_SIZE da UI ou passe como parâmetro
+            float centerY = character.getPosition().y + TILE_SIZE / 2f; // Use TILE_SIZE da UI ou passe como parâmetro
+            int tileX = (int) (centerX / TILE_SIZE); // Use TILE_SIZE da UI ou passe como parâmetro
+            int tileY = (int) (centerY / TILE_SIZE); // Use TILE_SIZE da UI ou passe como parâmetro
 
+            if (tileX >= 0 && tileX < MAP_WIDTH && tileY >= 0 && tileY < MAP_HEIGHT) { // Use MAP_WIDTH e MAP_HEIGHT da UI ou passe como parâmetro
+                character.setInTallGrass(jungle.isTallGrass(tileX, tileY));
+            } else {
+                character.setInTallGrass(false);
+            }
             jungle.checkSnakeBite(character);
+        } else {
+            character.setInTallGrass(false);
         }
-
-        character.updateStateTime(delta);
-        stateTime += delta;
-
         return passedThroughDoor;
     }
 
