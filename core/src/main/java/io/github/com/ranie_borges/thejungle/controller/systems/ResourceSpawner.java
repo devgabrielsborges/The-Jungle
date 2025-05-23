@@ -3,6 +3,7 @@ package io.github.com.ranie_borges.thejungle.controller.systems;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
@@ -24,10 +25,11 @@ public class ResourceSpawner implements UI {
     private List<Material> materialsOnMap = new ArrayList<>();
     private List<Deer> deers = new ArrayList<>();
     private List<Cannibal> cannibals = new ArrayList<>();
+    private List<Fish> fishes = new ArrayList<>();
 
     /**
      * Spawn resources appropriate for the given ambient
-     * 
+     *
      * @param ambient The ambient to spawn resources in
      * @param map     The current map
      * @return The list of materials placed on the map
@@ -59,7 +61,7 @@ public class ResourceSpawner implements UI {
 
     /**
      * Spawn deer appropriate for the given ambient
-     * 
+     *
      * @param ambient The ambient to spawn creatures in
      * @param map     The current map
      * @return The list of spawned deer
@@ -82,7 +84,7 @@ public class ResourceSpawner implements UI {
 
     /**
      * Spawn cannibals appropriate for the given ambient
-     * 
+     *
      * @param ambient The ambient to spawn creatures in
      * @param map     The current map
      * @return The list of spawned cannibals
@@ -102,7 +104,20 @@ public class ResourceSpawner implements UI {
             return cannibals;
         }
     }
+    public List<Fish> spawnFish(Ambient ambient, int[][] map) {
+        try {
+            fishes = Creature.regenerateCreatures(
+                5, map, MAP_WIDTH, MAP_HEIGHT, TILE_WATER, TILE_SIZE,
+                Fish::new, ambient, Fish::canSpawnIn);
 
+            logger.debug("Spawned {} fishes", fishes.size());
+            return fishes;
+        } catch (Exception e) {
+            logger.error("Error spawning fish: {}", e.getMessage());
+            fishes = new ArrayList<>();
+            return fishes;
+        }
+    }
     /**
      * Get the materials currently on the map
      */
@@ -115,6 +130,10 @@ public class ResourceSpawner implements UI {
      */
     public List<Deer> getDeers() {
         return deers;
+    }
+
+    public List<Fish> getFishes() {
+        return fishes;
     }
 
     /**
