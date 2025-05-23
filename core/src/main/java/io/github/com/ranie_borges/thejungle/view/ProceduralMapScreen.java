@@ -220,6 +220,7 @@ public class ProceduralMapScreen implements Screen, UI {
             return;
         }
 
+        character.updatePopupTimer(delta);
         lightingManager.beginLightBuffer();
 
         try {
