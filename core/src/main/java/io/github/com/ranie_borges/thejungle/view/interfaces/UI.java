@@ -13,4 +13,5 @@ public interface UI {
     int TILE_DOOR = 2;
     int TILE_CAVE = 3;
     int TILE_WATER = 4;
+    int TILE_WETGRASS = 5;
 }
