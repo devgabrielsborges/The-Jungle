@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -244,7 +245,7 @@ public class GameRenderHelper implements UI {
     /**
      * Render all creatures on the map
      */
-    public void renderCreatures(List<Deer> deers, List<Cannibal> cannibals, Character character) {
+    public void renderCreatures(List<Deer> deers, List<Cannibal> cannibals, Character character,List<Fish> fishes) {
         batch.begin();
 
         // Render deers
@@ -303,6 +304,35 @@ public class GameRenderHelper implements UI {
                         x + (float) (TILE_SIZE - 40) / 2,
                         y + (float) (TILE_SIZE - 40) / 2,
                         40, 40);
+                batch.setColor(1f, 1f, 1f, 1f);
+            }
+        }
+        // Render fishes
+        for (Fish fish : fishes) {
+            float x = fish.getPosition().x + offsetX;
+            float y = fish.getPosition().y + offsetY;
+
+            if (x < -TILE_SIZE || x > Gdx.graphics.getWidth() ||
+                    y < -TILE_SIZE || y > Gdx.graphics.getHeight()) {
+                continue;
+            }
+
+            // Get sprite from creature's map and draw it
+            if (fish.getSprites() != null && fish.getSprites().containsKey("idle")) {
+                Sprite sprite = fish.getSprites().get("idle");
+                // Set fish size to 30x30 pixels
+                sprite.setSize(30, 30);
+                sprite.setPosition(
+                        x + (TILE_SIZE - sprite.getWidth()) / 2,
+                        y + (TILE_SIZE - sprite.getHeight()) / 2);
+                sprite.draw(batch);
+            } else {
+                // Fallback in case no sprite is available
+                batch.setColor(0.5f, 0.5f, 1f, 1f); // Blue fish color
+                batch.draw(new Texture(Gdx.files.internal("sprites/criaturas/fish.png")),
+                        x + (float) (TILE_SIZE - 30) / 2,
+                        y + (float) (TILE_SIZE - 30) / 2,
+                        30, 30);
                 batch.setColor(1f, 1f, 1f, 1f);
             }
         }
