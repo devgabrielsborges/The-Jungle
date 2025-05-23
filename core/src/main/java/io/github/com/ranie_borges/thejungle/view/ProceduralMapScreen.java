@@ -23,12 +23,14 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 import io.github.com.ranie_borges.thejungle.view.helpers.GameRenderHelper;
 import io.github.com.ranie_borges.thejungle.view.helpers.LightingManager;
 import io.github.com.ranie_borges.thejungle.view.helpers.TextureManager;
@@ -61,6 +63,7 @@ public class ProceduralMapScreen implements Screen, UI {
     private List<Material> materiaisNoMapa = new ArrayList<>();
     private List<Deer> deers = new ArrayList<>();
     private List<Cannibal> cannibals = new ArrayList<>();
+    private List<Fish> fishes = new ArrayList<>();
 
     // Visual components
     private Texture playerTexture;
@@ -167,6 +170,8 @@ public class ProceduralMapScreen implements Screen, UI {
             deers = resourceSpawner.spawnCreatures(ambient, map);
             cannibals = resourceSpawner.spawnCannibals(ambient, map);
             materiaisNoMapa = resourceSpawner.spawnResources(ambient, map);
+            fishes = resourceSpawner.spawnFish(ambient, map);
+
 
             lightingManager = new LightingManager();
 
@@ -372,12 +377,47 @@ public class ProceduralMapScreen implements Screen, UI {
             logger.error("Error in render: {}", e.getMessage());
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            if (!showInventory) {
-                character.tryCollectNearbyMaterial(materiaisNoMapa);
-            } else {
+            if (!showInventory) { // Se o inventário NÃO estiver aberto
+                boolean actionTaken = false;
+
+                // --- TENTAR BEBER ÁGUA ---
+                // Determinar o tile em que o personagem está.
+                // Certifique-se de que TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, TILE_WATER
+                // são acessíveis aqui (ex: UI.TILE_SIZE ou ProceduralMapScreen.TILE_SIZE).
+                int playerTileX = (int) (character.getPosition().x / TILE_SIZE);
+                int playerTileY = (int) (character.getPosition().y / TILE_SIZE);
+
+                // Verificar se o jogador está dentro dos limites do mapa
+                if (playerTileX >= 0 && playerTileX < MAP_WIDTH &&
+                    playerTileY >= 0 && playerTileY < MAP_HEIGHT) {
+
+                    int tileTypeAtPlayer = map[playerTileY][playerTileX]; // 'map' é o int[][] da tela
+
+                    // Se o ambiente é LakeRiver E o jogador está num tile de água
+                    if (ambient instanceof LakeRiver && tileTypeAtPlayer == TILE_WATER) {
+                        character.drinkWater(ambient); // Método que você criou em Character.java
+                        actionTaken = true; // Ação de beber foi realizada
+                        logger.debug("Player action: Drank water.");
+                    }
+                }
+
+                // --- TENTAR COLETAR MATERIAIS (somente se não bebeu água) ---
+                if (!actionTaken) {
+                    // Sua lógica existente para coletar materiais.
+                    // Se tryCollectNearbyMaterial retornar um booleano, você pode usá-lo.
+                    // Se não, a chamada simples ainda funciona, mas actionTaken não será atualizado aqui.
+                    // Para este cenário simplificado, não precisamos do retorno booleano de tryCollect...
+                    // pois não há mais ações concorrentes com 'E' e inventário fechado.
+                    character.tryCollectNearbyMaterial(materiaisNoMapa);
+                    // Se quiser logar, precisaria que tryCollectNearbyMaterial retornasse um status.
+                    // logger.debug("Player action: Attempted to collect material.");
+                }
+
+            } else { // Se o inventário ESTIVER aberto
                 Item selectedItem = characterUI.getSelectedItem();
                 if (selectedItem != null) {
                     character.useItem(selectedItem);
+                    logger.debug("Player action: Used item from inventory.");
                 }
             }
         }
