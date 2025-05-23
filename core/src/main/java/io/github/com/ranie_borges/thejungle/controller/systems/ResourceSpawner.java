@@ -105,19 +105,38 @@ public class ResourceSpawner implements UI {
         }
     }
     public List<Fish> spawnFish(Ambient ambient, int[][] map) {
-        try {
-            fishes = Creature.regenerateCreatures(
-                5, map, MAP_WIDTH, MAP_HEIGHT, TILE_WATER, TILE_SIZE,
-                Fish::new, ambient, Fish::canSpawnIn);
+        this.fishes.clear(); // Limpa a lista de peixes antes de tentar popular novamente
 
-            logger.debug("Spawned {} fishes", fishes.size());
-            return fishes;
+        // CONDIÇÃO ADICIONADA: Somente spawnar peixes se o ambiente for LakeRiver
+        if (!(ambient instanceof LakeRiver)) {
+            logger.debug("Skipping fish spawn, not in LakeRiver ambient. Current ambient: {}", ambient.getName());
+            return this.fishes; // Retorna a lista vazia (ou a lista antiga, se não limpasse acima)
+        }
+
+        try {
+            // A chamada para regenerateCreatures já especifica TILE_WATER.
+            // O número de peixes (5) e o predicado Fish::canSpawnIn são mantidos.
+            this.fishes = Creature.regenerateCreatures(
+                5, // Número máximo de peixes a tentar spawnar
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_WATER, // <<< Condição de tile de água já está aqui
+                TILE_SIZE,
+                Fish::new, // Construtor do Peixe
+                ambient,   // Passa o ambiente
+                Fish::canSpawnIn // Predicado de spawn do Peixe
+            );
+
+            logger.debug("Spawned {} fishes in {}", this.fishes.size(), ambient.getName());
+            return this.fishes;
         } catch (Exception e) {
             logger.error("Error spawning fish: {}", e.getMessage());
-            fishes = new ArrayList<>();
-            return fishes;
+            this.fishes = new ArrayList<>(); // Garante que fishes seja uma lista vazia em caso de erro
+            return this.fishes;
         }
     }
+
     /**
      * Get the materials currently on the map
      */
