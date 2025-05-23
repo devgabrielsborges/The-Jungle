@@ -20,6 +20,7 @@ import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 
 import java.util.List;
 
@@ -118,60 +119,92 @@ public class GameRenderHelper implements UI {
                 float tileY = y * TILE_SIZE + offsetY;
 
                 if (tileX < -TILE_SIZE || tileX > Gdx.graphics.getWidth() ||
-                        tileY < -TILE_SIZE || tileY > Gdx.graphics.getHeight()) {
+                    tileY < -TILE_SIZE || tileY > Gdx.graphics.getHeight()) {
                     continue;
                 }
 
                 int tileType = map[y][x];
 
+                // Pega a textura de chão específica do ambiente atual
+                // Isso garante que se não for água no LakeRiver, usa o chão correto do ambiente.
+                Texture currentAmbientFloorTexture = ambient.getFloorTexture();
+                if (currentAmbientFloorTexture == null) { // Fallback para a textura genérica se a do ambiente for nula
+                    currentAmbientFloorTexture = floorTexture;
+                }
+
+
                 switch (tileType) {
                     case TILE_GRASS:
-                        batch.draw(floorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
+                        // Usa a textura de chão do ambiente atual (ex: lakeriverFloor.png para LakeRiver)
+                        // ou a floorTexture genérica se a do ambiente for nula.
+                        batch.draw(currentAmbientFloorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
                         break;
                     case TILE_WALL:
-                        batch.draw(wallTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
+                        // Usa a textura de parede do ambiente atual ou a genérica.
+                        Texture currentAmbientWallTexture = ambient.getWallTexture();
+                        if (currentAmbientWallTexture == null) {
+                            currentAmbientWallTexture = wallTexture;
+                        }
+                        batch.draw(currentAmbientWallTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
                         break;
                     case TILE_DOOR:
-                        batch.draw(floorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
-                        batch.setColor(1, 0.8f, 0, 0.85f); // Brighter golden color for doors
-                        batch.draw(wallTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
+                        // Mantém a lógica de desenhar com floorTexture e depois wallTexture para o efeito de porta
+                        // mas usando currentAmbientFloorTexture e currentAmbientWallTexture se disponíveis.
+                        Texture doorFloorTex = currentAmbientFloorTexture;
+                        Texture doorWallTex = ambient.getWallTexture() != null ? ambient.getWallTexture() : wallTexture;
 
-                        // Draw a door frame to make it more visible
-                        batch.setColor(1, 0.6f, 0, 1); // Darker gold for the frame
-                        // Top and bottom of door frame
-                        batch.draw(wallTexture, tileX, tileY, TILE_SIZE, TILE_SIZE * 0.15f);
-                        batch.draw(wallTexture, tileX, tileY + TILE_SIZE * 0.85f, TILE_SIZE, TILE_SIZE * 0.15f);
-                        // Left and right of door frame
-                        batch.draw(wallTexture, tileX, tileY, TILE_SIZE * 0.15f, TILE_SIZE);
-                        batch.draw(wallTexture, tileX + TILE_SIZE * 0.85f, tileY, TILE_SIZE * 0.15f, TILE_SIZE);
+                        batch.draw(doorFloorTex, tileX, tileY, TILE_SIZE, TILE_SIZE);
+                        batch.setColor(1, 0.8f, 0, 0.85f);
+                        batch.draw(doorWallTex, tileX, tileY, TILE_SIZE, TILE_SIZE);
 
-                        batch.setColor(1, 1, 1, 1); // Reset color
+                        batch.setColor(1, 0.6f, 0, 1);
+                        batch.draw(doorWallTex, tileX, tileY, TILE_SIZE, TILE_SIZE * 0.15f);
+                        batch.draw(doorWallTex, tileX, tileY + TILE_SIZE * 0.85f, TILE_SIZE, TILE_SIZE * 0.15f);
+                        batch.draw(doorWallTex, tileX, tileY, TILE_SIZE * 0.15f, TILE_SIZE);
+                        batch.draw(doorWallTex, tileX + TILE_SIZE * 0.85f, tileY, TILE_SIZE * 0.15f, TILE_SIZE);
+
+                        batch.setColor(1, 1, 1, 1);
                         break;
                     case TILE_CAVE:
                         if (ambient instanceof Jungle) {
                             Jungle jungle = (Jungle) ambient;
-                            if (jungle.isTallGrass(x, y)) {
-                                batch.draw(floorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
+                            // Usar currentAmbientFloorTexture para o chão da Jungle
+                            batch.draw(currentAmbientFloorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
+                            if (jungle.isTallGrass(x, y)) { // Grama alta sobrepõe o chão
                                 batch.draw(jungle.getTallGrassTexture(), tileX, tileY, TILE_SIZE, TILE_SIZE);
-                            } else {
-                                batch.draw(floorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
                             }
                         } else {
-                            // For actual cave ambient
-                            batch.setColor(0.5f, 0.5f, 0.5f, 1f);
-                            batch.draw(floorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
+                            // Para ambiente Caverna real, desenha o chão da caverna (currentAmbientFloorTexture)
+                            // e talvez escurece ou usa uma textura específica se Cave tiver uma.
+                            // A lógica original de escurecer com setColor pode ser mantida se desejado,
+                            // ou pode-se usar a floorTexture da Caverna diretamente.
+                            batch.setColor(0.5f, 0.5f, 0.5f, 1f); // Mantendo o escurecimento original para Cave
+                            batch.draw(currentAmbientFloorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
                             batch.setColor(1, 1, 1, 1);
                         }
                         break;
                     case TILE_WATER:
-                        batch.setColor(0.2f, 0.6f, 1f, 0.8f);
-                        batch.draw(floorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
-                        batch.setColor(1, 1, 1, 1);
+                        if (ambient instanceof LakeRiver) {
+                            // Se for LakeRiver e o tile for água, usa a waterTexture específica do LakeRiver
+                            batch.draw(((LakeRiver) ambient).getWaterTexture(), tileX, tileY, TILE_SIZE, TILE_SIZE);
+                        } else {
+                            // Para água em outros ambientes (se houver) ou como fallback:
+                            // Poderia usar a floorTexture do ambiente atual e tingir de azul,
+                            // ou ter uma textura de água genérica.
+                            // A lógica original tingia a floorTexture genérica. Vamos manter isso por enquanto.
+                            batch.setColor(0.2f, 0.6f, 1f, 0.8f);
+                            batch.draw(currentAmbientFloorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE); // Usa o chão do ambiente atual
+                            batch.setColor(1, 1, 1, 1);
+                        }
+                        break;
+                    default:
+                        // Para qualquer outro tipo de tile não especificado, desenha o chão do ambiente.
+                        // Isso é importante se você adicionar novos tipos de tile que deveriam ser "chão".
+                        batch.draw(currentAmbientFloorTexture, tileX, tileY, TILE_SIZE, TILE_SIZE);
                         break;
                 }
             }
         }
-
         batch.end();
     }
 
