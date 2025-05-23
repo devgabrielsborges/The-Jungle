@@ -424,6 +424,15 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            // Tenta capturar o peixe: remove ele da lista de peixes e adiciona o item no inventário.
+            boolean captured = character.tryCaptureFish(fishes);
+            if (captured) {
+                logger.info("{} capturou um peixe usando a spear.", character.getName());
+            } else {
+                logger.info("Nenhum peixe foi capturado.");
+            }
+        }
     }
 
     private void gameOver() {
