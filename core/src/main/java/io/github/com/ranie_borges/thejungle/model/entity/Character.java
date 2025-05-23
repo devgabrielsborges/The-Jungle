@@ -14,10 +14,11 @@ import io.github.com.ranie_borges.thejungle.model.entity.itens.*;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.IInventory;
+import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
 
 import java.util.ArrayList;
@@ -65,6 +66,11 @@ public abstract class Character implements ICharacter, IInventory {
     private float speed;
 
     @Expose
+    private boolean poisonedByWater = false;
+    private transient float waterPoisonTimer = 0f;
+    @Expose
+    private int waterPoisonTicksDone = 0;
+    @Expose
     private Vector2 position;
     private final Texture texture;
     private Animation<TextureRegion> playerIdleUp;
@@ -75,6 +81,13 @@ public abstract class Character implements ICharacter, IInventory {
     private Animation<TextureRegion> playerWalkDown;
     private Animation<TextureRegion> playerWalkLeft;
     private Animation<TextureRegion> playerWalkRight;
+
+
+    private static final int TOTAL_WATER_POISON_TICKS = 5; // Total de vezes que o dano será aplicado
+    private static final float DAMAGE_PER_WATER_POISON_TICK = 1f; // Dano por "tick"
+    private static final float WATER_POISON_TICK_INTERVAL = 3.0f; // Intervalo de 3 segundos entre danos
+    private static final float WATER_CONTAMINATION_CHANCE = 0.25f; // 25% de chance de contaminação
+    private static final float THIRST_QUENCH_AMOUNT = 30f;
 
     public float getMaxCarryWeight() {
         return this.maxCarryWeight;
@@ -147,7 +160,33 @@ public abstract class Character implements ICharacter, IInventory {
             throw e;
         }
     }
+    public void drinkWater(Ambient currentAmbient) {
+        // Só permite beber de LakeRiver (embora a chamada deva ser filtrada antes)
+        if (!(currentAmbient instanceof LakeRiver)) {
+            return;
+        }
 
+        // Restaura a sede
+        setThirsty(Math.min(getThirsty() + THIRST_QUENCH_AMOUNT, 100f));
+        logger.info("{} is drinking water from {}. Thirst is now: {}", getName(), currentAmbient.getName(), getThirsty());
+
+        if (this.poisonedByWater) {
+            // Já está envenenado, não permite beber novamente para re-envenenar ou curar
+            setPopupMessage("You are already feeling the effects of contaminated water.");
+            return;
+        }
+
+        if (Math.random() < WATER_CONTAMINATION_CHANCE) {
+            this.poisonedByWater = true;
+            this.waterPoisonTimer = 0f; // Inicia o timer para o primeiro dano
+            this.waterPoisonTicksDone = 0;
+            setPopupMessage("The water was contaminated!"); // Usa o sistema de popupMessage existente
+            logger.info("{} drank contaminated water.", getName());
+        } else {
+            setPopupMessage("You drank some refreshing water.");
+            logger.info("{} drank clean water.", getName());
+        }
+    }
     public void loadPlayerAnimations() {
         // IDLE: 2 frames
         playerIdleDown = loadAnimation("personagem_parado_frente.png", 0.5f, 2);
@@ -314,41 +353,81 @@ public abstract class Character implements ICharacter, IInventory {
 
     public boolean tryMove(float delta, int[][] map, int tileSize,
                            int tileWall, int tileDoor, int tileCave, int tileWater, int tileWetGrass,
-                           int mapWidth, int mapHeight) {
+                           int mapWidth, int mapHeight, Ambient currentAmbient) { // <<< Note o novo parâmetro 'currentAmbient'
+
         float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
-        float speedMultiplier = isInTallGrass() ? 0.5f : 1.0f;
-        float speed = baseSpeed * speedMultiplier;
+
+        float terrainSpeedMultiplier = isInTallGrass() ? 0.5f : 1.0f;
+
+        // ----- INÍCIO DA NOVA LÓGICA PARA VELOCIDADE NA ÁGUA -----
+        int currentPlayerTileX = (int) (getPosition().x / tileSize); // Tile X atual do personagem
+        int currentPlayerTileY = (int) (getPosition().y / tileSize); // Tile Y atual do personagem
+        float waterSpeedMultiplier = 1.0f; // Multiplicador padrão (sem redução)
+
+        // Verifica se a posição do tile atual é válida dentro do mapa
+        if (currentPlayerTileX >= 0 && currentPlayerTileX < mapWidth &&
+            currentPlayerTileY >= 0 && currentPlayerTileY < mapHeight) {
+
+            int playerTileType = map[currentPlayerTileY][currentPlayerTileX]; // Tipo do tile atual
+
+            // Se o ambiente é LakeRiver E o personagem está em um tile de água
+            if (currentAmbient instanceof LakeRiver && playerTileType == tileWater) {
+                waterSpeedMultiplier = 0.5f; // Reduz a velocidade para 50%
+            }
+        }
+        // ----- FIM DA NOVA LÓGICA PARA VELOCIDADE NA ÁGUA -----
+
+        // Aplica todos os multiplicadores de velocidade relevantes
+        float effectiveSpeed = baseSpeed * terrainSpeedMultiplier * waterSpeedMultiplier;
+
+        // Lógica de input para determinar a direção do movimento
         float deltaX = 0, deltaY = 0;
-
         if (Gdx.input.isKeyPressed(Input.Keys.W))
-            deltaY = speed * delta;
+            deltaY = effectiveSpeed * delta;
         if (Gdx.input.isKeyPressed(Input.Keys.S))
-            deltaY = -speed * delta;
+            deltaY = -effectiveSpeed * delta;
         if (Gdx.input.isKeyPressed(Input.Keys.A))
-            deltaX = -speed * delta;
+            deltaX = -effectiveSpeed * delta;
         if (Gdx.input.isKeyPressed(Input.Keys.D))
-            deltaX = speed * delta;
+            deltaX = effectiveSpeed * delta;
 
+        // Se não houve input de movimento, não há mais nada a fazer aqui para o movimento
+        if (deltaX == 0 && deltaY == 0) {
+            isMoving = false;
+            updatePlayerState();
+            updateStats(delta);
+            updateStateTime(delta);
+            return false; // Não se moveu, não passou por porta
+        }
+
+        // Calcula a próxima posição potencial para checagem de colisão
         float nextX = getPosition().x + deltaX;
         float nextY = getPosition().y + deltaY;
 
-        int tileX = (int) ((nextX + 8) / tileSize);
-        int tileY = (int) ((nextY + 8) / tileSize);
+        // Ponto de colisão (usando o centro do personagem para o tile de destino)
+        // Ajuste tileSize / 2f se a origem do seu personagem for diferente (ex: canto inferior esquerdo)
+        int collisionTileX = (int) ((nextX + tileSize / 2f) / tileSize);
+        int collisionTileY = (int) ((nextY + tileSize / 2f) / tileSize);
 
-        if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
-            int tileType = map[tileY][tileX];
+        // Verifica se o tile de colisão está dentro dos limites do mapa
+        if (collisionTileX >= 0 && collisionTileX < mapWidth &&
+            collisionTileY >= 0 && collisionTileY < mapHeight) {
 
-            if (tileType != tileWall) {
-                move(deltaX, deltaY);
-                updateStats(delta);
-                updateStateTime(delta);
-                return tileType == tileDoor; // true se for uma porta (trigger para Procedural reagir)
+            int collisionTileType = map[collisionTileY][collisionTileX];
+
+            if (collisionTileType != tileWall) { // Se o tile de destino não for uma parede
+                move(deltaX, deltaY); // Chama o método move para atualizar a posição e animação
+                // As chamadas updateStats e updateStateTime já estão no final
+                return collisionTileType == tileDoor; // Retorna true se o tile de destino for uma porta
             }
         }
 
+        // Se colidiu com uma parede ou está fora dos limites, o personagem não se move
+        isMoving = false;
+        updatePlayerState(); // Garante que o estado de animação seja IDLE
         updateStats(delta);
         updateStateTime(delta);
-        return false;
+        return false; // Não passou por uma porta
     }
 
     public void updateStats(float delta) {
@@ -357,6 +436,28 @@ public abstract class Character implements ICharacter, IInventory {
             float hungerDepletion = 0.01f * delta;
             float thirstDepletion = 0.015f * delta;
             float energyDepletion = 0.005f * delta;
+            if (this.poisonedByWater) {
+                this.waterPoisonTimer += delta;
+                if (this.waterPoisonTimer >= WATER_POISON_TICK_INTERVAL) {
+                    this.waterPoisonTimer -= WATER_POISON_TICK_INTERVAL; // Subtrai o intervalo, mantendo o excesso de tempo para precisão
+
+                    setLife(Math.max(0, getLife() - DAMAGE_PER_WATER_POISON_TICK));
+                    this.waterPoisonTicksDone++;
+
+                    logger.info("{} took {} damage from water poisoning. Life: {}. Ticks done: {}/{}",
+                        getName(), DAMAGE_PER_WATER_POISON_TICK, getLife(), this.waterPoisonTicksDone, TOTAL_WATER_POISON_TICKS);
+
+                    if (this.waterPoisonTicksDone >= TOTAL_WATER_POISON_TICKS) {
+                        this.poisonedByWater = false;
+                        // this.waterPoisonTicksDone = 0; // Opcional resetar aqui ou quando for envenenado novamente
+                        setPopupMessage("The effects of the contaminated water have worn off.");
+                        logger.info("{} is no longer poisoned by water.", getName());
+                    } else {
+                        // Opcional: Lembre o jogador que ele ainda está envenenado, ou deixe silencioso.
+                        // setPopupMessage("You still feel unwell from the water...");
+                    }
+                }
+            }
 
             // Atualiza os atributos
             setHunger(Math.max(0, getHunger() - hungerDepletion));
@@ -369,6 +470,25 @@ public abstract class Character implements ICharacter, IInventory {
             }
         } catch (Exception e) {
             logger.error("{}: Erro ao atualizar atributos: {}", name, e.getMessage());
+        }
+    }
+    public void setPopupMessage(String message) {
+        this.popupMessage = message;
+        this.popupTimer = 3.0f; // Define quanto tempo a mensagem fica na tela
+    }
+
+    public String getPopupMessage() {
+        return popupMessage;
+    }
+
+    // Este método deve ser chamado no loop de renderização principal (ex: ProceduralMapScreen.render)
+    public void updatePopupTimer(float delta) {
+        if (popupMessage != null) {
+            popupTimer -= delta;
+            if (popupTimer <= 0) {
+                popupMessage = null;
+                popupTimer = 0f;
+            }
         }
     }
 
