@@ -16,6 +16,7 @@ import io.github.com.ranie_borges.thejungle.model.events.Event;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 import io.github.com.ranie_borges.thejungle.view.*;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import org.slf4j.Logger;
@@ -240,7 +241,7 @@ public class AmbientController {
         this.gameState = new GameState();
         this.gameState.setPlayerCharacter(character);
 
-        Ambient startingAmbient = new Jungle();
+        Ambient startingAmbient = new LakeRiver();
         this.gameState.setCurrentAmbient(startingAmbient);
 
         this.eventController = new EventController(this.gameState);
