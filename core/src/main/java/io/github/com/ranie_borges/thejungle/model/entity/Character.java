@@ -743,7 +743,42 @@ public abstract class Character implements ICharacter, IInventory {
             }
         }
     }
-
+    public boolean tryCaptureFish(List<Fish> fishes) {
+        // Verifica se o personagem possui alguma spear no inventário.
+        boolean hasSpear = false;
+        for (Item item : getInventory()) {
+            if (item instanceof Weapon && item.getName().toLowerCase().contains("spear")) {
+                hasSpear = true;
+                break;
+            }
+        }
+        if (!hasSpear) {
+            logger.info(getName() + " não possui uma spear no inventário para capturar o peixe.");
+            return false;
+        }
+        // Define o raio de captura
+        float captureRadius = 24f;
+        Iterator<Fish> iterator = fishes.iterator();
+        while (iterator.hasNext()) {
+            Fish fish = iterator.next();
+            float dist = getPosition().dst(fish.getPosition());
+            if (dist <= captureRadius) {
+                // Remove o peixe do ambiente.
+                iterator.remove();
+                // Supondo que exista um método de fábrica para criar um item peixe.
+                Food fishItem = Food.createFish();
+                if (!canCarryMore(fishItem.getWeight())) {
+                    logger.info(getName() + " não pode carregar mais peso para adicionar o peixe.");
+                    return false;
+                }
+                insertItemInInventory(fishItem);
+                logger.info(getName() + " capturou um peixe usando a spear.");
+                return true;
+            }
+        }
+        logger.info("Nenhum peixe próximo para capturar.");
+        return false;
+    }
     public void insertItemInInventory(Item item) {
         if (item == null)
             return;
