@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.Color;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
+import com.badlogic.gdx.Gdx;
 
 public class Hud {
     private final Texture sidebarTexture;
@@ -17,8 +18,7 @@ public class Hud {
     private final GlyphLayout layout;
     private final Texture backpackTexture;
 
-    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font, Texture backpackTexture) {
-        this.sidebarTexture = sidebarTexture;
+    public Hud(Texture sidebarTexture, Texture classIcon, BitmapFont font, Texture backpackTexture) {        this.sidebarTexture = sidebarTexture;
         this.classIcon = classIcon;
         this.font = font;
         this.layout = new GlyphLayout();
