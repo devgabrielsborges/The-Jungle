@@ -25,7 +25,9 @@ public class Food extends Item {
     public static Food createBerry() {
         return new Food("Berry", 0.2f, 100f, 15, "Fruit", 5);
     }
-
+    public static Food createFish() {
+        return new Food("Fish", 0.5f, 100f, 20, "Fish", 10);
+    }
     /**
      * Consumes the food, restoring hunger but potentially causing food poisoning if spoiled
      */
