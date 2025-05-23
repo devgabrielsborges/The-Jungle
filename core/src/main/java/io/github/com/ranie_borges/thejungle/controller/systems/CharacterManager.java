@@ -43,7 +43,16 @@ public class CharacterManager implements UI {
             return false;
 
         boolean passedThroughDoor = character.tryMove(
-                delta, map, TILE_SIZE, TILE_WALL, TILE_DOOR, TILE_CAVE, MAP_WIDTH, MAP_HEIGHT);
+            delta,
+            map,
+            TILE_SIZE,
+            TILE_WALL,
+            TILE_DOOR,
+            TILE_CAVE,
+            TILE_WATER,
+            TILE_WETGRASS,
+            MAP_WIDTH,
+            MAP_HEIGHT);
 
         if (currentAmbient instanceof Jungle) {
             Jungle jungle = (Jungle) currentAmbient;
