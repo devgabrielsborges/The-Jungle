@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class Medicine extends Item {
 
     private static final Logger logger = LoggerFactory.getLogger(Medicine.class);
-    private static final Texture bgHud = new Texture(Gdx.files.internal("GameScreen/boxhud.png"));
+    private static Texture bgHud = null; // Initialize lazily or ensure loaded before use
 
     @Expose
     private double healRatio;
@@ -26,11 +26,19 @@ public class Medicine extends Item {
     public Medicine(String name, float weight, float durability, double healRatio) {
         super(name, weight, durability);
         setHealRatio(healRatio);
+        if (bgHud == null) { // Lazy initialization
+            try {
+                bgHud = new Texture(Gdx.files.internal("GameScreen/boxhud.png"));
+            } catch (Exception e) {
+                logger.error("Failed to load boxhud.png for Medicine class", e);
+                // Handle error, maybe use a placeholder or log that UI will be affected
+            }
+        }
     }
 
     public static Medicine fromMedicinalPlant(Material plant) {
         if (plant == null || !"Plant".equalsIgnoreCase(plant.getType())
-                || !"Medicinal".equalsIgnoreCase(plant.getName())) {
+            || !"Medicinal".equalsIgnoreCase(plant.getName())) {
             throw new IllegalArgumentException("O material não é uma planta medicinal válida.");
         }
         return new Medicine("Herbal Medicine", plant.getWeight(), 1.0f, 25.0);
@@ -76,25 +84,30 @@ public class Medicine extends Item {
     }
 
     public static void renderUseOption(SpriteBatch batch, Material plant, Character character, float offsetX,
-            float offsetY) {
+                                       float offsetY) {
         if (plant == null || !"Plant".equalsIgnoreCase(plant.getType())
-                || !"Medicinal".equalsIgnoreCase(plant.getName()))
+            || !"Medicinal".equalsIgnoreCase(plant.getName()))
             return;
+
+        if (bgHud == null) { // If texture failed to load, can't render this prompt
+            logger.warn("bgHud texture is null in Medicine.renderUseOption, skipping render.");
+            return;
+        }
 
         Vector2 pos = plant.getPosition();
         float boxX = pos.x + offsetX;
         float boxY = pos.y + offsetY + 40; // Position above the plant
 
+        batch.begin(); // Added batch.begin()
         batch.setColor(1, 1, 1, 0.7f);
         batch.draw(bgHud, boxX, boxY, 160, 30);
         batch.setColor(1, 1, 1, 1);
 
-        BitmapFont font = new BitmapFont(); // Consider passing font as a parameter or using a shared instance
+        BitmapFont font = new BitmapFont();
         font.setColor(Color.WHITE);
         font.getData().setScale(1.2f);
-        // Changed prompt text
         font.draw(batch, "[E] Coletar Planta Medicinal", boxX + 10, boxY + 20);
         font.dispose();
+        batch.end(); // Added batch.end()
     }
-
 }

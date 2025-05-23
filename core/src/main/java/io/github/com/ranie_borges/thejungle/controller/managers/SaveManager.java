@@ -1,11 +1,11 @@
-package io.github.com.ranie_borges.thejungle.controller.systems;
+package io.github.com.ranie_borges.thejungle.controller.managers;
 
 import com.google.gson.*;
 import io.github.com.ranie_borges.thejungle.controller.exceptions.save.SaveManagerException;
-import io.github.com.ranie_borges.thejungle.controller.systems.AmbientAdapter;
-import io.github.com.ranie_borges.thejungle.controller.systems.CharacterAdapter;
-import io.github.com.ranie_borges.thejungle.controller.systems.ItemAdapter;
-import io.github.com.ranie_borges.thejungle.controller.systems.OffsetDateTimeAdapter;
+import io.github.com.ranie_borges.thejungle.controller.adapters.AmbientAdapter;
+import io.github.com.ranie_borges.thejungle.controller.adapters.CharacterAdapter;
+import io.github.com.ranie_borges.thejungle.controller.adapters.ItemAdapter;
+import io.github.com.ranie_borges.thejungle.controller.adapters.OffsetDateTimeAdapter;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Survivor;

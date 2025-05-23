@@ -1,8 +1,11 @@
+// core/src/main/java/io/github/com/ranie_borges/thejungle/model/stats/GameState.java
 package io.github.com.ranie_borges.thejungle.model.stats;
 
 import com.google.gson.annotations.Expose;
 import io.github.com.ranie_borges.thejungle.controller.EventController;
 import io.github.com.ranie_borges.thejungle.controller.AmbientController;
+import io.github.com.ranie_borges.thejungle.controller.ChatController; // Import ChatController
+import io.github.com.ranie_borges.thejungle.controller.managers.MapManager; // Import MapManager for getMapManager()
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.events.Event;
@@ -24,6 +27,9 @@ public class GameState {
     @Expose
     private Ambient currentAmbient;
 
+    // Field to hold MapManager for direct access from TurnController
+    private MapManager mapManager; // No @Expose, as MapManager should not be serialized directly within GameState. It's managed by ProceduralMapScreen.
+
     @Expose
     private int[][] currentMap;
 
@@ -43,6 +49,7 @@ public class GameState {
 
     private EventController eventController;
     private AmbientController ambientController;
+    private ChatController chatController; // New: ChatController field
 
     @Expose
     private int mapWidth;
@@ -55,6 +62,7 @@ public class GameState {
         this.offsetDateTime = OffsetDateTime.now();
         this.eventController = new EventController(this);
         this.visitedAmbients = new HashMap<>();
+        this.chatController = new ChatController(); // New: Initialize ChatController
     }
 
     public Character getPlayerCharacter() {
@@ -216,5 +224,30 @@ public class GameState {
 
     public void setCharacter(Character character) {
         this.playerCharacter = character;
+    }
+
+    /**
+     * Get the ChatController instance.
+     * @return The ChatController.
+     */
+    public ChatController getChatController() {
+        return chatController;
+    }
+
+    /**
+     * Set the MapManager instance.
+     * This is primarily used by ProceduralMapScreen to set its mapManager.
+     * @param mapManager The MapManager instance.
+     */
+    public void setMapManager(MapManager mapManager) {
+        this.mapManager = mapManager;
+    }
+
+    /**
+     * Get the MapManager instance.
+     * @return The MapManager.
+     */
+    public MapManager getMapManager() {
+        return mapManager;
     }
 }

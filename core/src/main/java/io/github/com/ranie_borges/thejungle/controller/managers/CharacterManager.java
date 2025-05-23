@@ -1,4 +1,4 @@
-package io.github.com.ranie_borges.thejungle.controller.systems;
+package io.github.com.ranie_borges.thejungle.controller.managers;
 
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;

@@ -115,9 +115,6 @@ public abstract class Character implements ICharacter, IInventory {
             // Load texture with exception handling
             Texture tempTexture;
             try {
-                if ("sprites/character/personagem_luta.png" == null || "sprites/character/personagem_luta.png".isEmpty()) {
-                    throw new IllegalArgumentException("Sprite path cannot be null or empty");
-                }
                 tempTexture = new Texture(Gdx.files.internal("sprites/character/personagem_luta.png"));
                 logger.debug("Successfully loaded texture: {}", "sprites/character/personagem_luta.png");
             } catch (Exception e) {
