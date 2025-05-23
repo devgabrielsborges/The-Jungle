@@ -8,6 +8,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,8 +38,7 @@ public class Fish extends Creature {
         return ambientName.equals("LakeRiver");
     }
     public static boolean canSpawnIn(Ambient ambient) {
-        String name = ambient.getName().toLowerCase();
-        return name.contains("lake") ;
+        return ambient instanceof LakeRiver;
     }
 
 
