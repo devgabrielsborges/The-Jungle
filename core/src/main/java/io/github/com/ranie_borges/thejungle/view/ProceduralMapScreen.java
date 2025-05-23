@@ -244,6 +244,8 @@ public class ProceduralMapScreen implements Screen, UI {
 
                 deers = resourceSpawner.spawnCreatures(ambient, map);
                 cannibals = resourceSpawner.spawnCannibals(ambient, map);
+                fishes = resourceSpawner.spawnFish(ambient, map);
+
                 materiaisNoMapa = resourceSpawner.spawnResources(ambient, map);
 
                 updateTextures(ambient);
@@ -286,7 +288,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
             renderHelper.renderMap(map, textureManager.getFloorTexture(), textureManager.getWallTexture(), ambient);
 
-            renderHelper.renderCreatures(deers, cannibals, character);
+            renderHelper.renderCreatures(deers, cannibals, character,fishes);
 
             batch.begin();
 
