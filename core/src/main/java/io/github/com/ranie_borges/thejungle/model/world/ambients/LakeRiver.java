@@ -6,13 +6,17 @@ import io.github.com.ranie_borges.thejungle.model.entity.itens.Drinkable;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Food;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
+import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 
 import java.util.Random;
 import java.util.Set;
 
 import static io.github.com.ranie_borges.thejungle.model.enums.AmbientAttribute.HUMID_CLIMATE;
 
-public class LakeRiver extends Ambient {
+public class LakeRiver extends Ambient implements UI {
+
+    private transient final Texture waterTexture;
+    private final transient Random rand = new Random(); // Added transient
 
     public LakeRiver() {
         super(
@@ -27,82 +31,81 @@ public class LakeRiver extends Ambient {
             0.4f
         );
 
+        this.waterTexture = new Texture(Gdx.files.internal("scenarios/lakeriver/lakeriverWater.png"));
         setResources(Set.of(
             new Drinkable("Fresh Water", 0.1f, 1.0f, true, 8f),
             new Food("Wild Berries", 0.5f, 1.2f, 12, "Fruit", 3),
             new Material("Pebble", 0.4f, 1.0f, "Stone", 0.7f)
         ));
-
     }
 
-    @Override
-    public void explore() {
-        super.explore();
-    }
-
-    @Override
-    public void generateEvent() {
-        super.generateEvent();
-    }
-
-    @Override
-    public void modifiesClime() {
-        super.modifiesClime();
-    }
-
-    @Override
-    public void disableEvent() {
-        // Implementation
+    public Texture getWaterTexture() {
+        return waterTexture;
     }
 
     @Override
     public int[][] generateMap(int mapWidth, int mapHeight) {
         int[][] map = new int[mapHeight][mapWidth];
-        Random rand = new Random();
 
-        // Basic terrain
         for (int y = 0; y < mapHeight; y++) {
             for (int x = 0; x < mapWidth; x++) {
-                map[y][x] = (x == 0 || y == 0 || x == mapWidth - 1 || y == mapHeight - 1) ? 1 : 0;
+                if (x == 0 || y == 0 || x == mapWidth - 1 || y == mapHeight - 1) {
+                    map[y][x] = TILE_WALL;
+                } else {
+                    map[y][x] = TILE_GRASS;
+                }
             }
         }
 
-        // Add a river or lake
         boolean isLake = rand.nextBoolean();
 
         if (isLake) {
-            int lakeX = mapWidth / 2;
-            int lakeY = mapHeight / 2;
-            int lakeRadius = Math.min(mapWidth, mapHeight) / 4;
+            int lakeCenterX = mapWidth / 2 + rand.nextInt(mapWidth / 4) - (mapWidth / 8);
+            int lakeCenterY = mapHeight / 2 + rand.nextInt(mapHeight / 4) - (mapHeight / 8);
+            int lakeRadius = Math.min(mapWidth, mapHeight) / 4 + rand.nextInt(Math.min(mapWidth, mapHeight) / 8);
 
-            for (int y = 0; y < mapHeight; y++) {
-                for (int x = 0; x < mapWidth; x++) {
-                    int dx = x - lakeX;
-                    int dy = y - lakeY;
+            for (int y = 1; y < mapHeight - 1; y++) {
+                for (int x = 1; x < mapWidth - 1; x++) {
+                    int dx = x - lakeCenterX;
+                    int dy = y - lakeCenterY;
                     if (dx * dx + dy * dy < lakeRadius * lakeRadius) {
-                        map[y][x] = 1; // Water represented as walls
+                        map[y][x] = TILE_WATER;
                     }
                 }
             }
         } else {
-            int riverY = mapHeight / 2;
-            int width = 2 + rand.nextInt(2);
-
-            for (int x = 0; x < mapWidth; x++) {
-                for (int w = -width / 2; w <= width / 2; w++) {
-                    int y = riverY + w;
-                    if (y > 0 && y < mapHeight - 1) {
-                        map[y][x] = 1;
+            int riverWidth = 2 + rand.nextInt(3);
+                int riverCurrentY = mapHeight / 2 + rand.nextInt(mapHeight / 3) - (mapHeight / 6);
+                for (int x = 1; x < mapWidth - 1; x++) {
+                    for (int wOffset = -riverWidth / 2; wOffset <= riverWidth / 2; wOffset++) {
+                        int y = riverCurrentY + wOffset;
+                        if (y > 0 && y < mapHeight - 1) {
+                            map[y][x] = TILE_WATER;
+                        }
+                    }
+                    if (x % (5 + rand.nextInt(5)) == 0 && rand.nextFloat() < 0.6) {
+                        int yChange = rand.nextBoolean() ? 1 : -1;
+                        if (riverCurrentY + yChange > riverWidth && riverCurrentY + yChange < mapHeight - 1 - riverWidth) {
+                            riverCurrentY += yChange;
+                        }
                     }
                 }
-
-                if (rand.nextFloat() < 0.3 && riverY > 5 && riverY < mapHeight - 6) {
-                    riverY += rand.nextBoolean() ? 1 : -1;
-                }
-            }
         }
-
+        for(int i=0; i< (mapWidth*mapHeight)/10; i++){
+            int gx = 1 + rand.nextInt(mapWidth-2);
+            int gy = 1 + rand.nextInt(mapHeight-2);
+            if(map[gy][gx] == TILE_WATER) map[gy][gx] = TILE_GRASS;
+        }
         addDoors(map, mapWidth, mapHeight, rand);
         return map;
     }
+
+    @Override
+    public void explore() { super.explore(); }
+    @Override
+    public void generateEvent() { super.generateEvent(); }
+    @Override
+    public void modifiesClime() { super.modifiesClime(); }
+    @Override
+    public void disableEvent() { /* Implementation if needed */ }
 }

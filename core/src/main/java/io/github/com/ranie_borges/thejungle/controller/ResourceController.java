@@ -3,6 +3,7 @@ package io.github.com.ranie_borges.thejungle.controller;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish; // Import Fish
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
@@ -15,112 +16,90 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Responsible for spawning resources and creatures in different ambient types
- */
 public class ResourceController implements UI {
     private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
 
-    private List<Material> materialsOnMap = new ArrayList<>();
-    private List<Deer> deers = new ArrayList<>();
-    private List<Cannibal> cannibals = new ArrayList<>();
+    private final List<Material> materialsOnMap = new ArrayList<>();
+    private final List<Deer> deers = new ArrayList<>();
+    private final List<Cannibal> cannibals = new ArrayList<>();
+    private final List<Fish> fishes = new ArrayList<>(); // Added list for fish
 
-    /**
-     * Spawn resources appropriate for the given ambient
-     *
-     * @param ambient The ambient to spawn resources in
-     * @param map     The current map
-     * @return The list of materials placed on the map
-     */
     public List<Material> spawnResources(Ambient ambient, int[][] map) {
         materialsOnMap.clear();
-
         try {
             if (ambient instanceof Cave) {
-                materialsOnMap = Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE);
+                materialsOnMap.addAll(Material.spawnSmallRocks(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE));
             } else if (ambient instanceof Jungle || ambient instanceof LakeRiver) {
-                materialsOnMap = Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE);
+                materialsOnMap.addAll(Material.spawnSticksAndRocks(5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                 materialsOnMap.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
-                materialsOnMap
-                        .addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                materialsOnMap.addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                 materialsOnMap.addAll(Material.spawnBerryBushes(4, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
-            } else {
-                // For other ambient types, start with an empty list
-                materialsOnMap = new ArrayList<>();
             }
-
             logger.debug("Spawned {} materials for ambient: {}", materialsOnMap.size(), ambient.getName());
             return materialsOnMap;
         } catch (Exception e) {
-            logger.error("Error spawning resources: {}", e.getMessage());
+            logger.error("Error spawning resources: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
     }
 
-    /**
-     * Spawn deer appropriate for the given ambient
-     *
-     * @param ambient The ambient to spawn creatures in
-     * @param map     The current map
-     * @return The list of spawned deer
-     */
     public List<Deer> spawnCreatures(Ambient ambient, int[][] map) {
+        deers.clear();
         try {
-            // Spawn deers in any ambient with grass
-            deers = Creature.regenerateCreatures(
-                    5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE,
-                    Deer::new, ambient, Deer::canSpawnIn);
-
-            logger.debug("Spawned {} deers", deers.size());
+            deers.addAll(Creature.regenerateCreatures(
+                5, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE,
+                Deer::new, ambient, Deer::canSpawnIn));
+            logger.debug("Spawned {} deers in {}", deers.size(), ambient.getName());
             return deers;
         } catch (Exception e) {
-            logger.error("Error spawning deer: {}", e.getMessage());
-            deers = new ArrayList<>();
-            return deers;
+            logger.error("Error spawning deer: {}", e.getMessage(), e);
+            return new ArrayList<>();
         }
     }
 
-    /**
-     * Spawn cannibals appropriate for the given ambient
-     *
-     * @param ambient The ambient to spawn creatures in
-     * @param map     The current map
-     * @return The list of spawned cannibals
-     */
     public List<Cannibal> spawnCannibals(Ambient ambient, int[][] map) {
+        cannibals.clear();
         try {
-            // Spawn cannibals mainly in caves
-            cannibals = Creature.regenerateCreatures(
-                    3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE,
-                    Cannibal::new, ambient, Cannibal::canSpawnIn);
-
-            logger.debug("Spawned {} cannibals", cannibals.size());
+            cannibals.addAll(Creature.regenerateCreatures(
+                3, map, MAP_WIDTH, MAP_HEIGHT, TILE_CAVE, TILE_SIZE, // Cannibals prefer caves
+                Cannibal::new, ambient, Cannibal::canSpawnIn));
+            logger.debug("Spawned {} cannibals in {}", cannibals.size(), ambient.getName());
             return cannibals;
         } catch (Exception e) {
-            logger.error("Error spawning cannibals: {}", e.getMessage());
-            cannibals = new ArrayList<>();
-            return cannibals;
+            logger.error("Error spawning cannibals: {}", e.getMessage(), e);
+            return new ArrayList<>();
         }
     }
 
-    /**
-     * Get the materials currently on the map
-     */
-    public List<Material> getMaterialsOnMap() {
-        return materialsOnMap;
+    // New method to spawn fish
+    public List<Fish> spawnFish(Ambient ambient, int[][] map) {
+        this.fishes.clear();
+        if (!(ambient instanceof LakeRiver)) {
+            // logger.debug("Skipping fish spawn, not in LakeRiver ambient. Current ambient: {}", ambient.getName());
+            return this.fishes;
+        }
+        try {
+            this.fishes.addAll(Creature.regenerateCreatures(
+                5, // Number of fish to attempt to spawn
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_WATER, // Fish spawn in water tiles
+                TILE_SIZE,
+                Fish::new,
+                ambient,
+                Fish::canSpawnIn // Use the static canSpawnIn method from Fish class
+            ));
+            logger.debug("Spawned {} fishes in {}", this.fishes.size(), ambient.getName());
+            return this.fishes;
+        } catch (Exception e) {
+            logger.error("Error spawning fish: {}", e.getMessage(), e);
+            return new ArrayList<>(); // Return empty list on error
+        }
     }
 
-    /**
-     * Get the deers currently on the map
-     */
-    public List<Deer> getDeers() {
-        return deers;
-    }
-
-    /**
-     * Get the cannibals currently on the map
-     */
-    public List<Cannibal> getCannibals() {
-        return cannibals;
-    }
+    public List<Material> getMaterialsOnMap() { return materialsOnMap; }
+    public List<Deer> getDeers() { return deers; }
+    public List<Cannibal> getCannibals() { return cannibals; }
+    public List<Fish> getFishes() { return fishes; } // Getter for fish
 }

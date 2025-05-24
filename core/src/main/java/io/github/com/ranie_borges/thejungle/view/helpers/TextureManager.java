@@ -3,14 +3,14 @@ package io.github.com.ranie_borges.thejungle.view.helpers;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
+import org.slf4j.Logger; // Import Logger
+import org.slf4j.LoggerFactory; // Import LoggerFactory
 
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Manages textures for the game, allowing for better resource handling
- */
 public class TextureManager {
+    private static final Logger logger = LoggerFactory.getLogger(TextureManager.class); // Logger instance
     private final Map<String, Texture> textureCache;
     private Texture floorTexture;
     private Texture wallTexture;
@@ -18,99 +18,131 @@ public class TextureManager {
 
     public TextureManager() {
         textureCache = new HashMap<>();
+        logger.info("TextureManager initialized. Cache created.");
     }
 
-    /**
-     * Load textures for the given ambient
-     *
-     * @param ambient The ambient to load textures for
-     */
     public void loadAmbientTextures(Ambient ambient) {
+        if (ambient == null) {
+            logger.warn("Cannot load ambient textures: ambient is null.");
+            // Ensure default textures are set if ambient is null
+            this.floorTexture = getOrLoadTexture("scenarios/jungle/jungleFloor.jpg"); // Default fallback
+            this.wallTexture = getOrLoadTexture("scenarios/jungle/jungleWall.png");   // Default fallback
+            this.sidebarTexture = getOrLoadTexture("Gameplay/sidebar.jpg");            // Default fallback
+            return;
+        }
+        logger.debug("Loading ambient textures for: {}", ambient.getName());
         disposeAmbientTextures();
 
-        floorTexture = ambient.getFloorTexture() != null ? ambient.getFloorTexture()
-                : getOrLoadTexture("GameScreen/chao.png");
+        floorTexture = (ambient.getFloorTexture() != null)
+            ? ambient.getFloorTexture() // This assumes Ambient subclasses load their own Textures
+            : getOrLoadTexture("scenarios/jungle/jungleFloor.jpg"); // Fallback if not pre-loaded by Ambient
 
-        wallTexture = ambient.getWallTexture() != null ? ambient.getWallTexture()
-                : getOrLoadTexture("GameScreen/parede.png");
+        wallTexture = (ambient.getWallTexture() != null)
+            ? ambient.getWallTexture()
+            : getOrLoadTexture("scenarios/jungle/jungleWall.png");  // Fallback
 
-        sidebarTexture = ambient.getSidebarTexture() != null ? ambient.getSidebarTexture()
-                : getOrLoadTexture("Gameplay/sidebar.jpg");
+        sidebarTexture = (ambient.getSidebarTexture() != null)
+            ? ambient.getSidebarTexture()
+            : getOrLoadTexture("Gameplay/sidebar.jpg"); // Fallback
+
+        if(floorTexture == null) logger.error("Failed to load floorTexture for {}", ambient.getName());
+        if(wallTexture == null) logger.error("Failed to load wallTexture for {}", ambient.getName());
+        if(sidebarTexture == null) logger.error("Failed to load sidebarTexture for {}", ambient.getName());
     }
 
-    /**
-     * Load a texture for a character class icon
-     *
-     * @param characterType The character class type
-     * @return The class icon texture
-     */
     public Texture loadClassIcon(String characterType) {
+        String path;
         switch (characterType) {
             case "Hunter":
-                return getOrLoadTexture("StatsScreen/cacadorFundo.png");
+                path = "StatsScreen/cacadorFundo.png";
+                break;
             case "Lumberjack":
-                return getOrLoadTexture("StatsScreen/lenhadorFundo.png");
+                path = "StatsScreen/lenhadorFundo.png";
+                break;
             case "Doctor":
-                return getOrLoadTexture("StatsScreen/medicoFundo.png");
-            default:
-                return getOrLoadTexture("StatsScreen/desempregadoFundo.png");
+                path = "StatsScreen/medicoFundo.png";
+                break;
+            default: // Survivor or unspecified
+                path = "StatsScreen/desempregadoFundo.png";
+                break;
         }
+        return getOrLoadTexture(path);
     }
 
-    /**
-     * Get a texture from the cache or load it from disk
-     *
-     * @param path Path to the texture
-     * @return The loaded texture
-     */
     public Texture getOrLoadTexture(String path) {
-        if (textureCache.containsKey(path)) {
-            return textureCache.get(path);
-        } else {
-            Texture texture = new Texture(Gdx.files.internal(path));
-            textureCache.put(path, texture);
-            return texture;
+        if (path == null || path.trim().isEmpty()) {
+            logger.warn("Attempted to load texture with null or empty path.");
+            return null;
         }
+        if (textureCache.containsKey(path)) {
+            Texture cachedTexture = textureCache.get(path);
+            if (cachedTexture != null) {
+                // logger.trace("TextureManager: Returning cached texture for path: {}", path);
+                return cachedTexture;
+            } else {
+                logger.warn("TextureManager: Cache contained null for path: {}. Attempting reload.", path);
+                // Remove the null entry so it can be reloaded
+                textureCache.remove(path);
+            }
+        }
+
+        Texture texture = null;
+        try {
+            logger.debug("TextureManager: Attempting to load texture from path: {}", path);
+            texture = new Texture(Gdx.files.internal(path));
+            textureCache.put(path, texture);
+            logger.info("TextureManager: Successfully loaded and cached texture from path: {}", path);
+        } catch (Exception e) {
+            logger.error("TextureManager: CRITICAL - Failed to load texture from path: '{}'. Error: {}", path, e.getMessage(), e);
+            // Do not cache null on failure, so retries are possible if the issue was temporary
+            // Or cache a placeholder error texture if desired:
+            // texture = getErrorPlaceholderTexture();
+            // textureCache.put(path, texture); // Cache placeholder to prevent repeated load errors for same path
+        }
+        return texture;
     }
 
-    public Texture getFloorTexture() {
-        return floorTexture;
-    }
+    // Optional: Placeholder for missing textures
+    // private Texture getErrorPlaceholderTexture() {
+    //     if (textureCache.containsKey("error_placeholder")) return textureCache.get("error_placeholder");
+    //     Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+    //     pixmap.setColor(Color.RED);
+    //     pixmap.fill();
+    //     Texture errorTexture = new Texture(pixmap);
+    //     pixmap.dispose();
+    //     textureCache.put("error_placeholder", errorTexture);
+    //     return errorTexture;
+    // }
 
-    public Texture getWallTexture() {
-        return wallTexture;
-    }
+    public Texture getFloorTexture() { return floorTexture; }
+    public Texture getWallTexture() { return wallTexture; }
+    public Texture getSidebarTexture() { return sidebarTexture; }
 
-    public Texture getSidebarTexture() {
-        return sidebarTexture;
-    }
-
-    /**
-     * Dispose specific ambient textures
-     */
     private void disposeAmbientTextures() {
-        // We don't actually dispose the textures here
-        // since they might be cached and used elsewhere
+        // Only dispose if TextureManager exclusively owns these.
+        // If Textures are passed from Ambient objects that manage their own lifecycle, don't dispose here.
+        // Current Ambient class seems to load its own textures, so these might not need disposal by TM.
+        // For now, just nullify references. If these were loaded by getOrLoadTexture, they are in cache.
         floorTexture = null;
         wallTexture = null;
         sidebarTexture = null;
     }
 
-    /**
-     * Dispose all textures when no longer needed
-     */
     public void dispose() {
-        // Clear texture references
-        floorTexture = null;
-        wallTexture = null;
-        sidebarTexture = null;
-
-        // Dispose all textures in cache
-        for (Texture texture : textureCache.values()) {
-            if (texture != null) {
-                texture.dispose();
+        logger.info("Disposing TextureManager. Cached textures: {}", textureCache.size());
+        for (Map.Entry<String, Texture> entry : textureCache.entrySet()) {
+            if (entry.getValue() != null) {
+                logger.debug("Disposing cached texture: {}", entry.getKey());
+                entry.getValue().dispose();
             }
         }
         textureCache.clear();
+        // Ambient-specific textures (floorTexture, wallTexture, sidebarTexture) are either
+        // from the cache (and disposed above) or were direct references from Ambient objects
+        // which should manage their own disposal if they created them.
+        floorTexture = null;
+        wallTexture = null;
+        sidebarTexture = null;
+        logger.info("TextureManager disposed.");
     }
 }
