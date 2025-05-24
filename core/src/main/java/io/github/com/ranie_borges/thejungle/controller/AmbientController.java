@@ -1,4 +1,3 @@
-// core/src/main/java/io/github/com/ranie_borges/thejungle/controller/AmbientController.java
 package io.github.com.ranie_borges.thejungle.controller;
 
 import com.badlogic.gdx.Screen;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Set;
 
 public class AmbientController {
-    private boolean saveExists; // Updated by checking files
     private final SaveManager saveManager;
     private Screen actualScreen;
     private final Main game;
@@ -54,7 +52,6 @@ public class AmbientController {
 
     private void updateSaveExistsStatus() {
         File[] saveFiles = saveManager.getSaveFiles();
-        this.saveExists = (saveFiles != null && saveFiles.length > 0);
     }
 
     public Screen getActualScreen() {
@@ -203,7 +200,7 @@ public class AmbientController {
             this.visitedAmbients.add(currentAmbient);
         }
 
-        setScreen(new ProceduralMapScreen(this.gameState, player, currentAmbient));
+        setScreen(new ProceduralMapScreen(this.game, this.gameState, player, currentAmbient));
     }
 
     public void startNewGame() {
@@ -230,16 +227,13 @@ public class AmbientController {
         this.visitedAmbients = new ArrayList<>();
         this.visitedAmbients.add(startingAmbient);
 
-        setScreen(new ProceduralMapScreen(this.gameState, character, startingAmbient));
+        setScreen(new ProceduralMapScreen(this.game, this.gameState, character, startingAmbient));
     }
 
     public String getCurrentSaveFileName() {
-        // Prefer specific loaded name, then autosave, then null
         if (currentSaveFileName != null && !currentSaveFileName.trim().isEmpty()) {
             return currentSaveFileName;
         }
-        // If a game is active but no specific save was loaded (e.g. new game started),
-        // it defaults to autosaving.
         if (actualScreen instanceof ProceduralMapScreen) {
             return "autosave.json"; // Default for active games not explicitly loaded from a named save
         }
@@ -247,7 +241,6 @@ public class AmbientController {
     }
 
 
-    // ... (rest of the methods: modifyResources, regenerateResources, removeResource, setGlobalClime, etc. remain the same)
     public boolean modifyResources(Ambient ambient, Item item) {
         try {
             if (ambient == null) {

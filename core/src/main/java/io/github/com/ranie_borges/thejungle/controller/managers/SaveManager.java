@@ -1,12 +1,22 @@
 package io.github.com.ranie_borges.thejungle.controller.managers;
 
 import com.google.gson.*;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.BitmapFont; // Often problematic for serialization
+import com.badlogic.gdx.graphics.g2d.GlyphLayout; // Also problematic
+import com.badlogic.gdx.graphics.Mesh; // Highly problematic
+import java.nio.Buffer;
+import java.nio.FloatBuffer; // Explicitly add FloatBuffer
+
 import io.github.com.ranie_borges.thejungle.controller.exceptions.save.SaveManagerException;
 import io.github.com.ranie_borges.thejungle.controller.adapters.AmbientAdapter;
 import io.github.com.ranie_borges.thejungle.controller.adapters.CharacterAdapter;
 import io.github.com.ranie_borges.thejungle.controller.adapters.ItemAdapter;
 import io.github.com.ranie_borges.thejungle.controller.adapters.OffsetDateTimeAdapter;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.stats.AmbientData;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
@@ -15,15 +25,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+// import java.lang.reflect.Field; // Not strictly needed for FieldAttributes if using getDeclaredClass
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
+// import java.util.List; // Not directly used here but often in initializeTransientData
 
 public class SaveManager {
     private static final Logger logger = LoggerFactory.getLogger(SaveManager.class);
     private static final String SAVE_DIRECTORY = "saves/";
     private static final String JSON_EXTENSION = ".json";
+    private final Gson gson; // Create Gson instance once
 
     public SaveManager() {
         try {
@@ -32,6 +45,7 @@ public class SaveManager {
             logger.error("Failed to initialize SaveManager: {}", e.getMessage());
             throw new SaveManagerException("Failed to initialize SaveManager", e);
         }
+        this.gson = buildGsonInstance(); // Initialize Gson with strategy
     }
 
     private void createSaveDirectory() {
@@ -47,6 +61,46 @@ public class SaveManager {
         }
     }
 
+    private Gson buildGsonInstance() { // Renamed from getGsonInstance to indicate it builds
+        return new GsonBuilder()
+            .excludeFieldsWithoutExposeAnnotation()
+            .setPrettyPrinting()
+            .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter())
+            .registerTypeAdapter(Item.class, new ItemAdapter())
+            .registerTypeAdapter(Character.class, new CharacterAdapter())
+            .registerTypeAdapter(Ambient.class, new AmbientAdapter())
+            .setExclusionStrategies(new ExclusionStrategy() {
+                @Override
+                public boolean shouldSkipField(FieldAttributes f) {
+                    Class<?> fieldType = f.getDeclaredClass();
+                    // More comprehensive list of types to skip
+                    return fieldType == Sprite.class ||
+                        fieldType == Texture.class ||
+                        fieldType == TextureRegion.class ||
+                        fieldType == BitmapFont.class ||
+                        fieldType == GlyphLayout.class ||
+                        fieldType == Mesh.class ||
+                        fieldType == FloatBuffer.class || // Explicitly skip FloatBuffer
+                        Buffer.class.isAssignableFrom(fieldType); // Skip any NIO Buffer
+                }
+
+                @Override
+                public boolean shouldSkipClass(Class<?> clazz) {
+                    // Skip these classes if Gson tries to serialize them directly
+                    return clazz == Sprite.class ||
+                        clazz == Texture.class ||
+                        clazz == TextureRegion.class ||
+                        clazz == BitmapFont.class ||
+                        clazz == GlyphLayout.class ||
+                        clazz == Mesh.class ||
+                        clazz == FloatBuffer.class || // Explicitly skip FloatBuffer
+                        Buffer.class.isAssignableFrom(clazz);
+                }
+            })
+            .enableComplexMapKeySerialization()
+            .create();
+    }
+
     public boolean saveGame(GameState gameState, String saveName) {
         if (gameState == null) {
             logger.error("Cannot save game: game state is null");
@@ -58,31 +112,19 @@ public class SaveManager {
             logger.warn("Empty save name provided, using default 'autosave'");
             effectiveSaveName = "autosave";
         }
-        // Ensure .json extension
         if (!effectiveSaveName.toLowerCase().endsWith(JSON_EXTENSION)) {
             effectiveSaveName += JSON_EXTENSION;
         }
 
         File saveFile = new File(SAVE_DIRECTORY + effectiveSaveName);
         try (Writer writer = new FileWriter(saveFile)) {
-            // Consolidate map data into visitedAmbients before saving
             if (gameState.getCurrentAmbient() != null && gameState.getCurrentMap() != null) {
                 String ambientName = gameState.getCurrentAmbient().getName();
                 AmbientData currentAmbientData = gameState.getVisitedAmbients().computeIfAbsent(ambientName, k -> new AmbientData());
                 currentAmbientData.setMap(gameState.getCurrentMap());
-                // Resources and visit count should be managed by MapManager/GameState updates
             }
-
-            Gson gson = new GsonBuilder()
-                .excludeFieldsWithoutExposeAnnotation()
-                .setPrettyPrinting()
-                .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter())
-                .registerTypeAdapter(Item.class, new ItemAdapter())
-                .registerTypeAdapter(Character.class, new CharacterAdapter())
-                .registerTypeAdapter(Ambient.class, new AmbientAdapter())
-                .create();
-
-            gson.toJson(gameState, writer);
+            // Use the pre-configured Gson instance
+            this.gson.toJson(gameState, writer);
             logger.info("Game saved successfully to: {}", saveFile.getAbsolutePath());
             return true;
         } catch (Exception e) {
@@ -94,50 +136,29 @@ public class SaveManager {
     public GameState loadGame(String filePathOrName) {
         if (filePathOrName == null || filePathOrName.trim().isEmpty()) {
             logger.error("Cannot load game: filename is null or empty");
-            throw new IllegalArgumentException("Filename cannot be null or empty");
+            return null;
         }
 
         File saveFile;
-        if (filePathOrName.contains(File.separator) || filePathOrName.startsWith(SAVE_DIRECTORY)) { // Likely a full or relative path
+        if (filePathOrName.contains(File.separator) || filePathOrName.startsWith("saves" + File.separator)) {
             saveFile = new File(filePathOrName);
-        } else { // Just a name, assume it's in SAVE_DIRECTORY
+        } else {
             String fileName = filePathOrName.toLowerCase().endsWith(JSON_EXTENSION) ? filePathOrName : filePathOrName + JSON_EXTENSION;
             saveFile = new File(SAVE_DIRECTORY + fileName);
         }
 
-
         if (!saveFile.exists()) {
-            logger.error("Save file does not exist: {}", saveFile.getAbsolutePath());
+            logger.warn("Save file does not exist: {}", saveFile.getAbsolutePath());
             return null;
         }
 
         try (Reader reader = new FileReader(saveFile)) {
-            Gson gson = new GsonBuilder()
-                .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeAdapter())
-                .registerTypeAdapter(Item.class, new ItemAdapter())
-                .registerTypeAdapter(Character.class, new CharacterAdapter())
-                .registerTypeAdapter(Ambient.class, new AmbientAdapter())
-                .create();
+            // Use the pre-configured Gson instance
+            GameState gameState = this.gson.fromJson(reader, GameState.class);
 
-            GameState gameState = gson.fromJson(reader, GameState.class);
-
-            // Post-load initializations or validations if needed
             if (gameState != null) {
-                if (gameState.getPlayerCharacter() == null) {
-                    logger.warn("Loaded GameState has no player character. Load might be corrupted or incomplete.");
-                    // Optionally create a default character or handle error
-                }
-                if (gameState.getCurrentAmbient() == null && gameState.getVisitedAmbients() != null && !gameState.getVisitedAmbients().isEmpty()) {
-                    // Attempt to set currentAmbient if null but visitedAmbients has data (e.g. from older save structure)
-                    // This is a fallback, ideally currentAmbient should be saved directly.
-                    logger.warn("currentAmbient is null in loaded GameState. Attempting to infer from visitedAmbients.");
-                    // This logic might need to be more sophisticated, e.g. finding the most recently visited
-                } else if (gameState.getCurrentAmbient() == null) {
-                    logger.warn("currentAmbient is null in loaded GameState and no visitedAmbients to infer from. Will default in AmbientController.");
-                }
-
-
                 logger.info("Game loaded successfully from: {}", saveFile.getAbsolutePath());
+                initializeTransientData(gameState); // Call post-load initialization
             } else {
                 logger.error("Failed to deserialize GameState from: {}. Gson returned null.", saveFile.getAbsolutePath());
             }
@@ -150,7 +171,49 @@ public class SaveManager {
         } catch (IOException e) {
             logger.error("I/O error while loading game from {}: {}", saveFile.getAbsolutePath(), e.getMessage(), e);
         }
-        return null; // Return null if any error occurs during loading
+        return null;
+    }
+
+    private void initializeTransientData(GameState gameState) {
+        if (gameState == null) return;
+        logger.debug("Performing post-load initialization of transient data...");
+
+        if (gameState.getPlayerCharacter() != null) {
+            gameState.getPlayerCharacter().loadPlayerAnimations();
+            if (gameState.getPlayerCharacter().getInventory() != null) {
+                for (Item item : gameState.getPlayerCharacter().getInventory()) {
+                    if (item != null) {
+                        // Assuming TextureManager is not available here, item needs to self-initialize
+                        // or this method needs a TextureManager parameter.
+                        // For now, relying on item.initializeTransientGraphics() if it can work stand-alone
+                        // or if it's designed to be called again with a TextureManager by another part of the code.
+                        item.initializeTransientGraphics();
+                    }
+                }
+            }
+        }
+
+        // Initialize sprites for creatures:
+        // This depends on how creatures are persisted. If they are just types/counts and respawned,
+        // their constructors + reloadSprites called by ResourceController will handle it.
+        // If specific creature instances are saved in GameState/AmbientData and need sprite reloading:
+        // for (Creature creature : gameState.getAllCreaturesThatWereSaved()) {
+        //     creature.reloadSprites();
+        // }
+
+
+        if (gameState.getVisitedAmbients() != null) {
+            for (AmbientData ad : gameState.getVisitedAmbients().values()) {
+                if (ad.getRemainingResources() != null) {
+                    for (Item item : ad.getRemainingResources()) {
+                        if (item != null) {
+                            item.initializeTransientGraphics();
+                        }
+                    }
+                }
+            }
+        }
+        logger.debug("Post-load initialization complete (basic). Sprites requiring TextureManager might need further init.");
     }
 
     public boolean deleteSave(String filename) {
@@ -158,26 +221,20 @@ public class SaveManager {
             logger.error("Cannot delete save: filename is null or empty");
             return false;
         }
-
         String effectiveFilename = filename;
         if (!effectiveFilename.toLowerCase().endsWith(JSON_EXTENSION)) {
             effectiveFilename += JSON_EXTENSION;
         }
-
         File saveFile = new File(SAVE_DIRECTORY + effectiveFilename);
-
         try {
             if (!saveFile.exists()) {
                 logger.warn("Save file to delete does not exist: {}", saveFile.getAbsolutePath());
-                return false; // Or true, if "not existing" means "successfully deleted" in context
+                return false;
             }
-
             boolean deleted = Files.deleteIfExists(saveFile.toPath());
             if (deleted) {
                 logger.info("Save file deleted: {}", saveFile.getAbsolutePath());
             } else {
-                // This might happen if the file is locked or due to permissions,
-                // or if it was deleted by another process between exists() and delete()
                 logger.error("Failed to delete save file (Files.deleteIfExists returned false): {}", saveFile.getAbsolutePath());
             }
             return deleted;
@@ -192,10 +249,9 @@ public class SaveManager {
     public File[] getSaveFiles() {
         File directory = new File(SAVE_DIRECTORY);
         if (!directory.exists() || !directory.isDirectory()) {
-            createSaveDirectory(); // Attempt to create if missing
+            createSaveDirectory();
             return new File[0];
         }
-        // Filter for .json files
         return directory.listFiles((dir, name) -> name.toLowerCase().endsWith(JSON_EXTENSION));
     }
 }

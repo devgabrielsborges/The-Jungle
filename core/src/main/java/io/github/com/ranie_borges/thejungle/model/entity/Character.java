@@ -10,6 +10,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
+import io.github.com.ranie_borges.thejungle.model.entity.characters.Doctor;
+import io.github.com.ranie_borges.thejungle.model.entity.characters.Lumberjack;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish; // Import Fish
 import io.github.com.ranie_borges.thejungle.model.entity.itens.*;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
 import io.github.com.ranie_borges.thejungle.model.entity.interfaces.ICharacter;
@@ -17,13 +20,13 @@ import io.github.com.ranie_borges.thejungle.model.entity.interfaces.IInventory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.view.interfaces.UI; // For TILE_SIZE
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
-public abstract class Character implements ICharacter, IInventory {
+public abstract class Character implements ICharacter, IInventory, UI { // Implement UI for TILE_SIZE
     private static final Logger logger = LoggerFactory.getLogger(Character.class);
+    private static final Random random = new Random(); // For random chances
 
     @Expose
     private String name;
@@ -43,7 +46,7 @@ public abstract class Character implements ICharacter, IInventory {
     private float currentWeight = 0f;
 
     @Expose
-    private static final float maxCarryWeight = 30f;
+    private final float maxCarryWeight = 30f;
 
     @Expose
     private int inventoryInitialCapacity = 15;
@@ -59,7 +62,7 @@ public abstract class Character implements ICharacter, IInventory {
     @Expose
     private String characterType;
     @Expose
-    private float speed = 100f; // Default speed
+    private float speed = 100f;
 
     @Expose
     private Vector2 position;
@@ -114,7 +117,6 @@ public abstract class Character implements ICharacter, IInventory {
         }
     }
 
-    // --- Getter for maxCarryWeight --- ADDED
     public float getMaxCarryWeight() {
         return this.maxCarryWeight;
     }
@@ -293,10 +295,10 @@ public abstract class Character implements ICharacter, IInventory {
         if (frame == null && texture != null) {
             logger.warn("Current animation frame is null for state {}. Using fallback texture.", currentState);
             return new TextureRegion(texture);
-        } else if (frame == null) {
+        } else if (frame == null && texture == null) {
             logger.error("Cannot get current frame: no animation and no fallback texture for Character.");
             Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
-            pixmap.setColor(1,0,0,1);
+            pixmap.setColor(1, 0, 0, 1);
             pixmap.fill();
             Texture placeholder = new Texture(pixmap);
             pixmap.dispose();
@@ -308,15 +310,15 @@ public abstract class Character implements ICharacter, IInventory {
     public String getName() { return name; }
     public void setName(String name) { this.name = name != null ? name : "Unknown"; }
     public float getLife() { return life; }
-    public void setLife(float life) { this.life = Math.max(0, life); }
+    public void setLife(float life) { this.life = Math.max(0, Math.min(this instanceof Doctor ? 80f : (this instanceof Lumberjack ? 120f : 100f), life)); } // Max life can vary
     public float getHunger() { return hunger; }
     public void setHunger(float hunger) { this.hunger = Math.max(0, Math.min(100, hunger)); }
     public float getThirsty() { return thirsty; }
-    public void setThirsty(float thirsty) { this.thirsty = Math.max(0, Math.min(100, thirsty));}
+    public void setThirsty(float thirsty) { this.thirsty = Math.max(0, Math.min(100, thirsty)); }
     public float getEnergy() { return energy; }
-    public void setEnergy(float energy) { this.energy = Math.max(0, Math.min(100, energy));}
+    public void setEnergy(float energy) { this.energy = Math.max(0, Math.min(this instanceof Lumberjack ? 100f : (this instanceof Doctor ? 60f : 80f) , energy)); } // Max energy can vary
     public float getSanity() { return sanity; }
-    public void setSanity(float sanity) { this.sanity = Math.max(0, Math.min(100, sanity));}
+    public void setSanity(float sanity) { this.sanity = Math.max(0, Math.min(100, sanity)); }
     public boolean isInTallGrass() { return inTallGrass; }
     public void setInTallGrass(boolean inTallGrass) { this.inTallGrass = inTallGrass; }
     public float getSpeed() { return speed; }
@@ -329,8 +331,6 @@ public abstract class Character implements ICharacter, IInventory {
     public int getInventoryInitialCapacity() { return inventoryInitialCapacity; }
     public void setInventoryInitialCapacity(int capacity) {
         this.inventoryInitialCapacity = Math.max(1, capacity);
-        if (this.inventory != null && this.inventory.size < this.inventoryInitialCapacity) {
-        }
     }
 
     public void tryCollectNearbyMaterial(List<Material> materiaisNoMapa) {
@@ -339,7 +339,7 @@ public abstract class Character implements ICharacter, IInventory {
             Material materialOnMap = iterator.next();
             if (materialOnMap == null) continue;
             float dist = getPosition().dst(materialOnMap.getPosition());
-            float collectionRadius = 24f;
+            float collectionRadius = TILE_SIZE * 0.8f; // Reduced radius for more precise collection
             if (dist < collectionRadius) {
                 if (isInventoryFull()) {
                     logger.info("{}'s inventory is full. Cannot collect {}.", getName(), materialOnMap.getName());
@@ -349,9 +349,8 @@ public abstract class Character implements ICharacter, IInventory {
                 int baseQuantity = 1;
                 int bonusQuantity = 0;
                 if ("Berry".equalsIgnoreCase(materialOnMap.getName())) {
-                    itemToCollect = Food.createBerry();
+                    itemToCollect = Food.createBerry(); // This creates a Food item
                     bonusQuantity = getFoodWaterGatheringBonusQuantity();
-                    logger.debug("{} attempting to collect Berry. Bonus quantity: {}", getName(), bonusQuantity);
                 } else if ("Medicinal".equalsIgnoreCase(materialOnMap.getName()) && "Plant".equalsIgnoreCase(materialOnMap.getType())) {
                     itemToCollect = Material.createMedicinalPlant();
                 } else if ("rock".equalsIgnoreCase(materialOnMap.getName())) {
@@ -364,8 +363,8 @@ public abstract class Character implements ICharacter, IInventory {
 
                 if (itemToCollect != null) {
                     itemToCollect.setQuantity(baseQuantity + bonusQuantity);
-                    if (!canCarryMore(itemToCollect.getWeight() * itemToCollect.getQuantity())) {
-                        logger.info("{} cannot carry more weight for {}.", getName(), itemToCollect.getName());
+                    if (!canCarryMore(itemToCollect.getWeight() * itemToCollect.getQuantity())) { // Check total weight of stack
+                        logger.info("{} cannot carry more weight for {} ({} units).", getName(), itemToCollect.getName(), itemToCollect.getQuantity());
                         continue;
                     }
                     insertItemInInventory(itemToCollect);
@@ -383,9 +382,9 @@ public abstract class Character implements ICharacter, IInventory {
     public void insertItemInInventory(Item item) {
         if (item == null || item.getQuantity() <= 0) return;
         for (Item existingItem : inventory) {
-            if (existingItem != null && existingItem.getName().equals(item.getName())) {
-                float weightPerUnit = existingItem.getWeight() > 0 && existingItem.getQuantity() > 0 ? existingItem.getWeight() / existingItem.getQuantity() : item.getWeight();
-                if(canCarryMore(weightPerUnit * item.getQuantity())){
+            if (existingItem != null && existingItem.getName().equals(item.getName()) && existingItem.getClass() == item.getClass()) { // Also check class for type safety
+                float weightPerUnit = (existingItem.getWeight() > 0 && existingItem.getQuantity() > 0) ? existingItem.getWeight() / existingItem.getQuantity() : (item.getWeight() / item.getQuantity());
+                if (canCarryMore(weightPerUnit * item.getQuantity())) {
                     existingItem.addQuantity(item.getQuantity());
                     currentWeight += weightPerUnit * item.getQuantity();
                     logger.debug("Stacked {} to {}. New quantity: {}", item.getName(), existingItem.getName(), existingItem.getQuantity());
@@ -540,7 +539,7 @@ public abstract class Character implements ICharacter, IInventory {
             Drinkable drinkable = (Drinkable) item;
             drinkable.useItem();
             logger.info("{}: Used Drinkable '{}'. Effects handled by item.", getName(), drinkable.getName());
-            if(drinkable.getDurability() <= 0 || drinkable.getVolume() <= 0) {
+            if (drinkable.getDurability() <= 0 || drinkable.getVolume() <= 0) {
                 itemFullyConsumedOrBroken = true;
             }
         } else if (item instanceof Tool) {
@@ -559,7 +558,7 @@ public abstract class Character implements ICharacter, IInventory {
             }
         } else if (item instanceof Material) {
             if ("Medicinal".equalsIgnoreCase(item.getName()) && "Plant".equalsIgnoreCase(((Material) item).getType())) {
-                Medicine tempMed = Medicine.fromMedicinalPlant((Material)item);
+                Medicine tempMed = Medicine.fromMedicinalPlant((Material) item);
                 float lifeToRestore = (float) (tempMed.getHealRatio() * getHealingEffectivenessModifier());
                 setLife(getLife() + lifeToRestore);
                 logger.info("{} used raw Material '{}' and restored {} life (modifier: {}x). New Life: {}", getName(), item.getName(), lifeToRestore, getHealingEffectivenessModifier(), getLife());
@@ -573,23 +572,26 @@ public abstract class Character implements ICharacter, IInventory {
         } else {
             item.useItem();
             logger.info("{}: Used generic item '{}'.", getName(), item.getName());
-            if(item.getDurability() <= 0 && item.getQuantity() == 1) itemFullyConsumedOrBroken = true;
+            if (item.getDurability() <= 0 && item.getQuantity() == 1) itemFullyConsumedOrBroken = true;
         }
 
         if (itemFullyConsumedOrBroken) {
-            if (item.getQuantity() > 1 && !((item instanceof Medicine || item instanceof Tool || item instanceof Weapon || item instanceof Drinkable) && item.getDurability() <=0) ) {
-                float weightOfOneUnit = item.getWeight() / item.getQuantity();
+            float weightOfItemBeingRemoved = item.getWeight(); // This is the total weight of the item/stack instance
+            if (item.getQuantity() > 1 && !((item instanceof Medicine || item instanceof Tool || item instanceof Weapon || item instanceof Drinkable) && item.getDurability() <= 0)) {
+                // This handles stackable consumables like Food, or a stack of basic materials like Medicinal Plants if they were stackable.
+                // If an item from a stack is consumed.
+                weightOfItemBeingRemoved = item.getWeight() / item.getQuantity(); // Weight of one unit from the stack
                 item.setQuantity(item.getQuantity() - 1);
-                currentWeight -= weightOfOneUnit;
+                currentWeight -= weightOfItemBeingRemoved;
                 logger.info("Decremented quantity of {}. New quantity: {}. Item remains.", item.getName(), item.getQuantity());
             } else {
-                float weightToRemove = item.getWeight();
+                // Item's last quantity was used OR a non-stackable (or last of stack) durable item broke.
                 inventory.removeValue(item, true);
-                currentWeight -= weightToRemove;
+                currentWeight -= weightOfItemBeingRemoved; // Remove the full weight of the item instance
                 logger.info("Item {} (Last Qty before removal:{}, Dur:{}) removed from inventory after use.", item.getName(), item.getQuantity(), item.getDurability());
             }
         }
-        if(currentWeight < 0) currentWeight = 0;
+        if (currentWeight < 0) currentWeight = 0;
         logger.info("--------------------------------------------------------------------");
     }
 
@@ -609,20 +611,85 @@ public abstract class Character implements ICharacter, IInventory {
         }
     }
 
+    /**
+     * Attempts to capture a fish from the provided list.
+     * @param fishes The list of Fish objects currently in the ambient.
+     * @return true if a fish was successfully captured, false otherwise.
+     */
+    public boolean tryCaptureFish(List<Fish> fishes) {
+        Weapon spear = null;
+        for (Item item : inventory) {
+            if (item instanceof Weapon && ("Spear".equalsIgnoreCase(item.getName()) || "Wooden Spear".equalsIgnoreCase(item.getName()) || "Stone Spear".equalsIgnoreCase(item.getName()))) {
+                spear = (Weapon) item;
+                break;
+            }
+        }
+
+        if (spear == null) {
+            logger.info("{} has no spear to fish with.", getName());
+            return false;
+        }
+
+        if (isInventoryFull()) {
+            logger.info("{}'s inventory is full. Cannot capture fish.", getName());
+            return false;
+        }
+
+        Iterator<Fish> fishIterator = fishes.iterator();
+        while (fishIterator.hasNext()) {
+            Fish fish = fishIterator.next();
+            float distanceToFish = this.getPosition().dst(fish.getPosition());
+            float fishingRange = TILE_SIZE * 1.5f;
+
+            if (distanceToFish < fishingRange) {
+                if (random.nextFloat() < 0.70f) {
+                    logger.info("{} attempts to spear a fish...", getName());
+                    fishIterator.remove(); // Remove fish from the ambient list
+
+                    Set<Item> drops = Fish.createDrops(); // Static method to get drops
+                    for (Item drop : drops) {
+                        if (drop.getName().equalsIgnoreCase("Raw Fish")) {
+                            if (canCarryMore(drop.getWeight())) {
+                                insertItemInInventory(drop); // Add "Raw Fish" to inventory
+                                logger.info("{} successfully speared a {} and obtained {}!", getName(), fish.getName(), drop.getName());
+
+                                spear.useItem(); // Spear durability decreases
+                                if (spear.getDurability() <= 0) {
+                                    dropItem(spear); // Use character's dropItem to handle weight etc.
+                                    logger.info("The {} broke after fishing.", spear.getName());
+                                }
+                                return true; // Fish captured
+                            } else {
+                                logger.info("{} caught a fish, but cannot carry more weight for {}.", getName(), drop.getName());
+                                return false; // Failed due to inventory, but fish is gone.
+                            }
+                        }
+                    }
+                } else {
+                    logger.info("{} tried to spear a fish but missed!", getName());
+                    spear.useItem(); // Spear durability decreases even on miss
+                    if (spear.getDurability() <= 0) {
+                        dropItem(spear);
+                        logger.info("The {} broke after a failed fishing attempt.", spear.getName());
+                    }
+                    return false; // Missed
+                }
+            }
+        }
+        logger.info("{} found no fish within range.", getName());
+        return false; // No fish in range
+    }
+
+
     public void render(Batch batch) {
         if (batch == null || !batch.isDrawing()) {
             return;
         }
         TextureRegion currentFrame = getCurrentFrame();
         if (currentFrame != null) {
-            batch.draw(currentFrame, position.x, position.y, 32, 32);
+            batch.draw(currentFrame, position.x, position.y, TILE_SIZE, TILE_SIZE);
         } else if (texture != null) {
-            batch.draw(texture, position.x, position.y, 32, 32);
-        }
-    }
-
-    public void dispose() {
-        if (texture != null && texture.getTextureObjectHandle() != 0) {
+            batch.draw(texture, position.x, position.y, TILE_SIZE, TILE_SIZE);
         }
     }
 }

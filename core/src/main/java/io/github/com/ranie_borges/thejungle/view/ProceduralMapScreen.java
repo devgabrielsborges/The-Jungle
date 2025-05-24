@@ -1,4 +1,3 @@
-// core/src/main/java/io/github/com/ranie_borges/thejungle/view/ProceduralMapScreen.java
 package io.github.com.ranie_borges.thejungle.view;
 
 import com.badlogic.gdx.Gdx;
@@ -9,12 +8,10 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-
 import io.github.com.ranie_borges.thejungle.controller.*;
 import io.github.com.ranie_borges.thejungle.controller.managers.CharacterManager;
 import io.github.com.ranie_borges.thejungle.controller.managers.GameStateManager;
@@ -23,12 +20,14 @@ import io.github.com.ranie_borges.thejungle.model.entity.Character;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 import io.github.com.ranie_borges.thejungle.view.helpers.GameRenderHelper;
 import io.github.com.ranie_borges.thejungle.view.helpers.LightingManager;
 import io.github.com.ranie_borges.thejungle.view.helpers.TextureManager;
@@ -45,13 +44,14 @@ import java.util.List;
 public class ProceduralMapScreen implements Screen, UI {
     private static final Logger logger = LoggerFactory.getLogger(ProceduralMapScreen.class);
 
+    private final Main game;
     private final GameState gameState;
     private final MapManager mapManager;
     private final CharacterManager characterManager;
-    private final ResourceController resourceController;
+    private final ResourceController resourceController; // Ensure this is initialized
     private final GameStateManager gameStateManager;
     private GameRenderHelper renderHelper;
-    private final TurnController turnController;
+    private TurnController turnController;
 
     private final Character character;
     private Ambient ambient;
@@ -59,6 +59,7 @@ public class ProceduralMapScreen implements Screen, UI {
     private List<Material> materiaisNoMapa = new ArrayList<>();
     private List<Deer> deers = new ArrayList<>();
     private List<Cannibal> cannibals = new ArrayList<>();
+    private List<Fish> fishes = new ArrayList<>();
 
     private Texture classIcon;
     private Texture inventoryBackground, backpackIcon;
@@ -76,19 +77,22 @@ public class ProceduralMapScreen implements Screen, UI {
 
     private static Texture bgHudShared;
     private BitmapFont promptFont;
+    private GlyphLayout promptLayoutInstance;
 
     private boolean showInventory = false;
     private float blinkTimer = 0f;
     private boolean blinkVisible = true;
     private boolean playerSpawned = false;
     private boolean mapTransitionTriggered = false;
-    private boolean gameOverTriggered = false; // New flag to prevent multiple triggers
+    private boolean gameOverTriggered = false;
 
 
     private float offsetX = 0;
     private float offsetY = 0;
 
-    public ProceduralMapScreen(GameState gameState, Character character, Ambient ambient) {
+    public ProceduralMapScreen(Main game, GameState gameState, Character character, Ambient ambient) {
+        this.game = game;
+
         if (gameState == null) {
             logger.error("GameState is null in ProceduralMapScreen constructor. This is a critical error.");
             throw new IllegalArgumentException("GameState cannot be null");
@@ -124,16 +128,18 @@ public class ProceduralMapScreen implements Screen, UI {
         }
 
         this.characterManager = new CharacterManager(this.character, this.ambient);
-        this.resourceController = new ResourceController();
+        this.resourceController = new ResourceController(); // Make sure this is initialized
         this.gameStateManager = new GameStateManager(this.gameState);
         this.renderHelper = new GameRenderHelper();
 
-        io.github.com.ranie_borges.thejungle.controller.AmbientController mainGameAmbientController = null;
-        if (Gdx.app.getApplicationListener() instanceof Main) {
-            mainGameAmbientController = ((Main) Gdx.app.getApplicationListener()).getScenarioController();
+        if (this.game != null && this.game.getScenarioController() != null) {
+            this.turnController = new TurnController(this.gameState, this.game.getScenarioController());
+        } else {
+            logger.error("Main game instance or its ScenarioController is null. TurnController may not function correctly.");
+            this.turnController = new TurnController(this.gameState, null); // Fallback
         }
-        this.turnController = new TurnController(this.gameState, mainGameAmbientController);
     }
+
 
     public MapManager getMapManager() {
         return this.mapManager;
@@ -146,7 +152,6 @@ public class ProceduralMapScreen implements Screen, UI {
 
     @Override
     public void show() {
-        GlyphLayout promptLayoutInstance;
         try {
             stage = new Stage();
             Gdx.input.setInputProcessor(stage);
@@ -155,6 +160,8 @@ public class ProceduralMapScreen implements Screen, UI {
             turnController.setUI(stage, skin, this);
 
             textureManager = new TextureManager();
+            logger.info("TextureManager initialized in show().");
+
             lightingManager = new LightingManager();
             craftingBar = new CraftingBar();
 
@@ -193,7 +200,9 @@ public class ProceduralMapScreen implements Screen, UI {
                 logger.info("Show(): MapManager synced with GameState. Current Ambient: {}, Map set.",
                     mapManager.getCurrentAmbient().getName());
             } else {
-                logger.info("Show(): GameState has no map. MapManager (for {}) will generate initial map.", mapManager.getCurrentAmbient().getName());
+                logger.info("Show(): GameState has no map or ambient. MapManager (for {}) will generate initial map.",
+                    mapManager.getCurrentAmbient() != null ? mapManager.getCurrentAmbient().getName() : "a default ambient");
+                if (mapManager.getCurrentAmbient() == null) mapManager.externallySetCurrentAmbient(new Jungle());
                 mapManager.generateMapForCurrentAmbient();
                 this.gameState.setCurrentMap(mapManager.getMap());
                 this.gameState.setCurrentAmbient(mapManager.getCurrentAmbient());
@@ -216,7 +225,7 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
                 hud = new Hud(sidebarTex, classIcon, font, this.gameState.getChatController());
             } else {
-                logger.error("Cannot initialize HUD due to null components.");
+                logger.error("Cannot initialize HUD due to null components (textureManager, classIcon, font, or chatController).");
             }
 
             if (inventoryBackground != null && font != null) {
@@ -226,8 +235,11 @@ public class ProceduralMapScreen implements Screen, UI {
             }
             resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         } catch (Exception e) {
-            logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize ProceduralMapScreen", e);
+            logger.error("CRITICAL Error initializing ProceduralMapScreen: {}", e.getMessage(), e);
+            if (game != null) {
+                if (game.getScreen() != null) game.getScreen().dispose();
+                game.setScreen(new MainMenuScreen(game));
+            }
         }
     }
 
@@ -235,11 +247,13 @@ public class ProceduralMapScreen implements Screen, UI {
         this.map = mapManager.getMap();
         this.ambient = mapManager.getCurrentAmbient();
 
-        this.gameState.setCurrentMap(this.map);
-        this.gameState.setCurrentAmbient(this.ambient);
-        logger.info("Updating screen with map for ambient: {}", this.ambient.getName());
+        if (this.map != null) this.gameState.setCurrentMap(this.map);
+        if (this.ambient != null) this.gameState.setCurrentAmbient(this.ambient);
+
+        logger.info("Updating screen entities for ambient: {}", this.ambient != null ? this.ambient.getName() : "UNKNOWN AMBIENT");
 
         updateTextures(this.ambient);
+
         if (lightingManager != null) lightingManager.initializeBuffer();
 
         if (characterManager != null) {
@@ -249,9 +263,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         if (character != null) {
             if (!playerSpawned) {
-                playerSpawned = character.setInitialSpawn(
-                    map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE,
-                    TILE_GRASS, TILE_CAVE, ambient.getName(), ambient);
+                playerSpawned = character.setInitialSpawn(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, TILE_GRASS, TILE_CAVE, ambient != null ? ambient.getName() : "DefaultAmbient", ambient);
             } else {
                 if (characterManager != null) characterManager.safeSpawnCharacter();
             }
@@ -259,31 +271,67 @@ public class ProceduralMapScreen implements Screen, UI {
             logger.error("Character is null during updateScreenMapAndEntities, cannot spawn.");
         }
 
-        if (this.ambient.getName().toLowerCase().contains("cave")) {
+        if (this.ambient != null && this.ambient.getName().toLowerCase().contains("cave")) {
             mapManager.generateCaveDoors();
             this.map = mapManager.getMap();
             this.gameState.setCurrentMap(this.map);
         }
 
-        if (resourceController != null) {
+        // Ensure resourceController is not null before using it
+        if (resourceController != null && this.ambient != null && this.map != null) {
+            logger.info("Spawning resources, creatures, and fish for ambient: {}", this.ambient.getName());
             deers = resourceController.spawnCreatures(this.ambient, this.map);
             cannibals = resourceController.spawnCannibals(this.ambient, this.map);
-            materiaisNoMapa = resourceController.spawnResources(this.ambient, this.map);
+            materiaisNoMapa = resourceController.spawnResources(this.ambient, this.map); // This should return a list of Material objects
+            fishes = resourceController.spawnFish(this.ambient, this.map);
+
+            // Initialize sprites for all spawned materials
+            if (materiaisNoMapa != null && textureManager != null) {
+                logger.info("Initializing sprites for {} materials on map.", materiaisNoMapa.size());
+                for (Material material : materiaisNoMapa) {
+                    if (material != null) {
+                        logger.debug("Initializing sprites for material: {}", material.getName());
+                        material.initializeSprites(this.textureManager);
+                    } else {
+                        logger.warn("Encountered a null material in materiaisNoMapa during sprite initialization.");
+                    }
+                }
+                logger.info("Finished initializing material sprites. Count: {}", materiaisNoMapa.size());
+            } else {
+                if (materiaisNoMapa == null) logger.warn("materiaisNoMapa list is null after spawning, cannot initialize sprites.");
+                if (textureManager == null) logger.warn("textureManager is null, cannot initialize material sprites.");
+            }
+
+            // Reload sprites for creatures if necessary (though their constructors should handle initial sprite setup)
+            if (deers != null) for (Deer deer : deers) if (deer != null) deer.reloadSprites(); else logger.warn("Null deer in list.");
+            if (cannibals != null) for (Cannibal cannibal : cannibals) if (cannibal != null) cannibal.reloadSprites(); else logger.warn("Null cannibal in list.");
+            if (fishes != null) for (Fish fish : fishes) if (fish != null) fish.reloadSprites(); else logger.warn("Null fish in list.");
+
+        } else {
+            logger.warn("Cannot spawn resources/creatures: resourceController, ambient, or map is null.");
+            if (resourceController == null) logger.error("ResourceController is NULL in updateScreenMapAndEntities!");
+            if (this.ambient == null) logger.error("Ambient is NULL in updateScreenMapAndEntities!");
+            if (this.map == null) logger.error("Map is NULL in updateScreenMapAndEntities!");
         }
 
-        if (gameStateManager != null && character != null && !gameOverTriggered) { // Don't autosave if game over just happened
+        if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
             gameStateManager.autosave(character, this.ambient, this.map);
         }
-
-        if (this.gameState.getChatController() != null && !gameOverTriggered) { // Don't show "Entered" if game over
+        if (this.gameState.getChatController() != null && !gameOverTriggered && this.ambient != null) {
             this.gameState.getChatController().addMessage("Entered " + this.ambient.getName() + ".");
         }
     }
 
     private void handleDoorTraversal(Ambient ambientAtDoor) {
-        logger.info("Character passed through a door. Ambient at door was: {}", ambientAtDoor.getName());
+        // ... (implementation as before)
+        logger.info("Character passed through a door. Ambient at door was: {}", ambientAtDoor != null ? ambientAtDoor.getName() : "UNKNOWN");
         boolean ambientTypeRotated = mapManager.checkAndRotateAmbient();
         Ambient ambientForTurnPrompt = mapManager.getAmbientBeforeRotation();
+
+        if (ambientForTurnPrompt == null) {
+            logger.error("Critical: ambientBeforeRotation in MapManager is null during handleDoorTraversal. Defaulting.");
+            ambientForTurnPrompt = this.ambient != null ? this.ambient : new Jungle();
+        }
         this.gameState.setCurrentAmbient(ambientForTurnPrompt);
         logger.info("handleDoorTraversal: GameState.currentAmbient set to {} for turn decision.", ambientForTurnPrompt.getName());
 
@@ -293,7 +341,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         if (ambientTypeRotated) {
             logger.info("Ambient cycle complete for {}. Prompting user for next action.", ambientForTurnPrompt.getName());
-            if(this.gameState.getChatController() != null) {
+            if (this.gameState.getChatController() != null) {
                 this.gameState.getChatController().addMessage("You feel a shift in the environment around " + ambientForTurnPrompt.getName() + ". Choose your next path.", Color.GOLD);
             }
             turnController.advanceTurn();
@@ -303,13 +351,14 @@ public class ProceduralMapScreen implements Screen, UI {
             mapManager.generateMapForCurrentAmbient();
             updateScreenMapAndEntities();
             this.mapTransitionTriggered = false;
-            if(this.gameState.getChatController() != null) {
+            if (this.gameState.getChatController() != null) {
                 this.gameState.getChatController().addMessage("Moved to a new area in " + ambientForTurnPrompt.getName() + ".");
             }
         }
     }
 
     private void updateTextures(Ambient newAmbient) {
+        // ... (implementation as before)
         if (textureManager != null && newAmbient != null) {
             textureManager.loadAmbientTextures(newAmbient);
             if (hud != null ) {
@@ -317,39 +366,26 @@ public class ProceduralMapScreen implements Screen, UI {
                 if (sidebarTex == null) {
                     sidebarTex = textureManager.getOrLoadTexture("Gameplay/sidebar.jpg");
                 }
-                // Recreate HUD if its textures depend on ambient and it doesn't auto-update
-                // For now, assuming Hud takes a texture at construction and doesn't change it dynamically here.
-                // If dynamic change is needed, HUD needs a setSidebarTexture method.
-                // Example of re-creation (if necessary and other HUD params are available):
-                // hud = new Hud(sidebarTex, classIcon, font, this.gameState.getChatController());
             }
         } else {
-            logger.warn("TextureManager or newAmbient is null, cannot update textures.");
+            logger.warn("TextureManager or newAmbient is null in updateTextures. Cannot update ambient-specific textures.");
         }
     }
 
     @Override
     public void render(float delta) {
-        if (gameOverTriggered) { // If game over, don't render the game screen, wait for screen change
-            if (stage != null) { // Render stage if it has game over UI elements, though GameOverScreen handles this
-                stage.act(delta);
-                stage.draw();
-            }
+        // ... (render logic as before, ensure renderHelper.renderMaterials is called)
+        if (gameOverTriggered) {
+            if (stage != null) { stage.act(delta); stage.draw(); }
             return;
         }
-
         SnakeEventManager.handleInput();
         if (SnakeEventManager.isWaitingForSpace()) {
-            Gdx.gl.glClearColor(0, 0, 0, 1);
-            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-            if (batch != null && renderHelper != null) {
-                renderHelper.renderSnakeAlertScreen(batch);
-            }
+            Gdx.gl.glClearColor(0, 0, 0, 1); Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            if (batch != null && renderHelper != null) renderHelper.renderSnakeAlertScreen(batch);
             return;
         }
-
         boolean shouldUpdateGameLogic = !mapTransitionTriggered && (stage == null || stage.getActors().size == 0);
-
         if (shouldUpdateGameLogic) {
             try {
                 if (characterManager != null && character != null) {
@@ -360,85 +396,55 @@ public class ProceduralMapScreen implements Screen, UI {
                             handleDoorTraversal(this.ambient);
                         }
                     }
-
                     if (!this.mapTransitionTriggered) {
                         character.updateStateTime(delta);
                         characterManager.updateCharacterStats(delta);
-                        if (gameStateManager != null) {
-                            gameStateManager.update(delta, character, this.ambient, this.map);
-                        }
-
+                        if (gameStateManager != null) gameStateManager.update(delta, character, this.ambient, this.map);
                         blinkTimer += delta;
-                        float BLINK_INTERVAL = 0.5f;
-                        if (blinkTimer >= BLINK_INTERVAL) {
-                            blinkVisible = !blinkVisible;
-                            blinkTimer = 0f;
-                        }
-
+                        if (blinkTimer >= 0.5f) { blinkVisible = !blinkVisible; blinkTimer = 0f; }
                         float size = 96;
                         float backpackX = Gdx.graphics.getWidth() - SIDEBAR_WIDTH + (SIDEBAR_WIDTH - size) / 2f;
                         float backpackY = 30;
-                        int mouseX = Gdx.input.getX();
-                        int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
-                        boolean mouseOverBackpack = mouseX >= backpackX && mouseX <= backpackX + size &&
-                            mouseY >= backpackY && mouseY <= backpackY + size;
-                        if (Gdx.input.isKeyJustPressed(Input.Keys.I) || (Gdx.input.justTouched() && mouseOverBackpack)) {
-                            showInventory = !showInventory;
-                        }
+                        int mouseX = Gdx.input.getX(); int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+                        boolean mouseOverBackpack = mouseX >= backpackX && mouseX <= backpackX + size && mouseY >= backpackY && mouseY <= backpackY + size;
+                        if (Gdx.input.isKeyJustPressed(Input.Keys.I) || (Gdx.input.justTouched() && mouseOverBackpack)) showInventory = !showInventory;
                     }
-                    // Check for game over condition (e.g., life at zero)
-                    if (character.getLife() <= 0 && !gameOverTriggered) {
-                        handleGameOver();
-                    }
+                    if (character.getLife() <= 0 && !gameOverTriggered) handleGameOver();
                 }
-            } catch (Exception e) {
-                logger.error("Error in game logic update: {}", e.getMessage(), e);
-            }
+            } catch (Exception e) { logger.error("Error in game logic update: {}", e.getMessage(), e); }
         }
-
         if (batch == null || lightingManager == null || renderHelper == null || textureManager == null || character == null || this.ambient == null || this.map == null) {
-            if (stage != null) {
-                stage.act(delta);
-                stage.draw();
-            }
+            if (stage != null) { stage.act(delta); stage.draw(); }
             return;
         }
 
         lightingManager.beginLightBuffer();
         batch.begin();
-        renderHelper.updateCameraOffset(character.getPosition().x, character.getPosition().y,
-            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        renderHelper.updateCameraOffset(character.getPosition().x, character.getPosition().y, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         offsetX = renderHelper.getOffsetX();
         offsetY = renderHelper.getOffsetY();
+
         renderHelper.renderMap(batch, this.map, textureManager.getFloorTexture(), textureManager.getWallTexture(), this.ambient);
-        renderHelper.renderCreatures(batch, deers, cannibals, character);
+        renderHelper.renderMaterials(batch, materiaisNoMapa);
+        renderHelper.renderCreatures(batch, deers, cannibals, character, fishes);
+
         if (this.ambient instanceof Jungle) {
             Jungle jungle = (Jungle) this.ambient;
             Texture grassOverlay = jungle.getTallGrassTexture();
-            for (int y_coord = 0; y_coord < MAP_HEIGHT; y_coord++) {
-                for (int x_coord = 0; x_coord < MAP_WIDTH; x_coord++) {
-                    if (jungle.isTallGrass(x_coord, y_coord)) {
-                        float dx = x_coord * TILE_SIZE + offsetX;
-                        float dy = y_coord * TILE_SIZE + offsetY;
-                        batch.draw(grassOverlay, dx, dy, TILE_SIZE, TILE_SIZE);
+            if (grassOverlay != null) {
+                for (int y_coord = 0; y_coord < MAP_HEIGHT; y_coord++) {
+                    for (int x_coord = 0; x_coord < MAP_WIDTH; x_coord++) {
+                        if (jungle.isTallGrass(x_coord, y_coord)) {
+                            float dx = x_coord * TILE_SIZE + offsetX;
+                            float dy = y_coord * TILE_SIZE + offsetY;
+                            batch.draw(grassOverlay, dx, dy, TILE_SIZE, TILE_SIZE);
+                        }
                     }
                 }
             }
         }
-        for (Material m : materiaisNoMapa) {
-            Sprite s = m.getSprites().get("idle");
-            if (s != null) {
-                if ("Tree".equals(m.getName())) {
-                    s.setSize(128, 128);
-                    s.setPosition(m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f, m.getPosition().y + offsetY);
-                } else {
-                    s.setSize(32, 32);
-                    s.setPosition(m.getPosition().x + offsetX + (TILE_SIZE - s.getWidth()) / 2f, m.getPosition().y + offsetY + (TILE_SIZE - s.getHeight()) / 2f);
-                }
-                s.draw(batch);
-            }
-        }
         batch.end();
+
         lightingManager.endLightBufferAndRender(batch);
 
         if (character.isInTallGrass()) {
@@ -446,51 +452,45 @@ public class ProceduralMapScreen implements Screen, UI {
             float playerScreenY = character.getPosition().y + offsetY + TILE_SIZE / 2f;
             if(shapeRenderer != null) lightingManager.renderTallGrassEffect(shapeRenderer, playerScreenX, playerScreenY);
         }
+
         for (Material m : materiaisNoMapa) {
             float playerDistToMaterial = character.getPosition().dst(m.getPosition());
-            boolean playerIsNear = playerDistToMaterial < TILE_SIZE * 1.5f;
-            if (playerIsNear) {
-                float materialScreenX = m.getPosition().x + offsetX;
-                float materialScreenY = m.getPosition().y + offsetY;
-                boolean mouseIsOverMaterial = Gdx.input.getX() >= materialScreenX && Gdx.input.getX() <= materialScreenX + TILE_SIZE &&
-                    (Gdx.graphics.getHeight() - Gdx.input.getY()) >= materialScreenY && (Gdx.graphics.getHeight() - Gdx.input.getY()) <= materialScreenY + TILE_SIZE;
-                if (mouseIsOverMaterial || playerIsNear) {
-                    if ("Medicinal".equalsIgnoreCase(m.getName()) && "Plant".equalsIgnoreCase(m.getType())) {
-                        Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
-                    } else if ("Berry".equalsIgnoreCase(m.getName())) {
-                        renderHelper.renderInteractionPrompt(batch, m, "Collect Berry");
-                    } else if ("rock".equalsIgnoreCase(m.getName()) || "stick".equalsIgnoreCase(m.getName())) {
-                        renderHelper.renderInteractionPrompt(batch, m, "Collect " + m.getName());
-                    }
+            if (playerDistToMaterial < TILE_SIZE * 1.5f) {
+                float materialScreenX = m.getPosition().x + offsetX; float materialScreenY = m.getPosition().y + offsetY;
+                boolean mouseIsOverMaterial = Gdx.input.getX() >= materialScreenX && Gdx.input.getX() <= materialScreenX + TILE_SIZE && (Gdx.graphics.getHeight() - Gdx.input.getY()) >= materialScreenY && (Gdx.graphics.getHeight() - Gdx.input.getY()) <= materialScreenY + TILE_SIZE;
+                if (mouseIsOverMaterial || playerDistToMaterial < TILE_SIZE * 0.8f) {
+                    if ("Medicinal".equalsIgnoreCase(m.getName()) && "Plant".equalsIgnoreCase(m.getType())) Medicine.renderUseOption(batch, m, character, offsetX, offsetY);
+                    else if ("Berry".equalsIgnoreCase(m.getName())) renderHelper.renderInteractionPrompt(batch, m, "Collect Berry");
+                    else if ("rock".equalsIgnoreCase(m.getName()) || "stick".equalsIgnoreCase(m.getName())) renderHelper.renderInteractionPrompt(batch, m, "Collect " + m.getName());
                 }
             }
         }
+
         if (showInventory) {
-            if (characterUI != null) {
-                assert shapeRenderer != null;
-                characterUI.renderInventory(batch, shapeRenderer, character);
-            }
-            if (craftingBar != null) {
-                assert shapeRenderer != null;
-                craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-            }
+            if (characterUI != null) characterUI.renderInventory(batch, shapeRenderer, character);
+            if (craftingBar != null) craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         }
-
-        // Game over check moved to occur before HUD rendering if it affects UI state immediately
-        // if (character.getLife() <= 0 && !gameOverTriggered) { // Already checked in logic update
-        //    handleGameOver();
-        // }
-
         if (hud != null) hud.render(batch, shapeRenderer, character, gameState, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        if (stage != null) {
-            stage.act(delta);
-            stage.draw();
-        }
+
+        if (stage != null) { stage.act(delta); stage.draw(); }
+
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             if (!showInventory) {
-                character.tryCollectNearbyMaterial(materiaisNoMapa);
+                boolean actionTaken = false;
+                int playerTileX = (int) ((character.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE);
+                int playerTileY = (int) ((character.getPosition().y + TILE_SIZE / 4f) / TILE_SIZE);
+                if (playerTileX >= 0 && playerTileX < MAP_WIDTH && playerTileY >= 0 && playerTileY < MAP_HEIGHT) {
+                    int tileTypeAtPlayer = map[playerTileY][playerTileX];
+                    if (ambient instanceof LakeRiver && tileTypeAtPlayer == TILE_WATER) {
+                        logger.info("{} tries to drink water from {}.", character.getName(), ambient.getName());
+                        actionTaken = true;
+                    }
+                }
+                if (!actionTaken && character != null) {
+                    character.tryCollectNearbyMaterial(materiaisNoMapa);
+                }
             } else {
-                if (characterUI != null) {
+                if (characterUI != null && character != null) {
                     Item selectedItem = characterUI.getSelectedItem();
                     if (selectedItem != null) {
                         character.useItem(selectedItem);
@@ -499,37 +499,35 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            if (character != null && ambient instanceof LakeRiver) {
+                boolean captured = character.tryCaptureFish(fishes);
+                if (captured) {
+                    logger.info("{} captured a fish!", character.getName());
+                } else {
+                    logger.info("{} tried to fish but failed.", character.getName());
+                }
+            }
+        }
     }
 
     private void handleGameOver() {
-        if (gameOverTriggered) return; // Prevent multiple calls
+        if (gameOverTriggered) return;
         gameOverTriggered = true;
-
-        logger.info("Game over condition reached for character {} after {} days.",
-            character.getName(), gameState.getDaysSurvived());
-
-        // Determine which save file to delete. It's usually "autosave.json" or the currently loaded named save.
+        logger.info("Game over condition reached for character {} after {} days.", character.getName(), gameState.getDaysSurvived());
         String saveNameToDelete = null;
-        if (Gdx.app.getApplicationListener() instanceof Main) {
-            AmbientController ac = ((Main) Gdx.app.getApplicationListener()).getScenarioController();
-            if (ac != null) {
-                saveNameToDelete = ac.getCurrentSaveFileName();
-            }
-        }
-        if (saveNameToDelete == null) {
-            saveNameToDelete = "autosave.json"; // Fallback if current save name couldn't be determined
-            logger.warn("Could not determine specific save file name for deletion, defaulting to 'autosave.json'.");
-        }
 
-        // Trigger screen change via AmbientController
-        if (Gdx.app.getApplicationListener() instanceof Main) {
-            AmbientController ac = ((Main) Gdx.app.getApplicationListener()).getScenarioController();
-            if (ac != null) {
-                ac.triggerGameOver(saveNameToDelete);
-            } else {
-                logger.error("AmbientController is null, cannot switch to GameOverScreen.");
-                // Fallback to direct screen change if AC is not available (less ideal)
-                // ((Game)Gdx.app.getApplicationListener()).setScreen(new GameOverScreen(((Main)Gdx.app.getApplicationListener()), saveNameToDelete));
+        if (this.game != null && this.game.getScenarioController() != null) {
+            saveNameToDelete = this.game.getScenarioController().getCurrentSaveFileName();
+        }
+        if (saveNameToDelete == null) saveNameToDelete = "autosave.json";
+
+        if (this.game != null && this.game.getScenarioController() != null) {
+            this.game.getScenarioController().triggerGameOver(saveNameToDelete);
+        } else {
+            logger.error("Main game instance or ScenarioController is null. Cannot trigger GameOverScreen properly.");
+            if (Gdx.app.getApplicationListener() instanceof Main) {
+                ((Main)Gdx.app.getApplicationListener()).getScenarioController().triggerGameOver(saveNameToDelete);
             }
         }
     }
@@ -548,7 +546,6 @@ public class ProceduralMapScreen implements Screen, UI {
             gameStateManager.autosave(character, this.ambient, this.map);
         }
     }
-
     @Override
     public void resume() {}
     @Override
@@ -557,32 +554,26 @@ public class ProceduralMapScreen implements Screen, UI {
     @Override
     public void dispose() {
         try {
-            // Autosave one last time if game is not over and is being disposed
             if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
                 gameStateManager.autosave(character, this.ambient, this.map);
             }
-
             if (batch != null) batch.dispose(); batch = null;
             if (shapeRenderer != null) shapeRenderer.dispose(); shapeRenderer = null;
             if (font != null) font.dispose(); font = null;
             if (promptFont != null) promptFont.dispose(); promptFont = null;
-
             if (textureManager != null) textureManager.dispose(); textureManager = null;
             if (lightingManager != null) lightingManager.dispose(); lightingManager = null;
             if (renderHelper != null) renderHelper.dispose(); renderHelper = null;
             if (craftingBar != null) craftingBar.dispose(); craftingBar = null;
 
-            try {
-                java.lang.reflect.Field bgHudField = Medicine.class.getDeclaredField("bgHud");
-                bgHudField.setAccessible(true);
-
-            } catch (NoSuchFieldException e) {
-                // Ignore
-            }
+            // Static/shared textures like bgHudShared or Medicine.bgHud should ideally be managed by an AssetManager
+            // For now, not re-disposing them here to avoid issues if they are used elsewhere or already handled.
+            // if (bgHudShared != null && !bgHudShared.isDisposed()) { /* bgHudShared.dispose(); */ bgHudShared = null; }
 
             if (stage != null) stage.dispose(); stage = null;
-            if (skin != null) skin.dispose(); skin = null; // Dispose skin if it's loaded here
-
+            // Skin is loaded in show() and might be shared or used by other screens if not careful.
+            // If it's exclusively for this screen and loaded by it, dispose it.
+            // if (skin != null) skin.dispose(); skin = null;
             SnakeEventManager.dispose();
         } catch (Exception e) {
             logger.error("Error disposing resources in ProceduralMapScreen: {}", e.getMessage(), e);
