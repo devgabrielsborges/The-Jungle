@@ -51,7 +51,7 @@ public class ProceduralMapScreen implements Screen, UI {
     private final ResourceController resourceController;
     private final GameStateManager gameStateManager;
     private GameRenderHelper renderHelper;
-    private TurnController turnController;
+    private final TurnController turnController;
 
     private final Character character;
     private Ambient ambient;
@@ -76,13 +76,14 @@ public class ProceduralMapScreen implements Screen, UI {
 
     private static Texture bgHudShared;
     private BitmapFont promptFont;
-    private GlyphLayout promptLayoutInstance;
 
     private boolean showInventory = false;
     private float blinkTimer = 0f;
     private boolean blinkVisible = true;
     private boolean playerSpawned = false;
     private boolean mapTransitionTriggered = false;
+    private boolean gameOverTriggered = false; // New flag to prevent multiple triggers
+
 
     private float offsetX = 0;
     private float offsetY = 0;
@@ -116,7 +117,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         if (this.gameState.getMapManager() != null) {
             this.mapManager = this.gameState.getMapManager();
-            this.mapManager.externallySetCurrentAmbient(this.ambient); // Ensure MapManager is aligned
+            this.mapManager.externallySetCurrentAmbient(this.ambient);
         } else {
             this.mapManager = new MapManager(this.ambient);
             this.gameState.setMapManager(this.mapManager);
@@ -134,7 +135,6 @@ public class ProceduralMapScreen implements Screen, UI {
         this.turnController = new TurnController(this.gameState, mainGameAmbientController);
     }
 
-
     public MapManager getMapManager() {
         return this.mapManager;
     }
@@ -146,6 +146,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
     @Override
     public void show() {
+        GlyphLayout promptLayoutInstance;
         try {
             stage = new Stage();
             Gdx.input.setInputProcessor(stage);
@@ -194,18 +195,18 @@ public class ProceduralMapScreen implements Screen, UI {
             } else {
                 logger.info("Show(): GameState has no map. MapManager (for {}) will generate initial map.", mapManager.getCurrentAmbient().getName());
                 mapManager.generateMapForCurrentAmbient();
-                this.gameState.setCurrentMap(mapManager.getMap()); // Update GameState with the newly generated map
-                this.gameState.setCurrentAmbient(mapManager.getCurrentAmbient()); // And ambient
+                this.gameState.setCurrentMap(mapManager.getMap());
+                this.gameState.setCurrentAmbient(mapManager.getCurrentAmbient());
             }
 
-            updateScreenMapAndEntities(); // This syncs screen's map/ambient from mapManager and spawns entities
+            updateScreenMapAndEntities();
 
             if (character != null) {
                 character.updateStateTime(0f);
             }
 
             if (textureManager != null && classIcon != null && font != null && this.gameState.getChatController() != null) {
-                Texture sidebarTex = textureManager.getSidebarTexture(); // Will be based on current mapManager.getCurrentAmbient()
+                Texture sidebarTex = textureManager.getSidebarTexture();
                 if (sidebarTex == null && mapManager.getCurrentAmbient() != null) {
                     textureManager.loadAmbientTextures(mapManager.getCurrentAmbient());
                     sidebarTex = textureManager.getSidebarTexture();
@@ -223,9 +224,7 @@ public class ProceduralMapScreen implements Screen, UI {
             } else {
                 logger.error("Cannot initialize CharacterUI due to null components.");
             }
-
             resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
         } catch (Exception e) {
             logger.error("Error initializing ProceduralMapScreen: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to initialize ProceduralMapScreen", e);
@@ -272,21 +271,19 @@ public class ProceduralMapScreen implements Screen, UI {
             materiaisNoMapa = resourceController.spawnResources(this.ambient, this.map);
         }
 
-        if (gameStateManager != null && character != null) {
+        if (gameStateManager != null && character != null && !gameOverTriggered) { // Don't autosave if game over just happened
             gameStateManager.autosave(character, this.ambient, this.map);
         }
 
-        if (this.gameState.getChatController() != null) {
+        if (this.gameState.getChatController() != null && !gameOverTriggered) { // Don't show "Entered" if game over
             this.gameState.getChatController().addMessage("Entered " + this.ambient.getName() + ".");
         }
     }
 
     private void handleDoorTraversal(Ambient ambientAtDoor) {
         logger.info("Character passed through a door. Ambient at door was: {}", ambientAtDoor.getName());
-
         boolean ambientTypeRotated = mapManager.checkAndRotateAmbient();
-        Ambient ambientForTurnPrompt = mapManager.getAmbientBeforeRotation(); // This is the ambient whose cycle just ended
-
+        Ambient ambientForTurnPrompt = mapManager.getAmbientBeforeRotation();
         this.gameState.setCurrentAmbient(ambientForTurnPrompt);
         logger.info("handleDoorTraversal: GameState.currentAmbient set to {} for turn decision.", ambientForTurnPrompt.getName());
 
@@ -294,16 +291,15 @@ public class ProceduralMapScreen implements Screen, UI {
             logger.info("MapManager has internally rotated its currentAmbient to: {}", mapManager.getCurrentAmbient().getName());
         }
 
-
         if (ambientTypeRotated) {
             logger.info("Ambient cycle complete for {}. Prompting user for next action.", ambientForTurnPrompt.getName());
             if(this.gameState.getChatController() != null) {
                 this.gameState.getChatController().addMessage("You feel a shift in the environment around " + ambientForTurnPrompt.getName() + ". Choose your next path.", Color.GOLD);
             }
-            turnController.advanceTurn(); // TurnController will use gameState.getCurrentAmbient() (which is ambientForTurnPrompt)
+            turnController.advanceTurn();
         } else {
             logger.info("Continuing in ambient type: {}. Generating new map area.", ambientForTurnPrompt.getName());
-            mapManager.forceSetCurrentAmbient(ambientForTurnPrompt, false); // false because usage count is already handled by checkAndRotate
+            mapManager.forceSetCurrentAmbient(ambientForTurnPrompt, false);
             mapManager.generateMapForCurrentAmbient();
             updateScreenMapAndEntities();
             this.mapTransitionTriggered = false;
@@ -321,6 +317,11 @@ public class ProceduralMapScreen implements Screen, UI {
                 if (sidebarTex == null) {
                     sidebarTex = textureManager.getOrLoadTexture("Gameplay/sidebar.jpg");
                 }
+                // Recreate HUD if its textures depend on ambient and it doesn't auto-update
+                // For now, assuming Hud takes a texture at construction and doesn't change it dynamically here.
+                // If dynamic change is needed, HUD needs a setSidebarTexture method.
+                // Example of re-creation (if necessary and other HUD params are available):
+                // hud = new Hud(sidebarTex, classIcon, font, this.gameState.getChatController());
             }
         } else {
             logger.warn("TextureManager or newAmbient is null, cannot update textures.");
@@ -329,8 +330,15 @@ public class ProceduralMapScreen implements Screen, UI {
 
     @Override
     public void render(float delta) {
-        SnakeEventManager.handleInput();
+        if (gameOverTriggered) { // If game over, don't render the game screen, wait for screen change
+            if (stage != null) { // Render stage if it has game over UI elements, though GameOverScreen handles this
+                stage.act(delta);
+                stage.draw();
+            }
+            return;
+        }
 
+        SnakeEventManager.handleInput();
         if (SnakeEventManager.isWaitingForSpace()) {
             Gdx.gl.glClearColor(0, 0, 0, 1);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -346,19 +354,18 @@ public class ProceduralMapScreen implements Screen, UI {
             try {
                 if (characterManager != null && character != null) {
                     boolean passedThroughDoor = characterManager.updateCharacterMovement(delta);
-
                     if (passedThroughDoor) {
                         if (!this.mapTransitionTriggered) {
                             this.mapTransitionTriggered = true;
-                            handleDoorTraversal(this.ambient); // Pass current screen's ambient
+                            handleDoorTraversal(this.ambient);
                         }
                     }
 
-                    if (!this.mapTransitionTriggered) { // Re-check, as handleDoorTraversal might set it
+                    if (!this.mapTransitionTriggered) {
                         character.updateStateTime(delta);
                         characterManager.updateCharacterStats(delta);
                         if (gameStateManager != null) {
-                            gameStateManager.update(delta, character, this.ambient, this.map); // Use screen's current map/ambient
+                            gameStateManager.update(delta, character, this.ambient, this.map);
                         }
 
                         blinkTimer += delta;
@@ -375,10 +382,13 @@ public class ProceduralMapScreen implements Screen, UI {
                         int mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
                         boolean mouseOverBackpack = mouseX >= backpackX && mouseX <= backpackX + size &&
                             mouseY >= backpackY && mouseY <= backpackY + size;
-
                         if (Gdx.input.isKeyJustPressed(Input.Keys.I) || (Gdx.input.justTouched() && mouseOverBackpack)) {
                             showInventory = !showInventory;
                         }
+                    }
+                    // Check for game over condition (e.g., life at zero)
+                    if (character.getLife() <= 0 && !gameOverTriggered) {
+                        handleGameOver();
                     }
                 }
             } catch (Exception e) {
@@ -400,10 +410,8 @@ public class ProceduralMapScreen implements Screen, UI {
             Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         offsetX = renderHelper.getOffsetX();
         offsetY = renderHelper.getOffsetY();
-
         renderHelper.renderMap(batch, this.map, textureManager.getFloorTexture(), textureManager.getWallTexture(), this.ambient);
         renderHelper.renderCreatures(batch, deers, cannibals, character);
-
         if (this.ambient instanceof Jungle) {
             Jungle jungle = (Jungle) this.ambient;
             Texture grassOverlay = jungle.getTallGrassTexture();
@@ -417,7 +425,6 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         }
-
         for (Material m : materiaisNoMapa) {
             Sprite s = m.getSprites().get("idle");
             if (s != null) {
@@ -432,7 +439,6 @@ public class ProceduralMapScreen implements Screen, UI {
             }
         }
         batch.end();
-
         lightingManager.endLightBufferAndRender(batch);
 
         if (character.isInTallGrass()) {
@@ -440,7 +446,6 @@ public class ProceduralMapScreen implements Screen, UI {
             float playerScreenY = character.getPosition().y + offsetY + TILE_SIZE / 2f;
             if(shapeRenderer != null) lightingManager.renderTallGrassEffect(shapeRenderer, playerScreenX, playerScreenY);
         }
-
         for (Material m : materiaisNoMapa) {
             float playerDistToMaterial = character.getPosition().dst(m.getPosition());
             boolean playerIsNear = playerDistToMaterial < TILE_SIZE * 1.5f;
@@ -460,24 +465,32 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         }
-
         if (showInventory) {
-            if (characterUI != null) characterUI.renderInventory(batch, shapeRenderer, character);
-            if (craftingBar != null) craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            if (characterUI != null) {
+                assert shapeRenderer != null;
+                characterUI.renderInventory(batch, shapeRenderer, character);
+            }
+            if (craftingBar != null) {
+                assert shapeRenderer != null;
+                craftingBar.render(batch, shapeRenderer, character, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            }
         }
 
-        if (character.getLife() <= 0) gameOver();
+        // Game over check moved to occur before HUD rendering if it affects UI state immediately
+        // if (character.getLife() <= 0 && !gameOverTriggered) { // Already checked in logic update
+        //    handleGameOver();
+        // }
+
         if (hud != null) hud.render(batch, shapeRenderer, character, gameState, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         if (stage != null) {
             stage.act(delta);
             stage.draw();
         }
-
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             if (!showInventory) {
-                if (character != null) character.tryCollectNearbyMaterial(materiaisNoMapa);
+                character.tryCollectNearbyMaterial(materiaisNoMapa);
             } else {
-                if (characterUI != null && character != null) {
+                if (characterUI != null) {
                     Item selectedItem = characterUI.getSelectedItem();
                     if (selectedItem != null) {
                         character.useItem(selectedItem);
@@ -488,12 +501,36 @@ public class ProceduralMapScreen implements Screen, UI {
         }
     }
 
-    private void gameOver() {
-        if (gameStateManager != null && character != null && this.ambient != null && this.map != null && gameState != null) {
-            gameStateManager.save(character, this.ambient, this.map, "final_save_day_" + gameState.getDaysSurvived());
-            logger.info("Game over - character died after {} days", gameState.getDaysSurvived());
-        } else {
-            logger.error("Cannot save game over state due to null components.");
+    private void handleGameOver() {
+        if (gameOverTriggered) return; // Prevent multiple calls
+        gameOverTriggered = true;
+
+        logger.info("Game over condition reached for character {} after {} days.",
+            character.getName(), gameState.getDaysSurvived());
+
+        // Determine which save file to delete. It's usually "autosave.json" or the currently loaded named save.
+        String saveNameToDelete = null;
+        if (Gdx.app.getApplicationListener() instanceof Main) {
+            AmbientController ac = ((Main) Gdx.app.getApplicationListener()).getScenarioController();
+            if (ac != null) {
+                saveNameToDelete = ac.getCurrentSaveFileName();
+            }
+        }
+        if (saveNameToDelete == null) {
+            saveNameToDelete = "autosave.json"; // Fallback if current save name couldn't be determined
+            logger.warn("Could not determine specific save file name for deletion, defaulting to 'autosave.json'.");
+        }
+
+        // Trigger screen change via AmbientController
+        if (Gdx.app.getApplicationListener() instanceof Main) {
+            AmbientController ac = ((Main) Gdx.app.getApplicationListener()).getScenarioController();
+            if (ac != null) {
+                ac.triggerGameOver(saveNameToDelete);
+            } else {
+                logger.error("AmbientController is null, cannot switch to GameOverScreen.");
+                // Fallback to direct screen change if AC is not available (less ideal)
+                // ((Game)Gdx.app.getApplicationListener()).setScreen(new GameOverScreen(((Main)Gdx.app.getApplicationListener()), saveNameToDelete));
+            }
         }
     }
 
@@ -507,7 +544,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
     @Override
     public void pause() {
-        if (gameStateManager != null && character != null && this.ambient != null && this.map != null) {
+        if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
             gameStateManager.autosave(character, this.ambient, this.map);
         }
     }
@@ -520,7 +557,8 @@ public class ProceduralMapScreen implements Screen, UI {
     @Override
     public void dispose() {
         try {
-            if (gameStateManager != null && character != null && this.ambient != null && this.map != null) {
+            // Autosave one last time if game is not over and is being disposed
+            if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
                 gameStateManager.autosave(character, this.ambient, this.map);
             }
 
@@ -534,12 +572,16 @@ public class ProceduralMapScreen implements Screen, UI {
             if (renderHelper != null) renderHelper.dispose(); renderHelper = null;
             if (craftingBar != null) craftingBar.dispose(); craftingBar = null;
 
-            java.lang.reflect.Field bgHudField = Medicine.class.getDeclaredField("bgHud");
-            bgHudField.setAccessible(true);
+            try {
+                java.lang.reflect.Field bgHudField = Medicine.class.getDeclaredField("bgHud");
+                bgHudField.setAccessible(true);
 
+            } catch (NoSuchFieldException e) {
+                // Ignore
+            }
 
             if (stage != null) stage.dispose(); stage = null;
-            if (skin != null) skin.dispose(); skin = null;
+            if (skin != null) skin.dispose(); skin = null; // Dispose skin if it's loaded here
 
             SnakeEventManager.dispose();
         } catch (Exception e) {

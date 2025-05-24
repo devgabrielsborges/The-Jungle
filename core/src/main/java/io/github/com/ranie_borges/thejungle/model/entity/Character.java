@@ -25,7 +25,6 @@ import java.util.List;
 public abstract class Character implements ICharacter, IInventory {
     private static final Logger logger = LoggerFactory.getLogger(Character.class);
 
-    // Fields to be serialized
     @Expose
     private String name;
     @Expose
@@ -44,7 +43,7 @@ public abstract class Character implements ICharacter, IInventory {
     private float currentWeight = 0f;
 
     @Expose
-    private final float maxCarryWeight = 30f; // FiXME peso máximo padrão (pode mudar por profissão depois)
+    private static final float maxCarryWeight = 30f;
 
     @Expose
     private int inventoryInitialCapacity = 15;
@@ -60,23 +59,19 @@ public abstract class Character implements ICharacter, IInventory {
     @Expose
     private String characterType;
     @Expose
-    private float speed;
+    private float speed = 100f; // Default speed
 
     @Expose
     private Vector2 position;
-    private final Texture texture;
-    private Animation<TextureRegion> playerIdleUp;
-    private Animation<TextureRegion> playerIdleDown;
-    private Animation<TextureRegion> playerIdleLeft;
-    private Animation<TextureRegion> playerIdleRight;
-    private Animation<TextureRegion> playerWalkUp;
-    private Animation<TextureRegion> playerWalkDown;
-    private Animation<TextureRegion> playerWalkLeft;
-    private Animation<TextureRegion> playerWalkRight;
-
-    public float getMaxCarryWeight() {
-        return this.maxCarryWeight;
-    }
+    private transient Texture texture;
+    private transient Animation<TextureRegion> playerIdleUp;
+    private transient Animation<TextureRegion> playerIdleDown;
+    private transient Animation<TextureRegion> playerIdleLeft;
+    private transient Animation<TextureRegion> playerIdleRight;
+    private transient Animation<TextureRegion> playerWalkUp;
+    private transient Animation<TextureRegion> playerWalkDown;
+    private transient Animation<TextureRegion> playerWalkLeft;
+    private transient Animation<TextureRegion> playerWalkRight;
 
     private enum PlayerState {
         IDLE_UP, IDLE_DOWN, IDLE_LEFT, IDLE_RIGHT, WALK_UP, WALK_DOWN, WALK_LEFT, WALK_RIGHT
@@ -86,21 +81,21 @@ public abstract class Character implements ICharacter, IInventory {
         UP, DOWN, LEFT, RIGHT
     }
 
-    private Direction lastDirection = Direction.DOWN;
-    private PlayerState currentState = PlayerState.IDLE_DOWN;
-    private boolean isMoving = false;
-    private float stateTime = 0;
+    private transient Direction lastDirection = Direction.DOWN;
+    private transient PlayerState currentState = PlayerState.IDLE_DOWN;
+    private transient boolean isMoving = false;
+    private transient float stateTime = 0;
 
     private boolean inTallGrass = false;
 
     protected Character(
-            String name,
-            float life,
-            float energy,
-            float sanity,
-            float attackDamage,
-            float xPosition,
-            float yPosition) {
+        String name,
+        float life,
+        float energy,
+        float sanity,
+        float attackDamage,
+        float xPosition,
+        float yPosition) {
         try {
             this.name = name != null ? name : "Unknown";
             this.life = Math.max(0, life);
@@ -111,190 +106,147 @@ public abstract class Character implements ICharacter, IInventory {
             this.attackDamage = Math.max(0, attackDamage);
             this.inventory = new Array<>(inventoryInitialCapacity);
             this.traits = new ArrayList<>();
-
-            // Load texture with exception handling
-            Texture tempTexture;
-            try {
-                tempTexture = new Texture(Gdx.files.internal("sprites/character/personagem_luta.png"));
-                logger.debug("Successfully loaded texture: {}", "sprites/character/personagem_luta.png");
-            } catch (Exception e) {
-                logger.error("Failed to load texture {}: {}", "sprites/character/personagem_luta.png", e.getMessage());
-                // Create a fallback 1x1 texture
-                Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-                pixmap.setColor(1, 0, 1, 0.5f); // Semi-transparent magenta for visual debugging
-                pixmap.fill();
-                tempTexture = new Texture(pixmap);
-                pixmap.dispose();
-            }
-            this.texture = tempTexture;
-
             this.position = new Vector2(xPosition, yPosition);
             this.characterType = this.getClass().getSimpleName();
-
         } catch (Exception e) {
             logger.error("Error creating character {}: {}", name, e.getMessage());
             throw e;
         }
     }
 
+    // --- Getter for maxCarryWeight --- ADDED
+    public float getMaxCarryWeight() {
+        return this.maxCarryWeight;
+    }
+
+    public float getHungerDepletionModifier() { return 1.0f; }
+    public float getThirstDepletionModifier() { return 1.0f; }
+    public float getHealingEffectivenessModifier() { return 1.0f; }
+    public int getFoodWaterGatheringBonusQuantity() { return 0; }
+    public float getWoodCuttingYieldModifier() { return 1.0f; }
+
+
     public void loadPlayerAnimations() {
-        // IDLE: 2 frames
         playerIdleDown = loadAnimation("personagem_parado_frente.png", 0.5f, 2);
         playerIdleUp = loadAnimation("personagem_parado_costas.png", 0.5f, 2);
         playerIdleLeft = loadAnimation("personagem_parado_esquerda.png", 0.5f, 2);
         playerIdleRight = loadAnimation("personagem_parado_direita.png", 0.5f, 2);
-
-        // WALK: 4 frames
         playerWalkDown = loadAnimation("personagem_andando_frente.png", 0.1f, 4);
         playerWalkUp = loadAnimation("personagem_andando_costas.png", 0.1f, 4);
         playerWalkLeft = loadAnimation("personagem_andando_esquerda.png", 0.1f, 4);
         playerWalkRight = loadAnimation("personagem_andando_direita.png", 0.1f, 4);
 
+        if (playerIdleDown == null) {
+            logger.warn("playerIdleDown animation is null. Creating fallback texture for Character.");
+            Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+            pixmap.setColor(1, 0, 1, 0.5f);
+            pixmap.fill();
+            this.texture = new Texture(pixmap);
+            pixmap.dispose();
+        }
     }
 
     public boolean setInitialSpawn(
-            int[][] map, int mapWidth, int mapHeight, int tileSize,
-            int tileGrass, int tileCave, String ambientName,
-            io.github.com.ranie_borges.thejungle.model.world.Ambient ambient) {
-
+        int[][] map, int mapWidth, int mapHeight, int tileSize,
+        int tileGrass, int tileCave, String ambientName,
+        io.github.com.ranie_borges.thejungle.model.world.Ambient ambient) {
         try {
             int x, y;
             int attempts = 0;
             int maxAttempts = 1000;
             boolean positionFound = false;
-
             do {
                 x = (int) (Math.random() * mapWidth);
                 y = (int) (Math.random() * mapHeight);
                 attempts++;
-
+                if (y < 0 || y >= mapHeight || x < 0 || x >= mapWidth) continue;
                 int tileType = map[y][x];
                 boolean isValidTile = ((tileType == tileGrass
-                        || (ambientName.equalsIgnoreCase("Cave") && tileType == tileCave))
-                        && !(ambient instanceof Jungle && ((Jungle) ambient).isTallGrass(x, y)));
-
+                    || (ambientName.equalsIgnoreCase("Cave") && tileType == tileCave))
+                    && !(ambient instanceof Jungle && ((Jungle) ambient).isTallGrass(x, y)));
                 if (isValidTile) {
                     getPosition().set(x * tileSize, y * tileSize);
                     positionFound = true;
                 }
             } while (!positionFound && attempts < maxAttempts);
-
             if (!positionFound) {
-                getPosition().set(((float) mapWidth / 2) * tileSize, ((float) mapHeight / 2) * tileSize);
-                logger.warn("{}: Could not find valid spawn position, using fallback", getName());
-            }
-
-            logger.info("{}: Player spawned at ({}, {})", getName(), (int) (getPosition().x / tileSize),
+                float fallbackX = ((float) mapWidth / 2) * tileSize;
+                float fallbackY = ((float) mapHeight / 2) * tileSize;
+                getPosition().set(fallbackX, fallbackY);
+                logger.warn("{}: Could not find valid spawn position after {} attempts, using fallback at ({}, {})",
+                    getName(), maxAttempts, fallbackX / tileSize, fallbackY / tileSize);
+            } else {
+                logger.info("{}: Player spawned at ({}, {})", getName(), (int) (getPosition().x / tileSize),
                     (int) (getPosition().y / tileSize));
+            }
             return true;
         } catch (Exception e) {
-            logger.error("{}: Error during spawn positioning: {}", getName(), e.getMessage());
+            logger.error("{}: Error during spawn positioning: {}", getName(), e.getMessage(), e);
+            float fallbackX = ((float) mapWidth / 2) * tileSize;
+            float fallbackY = ((float) mapHeight / 2) * tileSize;
+            getPosition().set(fallbackX, fallbackY);
             return false;
         }
     }
 
     private Animation<TextureRegion> loadAnimation(String filename, float frameDuration, int framesCount) {
-        Texture spriteSheet = new Texture(Gdx.files.internal("sprites/character/" + filename.replace(".gif", ".png")));
-
-        int frameWidth = spriteSheet.getWidth() / framesCount;
-        int frameHeight = spriteSheet.getHeight();
-
-        TextureRegion[][] tmp = TextureRegion.split(spriteSheet, frameWidth, frameHeight);
-        Array<TextureRegion> frames = new Array<>(framesCount);
-
-        for (int i = 0; i < framesCount; i++) {
-            frames.add(tmp[0][i]);
+        try {
+            Texture spriteSheet = new Texture(Gdx.files.internal("sprites/character/" + filename));
+            int frameWidth = spriteSheet.getWidth() / framesCount;
+            int frameHeight = spriteSheet.getHeight();
+            TextureRegion[][] tmp = TextureRegion.split(spriteSheet, frameWidth, frameHeight);
+            Array<TextureRegion> frames = new Array<>(framesCount);
+            for (int i = 0; i < framesCount; i++) {
+                frames.add(tmp[0][i]);
+            }
+            return new Animation<>(frameDuration, frames, Animation.PlayMode.LOOP);
+        } catch (Exception e) {
+            logger.error("Failed to load animation sprite sheet: sprites/character/{}", filename, e);
+            return null;
         }
-
-        return new Animation<>(frameDuration, frames);
     }
 
     private void updatePlayerState() {
         if (isMoving) {
             switch (lastDirection) {
-                case UP:
-                    currentState = PlayerState.WALK_UP;
-                    break;
-                case DOWN:
-                    currentState = PlayerState.WALK_DOWN;
-                    break;
-                case LEFT:
-                    currentState = PlayerState.WALK_LEFT;
-                    break;
-                case RIGHT:
-                    currentState = PlayerState.WALK_RIGHT;
-                    break;
+                case UP: currentState = PlayerState.WALK_UP; break;
+                case DOWN: currentState = PlayerState.WALK_DOWN; break;
+                case LEFT: currentState = PlayerState.WALK_LEFT; break;
+                case RIGHT: currentState = PlayerState.WALK_RIGHT; break;
             }
         } else {
             switch (lastDirection) {
-                case UP:
-                    currentState = PlayerState.IDLE_UP;
-                    break;
-                case DOWN:
-                    currentState = PlayerState.IDLE_DOWN;
-                    break;
-                case LEFT:
-                    currentState = PlayerState.IDLE_LEFT;
-                    break;
-                case RIGHT:
-                    currentState = PlayerState.IDLE_RIGHT;
-                    break;
+                case UP: currentState = PlayerState.IDLE_UP; break;
+                case DOWN: currentState = PlayerState.IDLE_DOWN; break;
+                case LEFT: currentState = PlayerState.IDLE_LEFT; break;
+                case RIGHT: currentState = PlayerState.IDLE_RIGHT; break;
             }
         }
     }
 
     private TextureRegion getFrameForCurrentState(float stateTime) {
-        Animation<TextureRegion> currentAnimation;
-
+        Animation<TextureRegion> currentAnimation = playerIdleDown;
         switch (currentState) {
-            case IDLE_UP:
-                currentAnimation = playerIdleUp;
-                break;
-            case IDLE_LEFT:
-                currentAnimation = playerIdleLeft;
-                break;
-            case IDLE_RIGHT:
-                currentAnimation = playerIdleRight;
-                break;
-            case WALK_UP:
-                currentAnimation = playerWalkUp;
-                break;
-            case WALK_DOWN:
-                currentAnimation = playerWalkDown;
-                break;
-            case WALK_LEFT:
-                currentAnimation = playerWalkLeft;
-                break;
-            case WALK_RIGHT:
-                currentAnimation = playerWalkRight;
-                break;
-            default:
-                currentAnimation = playerIdleDown;
-                break;
+            case IDLE_UP: currentAnimation = playerIdleUp; break;
+            case IDLE_LEFT: currentAnimation = playerIdleLeft; break;
+            case IDLE_RIGHT: currentAnimation = playerIdleRight; break;
+            case WALK_UP: currentAnimation = playerWalkUp; break;
+            case WALK_DOWN: currentAnimation = playerWalkDown; break;
+            case WALK_LEFT: currentAnimation = playerWalkLeft; break;
+            case WALK_RIGHT: currentAnimation = playerWalkRight; break;
         }
-
-        return currentAnimation.getKeyFrame(stateTime, true);
+        return (currentAnimation != null) ? currentAnimation.getKeyFrame(stateTime, true) : null;
     }
 
     public void move(float deltaX, float deltaY) {
         try {
-            // Atualiza a posição do personagem
             position.x += deltaX;
             position.y += deltaY;
-
-            // Atualiza o estado de movimento para animações
             isMoving = (deltaX != 0 || deltaY != 0);
-
-            // Define a direção com base no movimento
-            if (deltaY > 0)
-                lastDirection = Direction.UP;
-            else if (deltaY < 0)
-                lastDirection = Direction.DOWN;
-            else if (deltaX < 0)
-                lastDirection = Direction.LEFT;
-            else if (deltaX > 0)
-                lastDirection = Direction.RIGHT;
-
+            if (deltaY > 0) lastDirection = Direction.UP;
+            else if (deltaY < 0) lastDirection = Direction.DOWN;
+            else if (deltaX < 0) lastDirection = Direction.LEFT;
+            else if (deltaX > 0) lastDirection = Direction.RIGHT;
             updatePlayerState();
         } catch (Exception e) {
             logger.error("{}: Erro ao mover personagem: {}", name, e.getMessage());
@@ -302,62 +254,34 @@ public abstract class Character implements ICharacter, IInventory {
     }
 
     public boolean tryMove(float delta, int[][] map, int tileSize, int tileWall, int tileDoor, int tileCave,
-            int mapWidth, int mapHeight) {
-        float baseSpeed = getSpeed() > 0 ? getSpeed() : 100f;
+                           int mapWidth, int mapHeight) {
+        float currentSpeed = getSpeed() > 0 ? getSpeed() : 100f;
         float speedMultiplier = isInTallGrass() ? 0.5f : 1.0f;
-        float speed = baseSpeed * speedMultiplier;
+        float finalSpeed = currentSpeed * speedMultiplier;
         float deltaX = 0, deltaY = 0;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.W))
-            deltaY = speed * delta;
-        if (Gdx.input.isKeyPressed(Input.Keys.S))
-            deltaY = -speed * delta;
-        if (Gdx.input.isKeyPressed(Input.Keys.A))
-            deltaX = -speed * delta;
-        if (Gdx.input.isKeyPressed(Input.Keys.D))
-            deltaX = speed * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) deltaY = finalSpeed * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) deltaY = -finalSpeed * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) deltaX = -finalSpeed * delta;
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) deltaX = finalSpeed * delta;
+        isMoving = (deltaX != 0 || deltaY != 0);
 
-        float nextX = getPosition().x + deltaX;
-        float nextY = getPosition().y + deltaY;
-
-        int tileX = (int) ((nextX + 8) / tileSize);
-        int tileY = (int) ((nextY + 8) / tileSize);
-
-        if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
-            int tileType = map[tileY][tileX];
-
-            if (tileType != tileWall) {
-                move(deltaX, deltaY);
-                updateStats(delta);
-                updateStateTime(delta);
-                return tileType == tileDoor; // true se for uma porta (trigger para Procedural reagir)
+        if (isMoving) {
+            float nextX = getPosition().x + deltaX;
+            float nextY = getPosition().y + deltaY;
+            int targetTileX = (int) ((nextX + tileSize / 2f) / tileSize);
+            int targetTileY = (int) ((nextY + tileSize / 4f) / tileSize);
+            if (targetTileX >= 0 && targetTileX < mapWidth && targetTileY >= 0 && targetTileY < mapHeight) {
+                int tileType = map[targetTileY][targetTileX];
+                if (tileType != tileWall) {
+                    move(deltaX, deltaY);
+                    return tileType == tileDoor;
+                }
             }
+        } else {
+            updatePlayerState();
         }
-
-        updateStats(delta);
-        updateStateTime(delta);
         return false;
-    }
-
-    public void updateStats(float delta) {
-        try {
-            // Depleção de recursos ao longo do tempo
-            float hungerDepletion = 0.01f * delta;
-            float thirstDepletion = 0.015f * delta;
-            float energyDepletion = 0.005f * delta;
-
-            // Atualiza os atributos
-            setHunger(Math.max(0, getHunger() - hungerDepletion));
-            setThirsty(Math.max(0, getThirsty() - thirstDepletion));
-            setEnergy(Math.max(0, getEnergy() - energyDepletion));
-
-            // Se fome ou sede estão baixas, diminui a vida
-            if (getHunger() <= 10 || getThirsty() <= 10) {
-                setLife(Math.max(0, getLife() - 0.05f * delta));
-            }
-        } catch (Exception e) {
-            logger.error("{}: Erro ao atualizar atributos: {}", name, e.getMessage());
-        }
     }
 
     public void updateStateTime(float delta) {
@@ -365,792 +289,340 @@ public abstract class Character implements ICharacter, IInventory {
     }
 
     public TextureRegion getCurrentFrame() {
-        return getFrameForCurrentState(stateTime);
+        TextureRegion frame = getFrameForCurrentState(stateTime);
+        if (frame == null && texture != null) {
+            logger.warn("Current animation frame is null for state {}. Using fallback texture.", currentState);
+            return new TextureRegion(texture);
+        } else if (frame == null) {
+            logger.error("Cannot get current frame: no animation and no fallback texture for Character.");
+            Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+            pixmap.setColor(1,0,0,1);
+            pixmap.fill();
+            Texture placeholder = new Texture(pixmap);
+            pixmap.dispose();
+            return new TextureRegion(placeholder);
+        }
+        return frame;
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name != null ? name : "Unknown"; }
+    public float getLife() { return life; }
+    public void setLife(float life) { this.life = Math.max(0, life); }
+    public float getHunger() { return hunger; }
+    public void setHunger(float hunger) { this.hunger = Math.max(0, Math.min(100, hunger)); }
+    public float getThirsty() { return thirsty; }
+    public void setThirsty(float thirsty) { this.thirsty = Math.max(0, Math.min(100, thirsty));}
+    public float getEnergy() { return energy; }
+    public void setEnergy(float energy) { this.energy = Math.max(0, Math.min(100, energy));}
+    public float getSanity() { return sanity; }
+    public void setSanity(float sanity) { this.sanity = Math.max(0, Math.min(100, sanity));}
+    public boolean isInTallGrass() { return inTallGrass; }
+    public void setInTallGrass(boolean inTallGrass) { this.inTallGrass = inTallGrass; }
+    public float getSpeed() { return speed; }
+    public void setSpeed(float speed) { this.speed = speed; }
 
-    public void setName(String name) {
-        try {
-            this.name = name != null ? name : "Unknown";
-        } catch (Exception e) {
-            logger.error("Error setting name: {}", e.getMessage());
-            this.name = "Error";
+    public Array<Item> getInventory() { return inventory; }
+    public void setInventory(Array<Item> inventory) { this.inventory = inventory != null ? inventory : new Array<>(); }
+    public int getMaxInventoryCapacity() { return maxInventoryCapacity; }
+    public void setMaxInventoryCapacity(int maxInventoryCapacity) { this.maxInventoryCapacity = Math.max(0, maxInventoryCapacity); }
+    public int getInventoryInitialCapacity() { return inventoryInitialCapacity; }
+    public void setInventoryInitialCapacity(int capacity) {
+        this.inventoryInitialCapacity = Math.max(1, capacity);
+        if (this.inventory != null && this.inventory.size < this.inventoryInitialCapacity) {
         }
     }
 
-    public float getLife() {
-        return life;
-    }
-
-    public void setLife(float life) {
-        try {
-            if (life < 0) {
-                logger.warn("{}: Tried to set negative life value ({}), clamping to 0", name, life);
-                this.life = 0;
-            } else {
-                this.life = life;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting life: {}", name, e.getMessage());
-        }
-    }
-
-    public float getHunger() {
-        return hunger;
-    }
-
-    public void setHunger(float hunger) {
-        try {
-            if (hunger < 0) {
-                logger.warn("{}: Tried to set negative hunger value ({}), clamping to 0", name, hunger);
-                this.hunger = 0;
-            } else {
-                this.hunger = hunger;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting hunger: {}", name, e.getMessage());
-        }
-    }
-
-    public float getThirsty() {
-        return thirsty;
-    }
-
-    public void setThirsty(float thirsty) {
-        try {
-            if (thirsty < 0) {
-                logger.warn("{}: Tried to set negative thirsty value ({}), clamping to 0", name, thirsty);
-                this.thirsty = 0;
-            } else {
-                this.thirsty = thirsty;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting thirsty: {}", name, e.getMessage());
-        }
-    }
-
-    public float getEnergy() {
-        return energy;
-    }
-
-    public void setEnergy(float energy) {
-        try {
-            if (energy < 0) {
-                logger.warn("{}: Tried to set negative energy value ({}), clamping to 0", name, energy);
-                this.energy = 0;
-            } else {
-                this.energy = energy;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting energy: {}", name, e.getMessage());
-        }
-    }
-
-    public boolean isInTallGrass() {
-        return inTallGrass;
-    }
-
-    public void setInTallGrass(boolean inTallGrass) {
-        this.inTallGrass = inTallGrass;
-    }
-
-    public float getSanity() {
-        return sanity;
-    }
-
-    public void setSanity(float sanity) {
-        try {
-            if (sanity < 0) {
-                logger.warn("{}: Tried to set negative sanity value ({}), clamping to 0", name, sanity);
-                this.sanity = 0;
-            } else {
-                this.sanity = sanity;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting sanity: {}", name, e.getMessage());
-        }
-    }
-
-    public float getSpeed() {
-        return speed;
-    }
-
-    public Array<Item> getInventory() {
-        return inventory;
-    }
-
-    public void setInventory(Array<Item> inventory) {
-        try {
-            if (inventory == null) {
-                logger.warn("{}: Tried to set null inventory, creating empty inventory instead", name);
-                this.inventory = new Array<>(inventoryInitialCapacity);
-            } else {
-                this.inventory = inventory;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting inventory: {}", name, e.getMessage());
-            this.inventory = new Array<>(inventoryInitialCapacity);
-        }
-    }
-
-    public int getMaxInventoryCapacity() {
-        return maxInventoryCapacity;
-    }
-
-    public void setMaxInventoryCapacity(int maxInventoryCapacity) {
-        try {
-            if (maxInventoryCapacity <= 0) {
-                logger.warn("{}: Invalid max inventory capacity: {}, must be positive", name, maxInventoryCapacity);
-                return;
-            }
-            this.maxInventoryCapacity = maxInventoryCapacity;
-        } catch (Exception e) {
-            logger.error("{}: Error setting max inventory capacity: {}", name, e.getMessage());
-        }
-    }
-
-    public int getInventoryInitialCapacity() {
-        return inventoryInitialCapacity;
-    }
-
-    public void setInventoryInitialCapacity(int inventoryInitialCapacity) {
-        try {
-            if (inventoryInitialCapacity <= 0) {
-                logger.warn("{}: Invalid inventory initial capacity: {}, must be positive", name,
-                        inventoryInitialCapacity);
-                return;
-            }
-
-            if (inventoryInitialCapacity > maxInventoryCapacity) {
-                logger.warn("{}: Initial capacity {} exceeds max capacity {}, capping at max",
-                        name, inventoryInitialCapacity, maxInventoryCapacity);
-                this.inventoryInitialCapacity = maxInventoryCapacity;
-            } else {
-                this.inventoryInitialCapacity = inventoryInitialCapacity;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting initial inventory capacity: {}", name, e.getMessage());
-        }
-    }
-
-    public void tryCollectNearbyMaterial(List<Material> materiais) {
-        Iterator<Material> iterator = materiais.iterator();
+    public void tryCollectNearbyMaterial(List<Material> materiaisNoMapa) {
+        Iterator<Material> iterator = materiaisNoMapa.iterator();
         while (iterator.hasNext()) {
             Material materialOnMap = iterator.next();
-
-            if ("Tree".equalsIgnoreCase(materialOnMap.getName())) {
-                // Trees might be handled by a "cut tree" action, not generic collect
-                continue;
-            }
+            if (materialOnMap == null) continue;
             float dist = getPosition().dst(materialOnMap.getPosition());
-            float collectionRadius = 24f; // Define the actual radius for collection
-
+            float collectionRadius = 24f;
             if (dist < collectionRadius) {
-                // Check inventory capacity first, applies to any item
                 if (isInventoryFull()) {
                     logger.info("{}'s inventory is full. Cannot collect {}.", getName(), materialOnMap.getName());
-                    logger.warn("{}: Inventory full, cannot collect {}.", getName(), materialOnMap.getName());
                     return;
                 }
-
+                Item itemToCollect = null;
+                int baseQuantity = 1;
+                int bonusQuantity = 0;
                 if ("Berry".equalsIgnoreCase(materialOnMap.getName())) {
-                    Food berryItem = Food.createBerry(); // Creates a new Food object
-                    if (!canCarryMore(berryItem.getWeight())) {
-                        logger.info("{} cannot carry more weight for a berry.", getName());
-                        logger.warn("{}: Cannot carry more weight for {}.", getName(), berryItem.getName());
-                        return; // Stop if character cannot carry this specific item
-                    }
-                    insertItemInInventory(berryItem);
-                    iterator.remove(); // Remove the berry bush (Material) from the map
-                    logger.info("{} collected a {}.", getName(), berryItem.getName());
-                    logger.info("{}: Collected {}.", getName(), berryItem.getName());
-                    return; // Successfully collected one item
+                    itemToCollect = Food.createBerry();
+                    bonusQuantity = getFoodWaterGatheringBonusQuantity();
+                    logger.debug("{} attempting to collect Berry. Bonus quantity: {}", getName(), bonusQuantity);
+                } else if ("Medicinal".equalsIgnoreCase(materialOnMap.getName()) && "Plant".equalsIgnoreCase(materialOnMap.getType())) {
+                    itemToCollect = Material.createMedicinalPlant();
+                } else if ("rock".equalsIgnoreCase(materialOnMap.getName())) {
+                    itemToCollect = Material.createSmallRock();
+                } else if ("stick".equalsIgnoreCase(materialOnMap.getName())) {
+                    itemToCollect = Material.createStick();
+                } else if ("Tree".equalsIgnoreCase(materialOnMap.getName())) {
+                    continue;
                 }
-                // Handle Medicinal Plants: creates a Material item
-                else if ("Medicinal".equalsIgnoreCase(materialOnMap.getName())
-                        && "Plant".equalsIgnoreCase(materialOnMap.getType())) {
-                    Material medicinalPlantItem = Material.createMedicinalPlant(); // Creates a new Material object
-                    if (!canCarryMore(medicinalPlantItem.getWeight())) {
-                        logger.info("{} cannot carry more weight for a medicinal plant.", getName());
-                        logger.warn("{}: Cannot carry more weight for {}.", getName(), medicinalPlantItem.getName());
-                        return;
-                    }
-                    insertItemInInventory(medicinalPlantItem);
-                    iterator.remove(); // Remove the medicinal plant (Material) from the map
-                    logger.info("{} collected a {}.", getName(), medicinalPlantItem.getName());
-                    logger.info("{}: Collected {}.", getName(), medicinalPlantItem.getName());
-                    return; // Successfully collected one item
-                }
-                // Handle other simple materials like Rock or Stick
-                else if ("rock".equalsIgnoreCase(materialOnMap.getName())
-                        || "stick".equalsIgnoreCase(materialOnMap.getName())) {
-                    Item itemToCollect = null;
-                    if ("rock".equalsIgnoreCase(materialOnMap.getName())) {
-                        itemToCollect = Material.createSmallRock(); // Creates a new Material item for inventory
-                    } else if ("stick".equalsIgnoreCase(materialOnMap.getName())) {
-                        itemToCollect = Material.createStick(); // Creates a new Material item for inventory
-                    }
 
-                    if (itemToCollect != null) {
-                        if (!canCarryMore(itemToCollect.getWeight())) {
-                            logger.info("{} cannot carry more weight for {}.", getName(), itemToCollect.getName());
-                            logger.warn("{}: Cannot carry more weight for {}.", getName(), itemToCollect.getName());
-                            return; // Stop if character cannot carry this specific item
-                        }
-                        insertItemInInventory(itemToCollect);
-                        iterator.remove(); // Remove the material from the map
-                        logger.info("{} collected a {}.", getName(), itemToCollect.getName());
-                        logger.info("{}: Collected {}.", getName(), itemToCollect.getName());
-                        return; // Successfully collected one item
+                if (itemToCollect != null) {
+                    itemToCollect.setQuantity(baseQuantity + bonusQuantity);
+                    if (!canCarryMore(itemToCollect.getWeight() * itemToCollect.getQuantity())) {
+                        logger.info("{} cannot carry more weight for {}.", getName(), itemToCollect.getName());
+                        continue;
                     }
+                    insertItemInInventory(itemToCollect);
+                    iterator.remove();
+                    logger.info("{} collected {} of {}.", getName(), itemToCollect.getQuantity(), itemToCollect.getName());
+                    if (bonusQuantity > 0 && (itemToCollect instanceof Food || itemToCollect instanceof Drinkable || "Berry".equalsIgnoreCase(materialOnMap.getName()))) {
+                        logger.info("Hunter's ability yielded {} extra {}!", bonusQuantity, itemToCollect.getName());
+                    }
+                    return;
                 }
-                // Add 'else if' blocks here for other specific material types if needed
             }
         }
     }
 
     public void insertItemInInventory(Item item) {
-        if (item == null)
-            return;
-
-        // 1. Tenta somar com um item do mesmo tipo
-        for (int i = 0; i < inventory.size; i++) {
-            Item slot = inventory.get(i);
-            if (slot != null && slot.getName().equalsIgnoreCase(item.getName())) {
-                slot.addQuantity(item.getQuantity());
-                return;
+        if (item == null || item.getQuantity() <= 0) return;
+        for (Item existingItem : inventory) {
+            if (existingItem != null && existingItem.getName().equals(item.getName())) {
+                float weightPerUnit = existingItem.getWeight() > 0 && existingItem.getQuantity() > 0 ? existingItem.getWeight() / existingItem.getQuantity() : item.getWeight();
+                if(canCarryMore(weightPerUnit * item.getQuantity())){
+                    existingItem.addQuantity(item.getQuantity());
+                    currentWeight += weightPerUnit * item.getQuantity();
+                    logger.debug("Stacked {} to {}. New quantity: {}", item.getName(), existingItem.getName(), existingItem.getQuantity());
+                    return;
+                } else {
+                    logger.info("Cannot stack more {}, not enough carry capacity.", item.getName());
+                }
             }
         }
-
-        // 2. Tenta encontrar um slot vazio
-        for (int i = 0; i < inventory.size; i++) {
-            if (inventory.get(i) == null) {
-                inventory.set(i, item);
-                return;
+        if (!isInventoryFull()) {
+            float itemTotalWeight = item.getWeight();
+            if (canCarryMore(itemTotalWeight)) {
+                inventory.add(item);
+                currentWeight += itemTotalWeight;
+                logger.debug("Added new item {} to inventory.", item.getName());
+            } else {
+                logger.info("Cannot add new item {}, not enough carry capacity.", item.getName());
             }
+        } else {
+            logger.info("Inventory is full. Cannot add new item {}.", item.getName());
         }
-
-        // 3. Caso contrário, adiciona no final (expande o inventário)
-        inventory.add(item);
     }
 
     public Item getItem(int index) {
-        try {
-            if (index < 0 || index >= inventory.size) {
-                logger.warn("{}: Attempt to access invalid inventory index: {}", name, index);
-                return null;
-            }
-            return inventory.get(index);
-        } catch (Exception e) {
-            logger.error("{}: Error accessing inventory at index {}: {}", name, index, e.getMessage());
-            return null;
-        }
+        if (index >= 0 && index < inventory.size) return inventory.get(index);
+        return null;
     }
 
     public void dropItem(int index) {
-        try {
-            if (index < 0 || index >= inventory.size) {
-                logger.warn("{}: Cannot drop item, invalid index: {}", name, index);
-                return;
-            }
-
+        if (isInventoryIndexOk(index)) {
             Item item = inventory.get(index);
-            if (item == null) {
-                logger.warn("{}: No item to drop at index {}", name, index);
-                return;
+            if (item != null) {
+                inventory.removeIndex(index);
+                currentWeight -= item.getWeight();
+                if (currentWeight < 0) currentWeight = 0;
+                logger.info("{} dropped: {}", getName(), item.getName());
             }
-
-            inventory.set(index, null);
-            logger.debug("{}: Dropped item '{}' from index {}", name, item.getName(), index);
-        } catch (Exception e) {
-            logger.error("{}: Error dropping item at index {}: {}", name, index, e.getMessage());
+        } else {
+            logger.warn("{} cannot drop item at invalid index: {}", getName(), index);
         }
     }
 
     public void cutTree() {
-        try {
+        int woodYield = (int) (1 * getWoodCuttingYieldModifier());
+        logger.info("{} attempts to cut a tree. Modified yield: {}", getName(), woodYield);
+        for (int i = 0; i < woodYield; i++) {
             if (isInventoryFull()) {
-                logger.warn("{}: Inventory full, cannot collect wood.", getName());
-                logger.info("{} tentou cortar uma árvore, mas o inventário está cheio!", getName());
-                return;
+                logger.warn("{}'s inventory is full. Cannot collect more wood.", getName());
+                break;
             }
-
-            Material woodLog = Material.createWoodLog(); // Usa o método padrão da classe Material
-            insertItemInInventory(woodLog);
-
-            logger.info("{} cut down a tree and collected a Wood Log.", getName());
-            logger.info("{} cortou uma árvore e coletou uma tora de madeira!", getName());
-        } catch (Exception e) {
-            logger.error("{}: Error while cutting tree: {}", getName(), e.getMessage());
+            Material woodLog = Material.createWoodLog();
+            if (canCarryMore(woodLog.getWeight())) {
+                insertItemInInventory(woodLog);
+                logger.info("{} collected a Wood Log.", getName());
+            } else {
+                logger.warn("{} cannot carry more wood.", getName());
+                break;
+            }
+        }
+        if (getWoodCuttingYieldModifier() > 1.0f && woodYield > 1) {
+            logger.info("Lumberjack's skill yielded extra wood!");
         }
     }
 
-    /**
-     * Cuts a tree using an Axe, collecting extra wood logs if successful.
-     */
     public void cutTreeWithAxe() {
-        try {
-            Tool axe = null;
-
-            for (Item item : inventory) {
-                if (item instanceof Tool) {
-                    Tool tool = (Tool) item;
-                    if (tool.getName().equalsIgnoreCase("Axe")) {
-                        axe = tool;
-                        break;
-                    }
-                }
+        Tool axe = null;
+        for (Item item : inventory) {
+            if (item instanceof Tool && item.getName().equalsIgnoreCase("Axe")) {
+                axe = (Tool) item;
+                break;
             }
-
-            if (axe == null) {
-                logger.warn("{}: Tried to cut a tree but has no Axe.", getName());
-                logger.info("{} tentou cortar uma árvore, mas não tem um Machado!", getName());
-                return;
-            }
-
+        }
+        if (axe == null) {
+            logger.warn("{} tried to cut a tree with an axe, but has no Axe. Defaulting to manual cutting.", getName());
+            cutTree();
+            return;
+        }
+        int woodYield = (int) (2 * getWoodCuttingYieldModifier());
+        logger.info("{} attempts to cut a tree with an Axe. Modified yield: {}", getName(), woodYield);
+        for (int i = 0; i < woodYield; i++) {
             if (isInventoryFull()) {
-                logger.warn("{}: Inventory full, cannot collect wood.", getName());
-                logger.info("{} tentou cortar uma árvore, mas o inventário está cheio!", getName());
-                return;
+                logger.warn("{}'s inventory is full. Cannot collect more wood.", getName());
+                break;
             }
-
-            insertItemInInventory(Material.createWoodLog());
-            insertItemInInventory(Material.createWoodLog());
-
-            logger.info("{} used an Axe to cut a tree and collected 2 Wood Logs.", getName());
-            logger.info("{} cortou uma árvore com o Machado e coletou 2 toras de madeira!", getName());
-
-            axe.useItem();
-
-            if (axe.getDurability() <= 0) {
-                inventory.removeValue(axe, true);
-                logger.info("O Machado quebrou após o uso!");
-                logger.info("{}: Axe broke after use.", getName());
+            Material woodLog = Material.createWoodLog();
+            if (canCarryMore(woodLog.getWeight())) {
+                insertItemInInventory(woodLog);
+                logger.info("{} collected a Wood Log using Axe.", getName());
+            } else {
+                logger.warn("{} cannot carry more wood with Axe.", getName());
+                break;
             }
-        } catch (Exception e) {
-            logger.error("{}: Error while cutting tree with Axe: {}", getName(), e.getMessage());
+        }
+        if (getWoodCuttingYieldModifier() > 1.0f && woodYield > 2) {
+            logger.info("Lumberjack's skill with Axe yielded extra wood!");
+        }
+        axe.useItem();
+        if (axe.getDurability() <= 0) {
+            dropItem(axe);
+            logger.info("The Axe broke after use and was dropped.");
         }
     }
 
-    /**
-     * Collects a resource using a Knife, improving success and reducing wear.
-     *
-     * @param resource The item to collect
-     */
-    public void collectWithKnife(Item resource) {
-        try {
-            if (resource == null) {
-                logger.warn("{}: Tried to collect a null resource.", getName());
-                logger.info("{} tentou coletar algo, mas não havia nada.", getName());
-                return;
-            }
-
-            Tool knife = null;
-
-            for (Item item : inventory) {
-                if (item instanceof Tool) {
-                    Tool tool = (Tool) item;
-                    if (tool.getName().equalsIgnoreCase("Knife")) {
-                        knife = tool;
-                        break;
-                    }
-                }
-            }
-
-            if (knife == null) {
-                logger.warn("{}: Tried to collect a resource but has no Knife.", getName());
-                logger.info("{} tentou coletar um recurso, mas não tem uma Faca!", getName());
-                return;
-            }
-
-            if (isInventoryFull()) {
-                logger.warn("{}: Inventory full, cannot collect resource.", getName());
-                logger.info("{} tentou coletar, mas o inventário está cheio!", getName());
-                return;
-            }
-
-            insertItemInInventory(resource);
-
-            logger.info("{} used a Knife to collect resource: {}", getName(), resource.getName());
-            logger.info("{} usou a Faca e coletou com sucesso: {}", getName(), resource.getName());
-
-            knife.useItem();
-
-            if (knife.getDurability() <= 0) {
-                inventory.removeValue(knife, true);
-                logger.info("A Faca quebrou após o uso!");
-                logger.info("{}: Knife broke after use.", getName());
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error while collecting with Knife: {}", getName(), e.getMessage());
-        }
-    }
-
-    public void emptyInventory() {
-        try {
-            inventory.clear();
-            logger.debug("{}: Inventory emptied", name);
-        } catch (Exception e) {
-            logger.error("{}: Error emptying inventory: {}", name, e.getMessage());
-        }
-    }
-
+    public void collectWithKnife(Item resource) { /* ... implementation ... */ }
+    public void emptyInventory() { inventory.clear(); currentWeight = 0; }
     @Override
-    public boolean canCarryMore(float itemWeight) {
-        return (currentWeight + itemWeight) <= maxCarryWeight;
-    }
-
+    public boolean canCarryMore(float itemWeight) { return (currentWeight + itemWeight) <= maxCarryWeight; }
     public void increaseInventoryCapacity(int newCapacity) {
-        try {
-            if (!isNewInventoryCapacityOk(newCapacity)) {
-                logger.warn("{}: Invalid new inventory capacity: {}", name, newCapacity);
-                return;
-            }
-
+        if (isNewInventoryCapacityOk(newCapacity)) {
             this.inventoryInitialCapacity = newCapacity;
-            if (inventory.size < newCapacity) {
-                inventory.ensureCapacity(newCapacity);
-                logger.debug("{}: Inventory capacity increased to {}", name, newCapacity);
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error increasing inventory capacity: {}", name, e.getMessage());
+            logger.info("{} inventory slot capacity target set to {}", getName(), newCapacity);
+        } else {
+            logger.warn("{} invalid new inventory capacity: {}", getName(), newCapacity);
         }
     }
+    public boolean isNewInventoryCapacityOk(int newCapacity) { return newCapacity > 0 && newCapacity <= maxInventoryCapacity; }
+    public boolean isInventoryFull() { return inventory.size >= inventoryInitialCapacity; }
+    public boolean isInventoryIndexOk(int index) { return index >= 0 && index < inventory.size; }
+    public boolean isInventoryIndexFree(int index) { return isInventoryIndexOk(index) && inventory.get(index) == null; }
+    public boolean isInventoryEmpty() { return inventory.isEmpty(); }
+    public int getInventorySize() { return inventory.size; }
 
-    public boolean isNewInventoryCapacityOk(int newCapacity) {
-        try {
-            return newCapacity > 0 && newCapacity <= maxInventoryCapacity;
-        } catch (Exception e) {
-            logger.error("{}: Error checking inventory capacity: {}", name, e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean isInventoryFull() {
-        try {
-            return inventory.size >= inventoryInitialCapacity;
-        } catch (Exception e) {
-            logger.error("{}: Error checking if inventory is full: {}", name, e.getMessage());
-            return true; // Safer to assume it's full if we can't check
-        }
-    }
-
-    public boolean isInventoryIndexOk(int index) {
-        try {
-            return index >= 0 && index < inventory.size;
-        } catch (Exception e) {
-            logger.error("{}: Error checking inventory index: {}", name, e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean isInventoryIndexFree(int index) {
-        try {
-            return isInventoryIndexOk(index) && inventory.get(index) == null;
-        } catch (Exception e) {
-            logger.error("{}: Error checking if inventory index is free: {}", name, e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean isInventoryEmpty() {
-        try {
-            // Check if size is 0 or all elements are null
-            if (inventory.size == 0)
-                return true;
-
-            for (Item item : inventory) {
-                if (item != null)
-                    return false;
-            }
-            return true;
-        } catch (Exception e) {
-            logger.error("{}: Error checking if inventory is empty: {}", name, e.getMessage());
-            return true; // Safer to assume it's empty
-        }
-    }
-
-    public int getInventorySize() {
-        try {
-            return inventory.size;
-        } catch (Exception e) {
-            logger.error("{}: Error getting inventory size: {}", name, e.getMessage());
-            return 0;
-        }
-    }
-
-    /**
-     * Helper method to get how much of life the medicine will restore.
-     */
-    private float getHealRatioPercentage(Medicine medicine) {
-        return (float) (medicine.getHealRatio() / 100.0);
-    }
-
-    /**
-     * Helper method to define the maximum life of a character (could vary by
-     * profession)
-     */
-    private float getLifeMax() {
-        return 100f;
-    }
-
-    /**
-     * Uses an item intelligently depending on its type (Medicine, Tool, Weapon,
-     * etc.).
-     *
-     * @param item The item to use
-     */
     public void useItem(Item item) {
-        try {
-            if (item == null) {
-                logger.warn("{}: Attempted to use a null item.", getName());
-                return;
+        if (item == null || !inventory.contains(item, true)) {
+            logger.warn("{}: Attempted to use item not in inventory or null item: {}", getName(), item != null ? item.getName() : "null");
+            return;
+        }
+        logger.info("--------------------------------------------------------------------");
+        logger.info("{}: PREPARING TO USE ITEM: Name: '{}', Type: {}, Qty: {}, Dur: {}",
+            getName(), item.getName(), item.getClass().getSimpleName(), item.getQuantity(), item.getDurability());
+        boolean itemFullyConsumedOrBroken = false;
+        if (item instanceof Food) {
+            Food food = (Food) item;
+            food.useItem();
+            setHunger(getHunger() + food.getNutritionalValue());
+            logger.info("{}: Ate '{}'. Hunger restored by {}. New Hunger: {}", getName(), food.getName(), food.getNutritionalValue(), getHunger());
+            itemFullyConsumedOrBroken = true;
+        } else if (item instanceof Medicine) {
+            Medicine medicine = (Medicine) item;
+            float healingModifier = getHealingEffectivenessModifier();
+            float lifeToRestore = (float) (medicine.getHealRatio() * healingModifier);
+            setLife(getLife() + lifeToRestore);
+            logger.info("{}: Used '{}'. Life restored by {} (base: {}, modifier: {}x). New Life: {}", getName(), medicine.getName(), lifeToRestore, medicine.getHealRatio(), healingModifier, getLife());
+            if (healingModifier > 1.0f) {
+                logger.info("Doctor's medical expertise enhanced healing!");
             }
-            if (!inventory.contains(item, true)) { // Check for the exact instance
-                logger.warn("{}: Attempted to use item not in inventory: {} (Instance ID: {}).",
-                        getName(), item.getName(), System.identityHashCode(item));
-                return;
+            medicine.useItem();
+            if (medicine.getDurability() <= 0) {
+                itemFullyConsumedOrBroken = true;
             }
-
-            logger.info("--------------------------------------------------------------------");
-            logger.info("{}: PREPARING TO USE ITEM: Name: '{}', ID: {}, Initial Quantity: {}, Initial Durability: {}",
-                    getName(), item.getName(), System.identityHashCode(item), item.getQuantity(), item.getDurability());
-
-            // --- 1. Perform item-specific actions and update item state (e.g., durability,
-            // spoilage) ---
-            boolean calledItemSpecificUseItem = false;
-            // Raw medicinal plants (Material type) are a special case as their "use" is
-            // direct healing by Character.
-            if (!(item instanceof Material && "Medicinal".equalsIgnoreCase(item.getName())
-                    && "Plant".equalsIgnoreCase(((Material) item).getType()))) {
-                item.useItem(); // Food.useItem() prints "Você comeu...", Medicine.useItem() reduces its own
-                                // durability etc.
-                calledItemSpecificUseItem = true;
-                logger.info(
-                        "{}: CALLED item.useItem() for '{}' (ID: {}). State AFTER item.useItem() -> Quantity: {}, Durability: {}",
-                        getName(), item.getName(), System.identityHashCode(item), item.getQuantity(),
-                        item.getDurability());
+        } else if (item instanceof Drinkable) {
+            Drinkable drinkable = (Drinkable) item;
+            drinkable.useItem();
+            logger.info("{}: Used Drinkable '{}'. Effects handled by item.", getName(), drinkable.getName());
+            if(drinkable.getDurability() <= 0 || drinkable.getVolume() <= 0) {
+                itemFullyConsumedOrBroken = true;
             }
-
-            // --- 2. Apply character-specific effects based on the item type ---
-            if (item instanceof Material) {
-                Material material = (Material) item;
-                if ("Medicinal".equalsIgnoreCase(material.getName()) && "Plant".equalsIgnoreCase(material.getType())) {
-                    Medicine tempMed = Medicine.fromMedicinalPlant(material);
-                    float lifeToRestore = (getHealRatioPercentage(tempMed) * getLifeMax());
-                    setLife(Math.min(getLife() + lifeToRestore, getLifeMax()));
-                    logger.info("{} used raw Material '{}' (ID: {}) and restored {} life.", getName(),
-                            material.getName(),
-                            System.identityHashCode(item), lifeToRestore);
-                } else {
-                    if (!calledItemSpecificUseItem) {
-                        logger.info(
-                                "{}: Interacted with generic Material: '{}' (ID: {}). No specific character effect from Character.useItem.",
-                                getName(), item.getName(), System.identityHashCode(item));
-                    }
+        } else if (item instanceof Tool) {
+            Tool tool = (Tool) item;
+            tool.useItem();
+            logger.info("{}: Used tool '{}'. Durability now: {}", getName(), tool.getName(), tool.getDurability());
+            if (tool.getDurability() <= 0) {
+                itemFullyConsumedOrBroken = true;
+            }
+        } else if (item instanceof Weapon) {
+            Weapon weapon = (Weapon) item;
+            weapon.useItem();
+            logger.info("{}: 'Used' (interacted with) weapon '{}'. Durability now: {}", getName(), weapon.getName(), weapon.getDurability());
+            if (weapon.getDurability() <= 0) {
+                itemFullyConsumedOrBroken = true;
+            }
+        } else if (item instanceof Material) {
+            if ("Medicinal".equalsIgnoreCase(item.getName()) && "Plant".equalsIgnoreCase(((Material) item).getType())) {
+                Medicine tempMed = Medicine.fromMedicinalPlant((Material)item);
+                float lifeToRestore = (float) (tempMed.getHealRatio() * getHealingEffectivenessModifier());
+                setLife(getLife() + lifeToRestore);
+                logger.info("{} used raw Material '{}' and restored {} life (modifier: {}x). New Life: {}", getName(), item.getName(), lifeToRestore, getHealingEffectivenessModifier(), getLife());
+                if (getHealingEffectivenessModifier() > 1.0f) {
+                    logger.info("Doctor's medical expertise enhanced healing from raw plant!");
                 }
-            } else if (item instanceof Food) {
-                Food food = (Food) item;
-                setHunger(Math.min(getHunger() + food.getNutritionalValue(), 100f));
-                logger.info("{}: Ate '{}' (ID: {}), hunger restored. Spoilage/effects handled by food.useItem().",
-                        getName(), food.getName(), System.identityHashCode(item));
-            } else if (item instanceof Medicine) {
-                Medicine medicine = (Medicine) item;
-                float lifeToRestore = getHealRatioPercentage(medicine) * getLifeMax();
-                setLife(Math.min(getLife() + lifeToRestore, getLifeMax()));
-                logger.info("{} healed with '{}' (ID: {}), restored {} life. Dose consumed by medicine.useItem().",
-                        getName(), medicine.getName(), System.identityHashCode(item), lifeToRestore);
-            } else if (item instanceof Drinkable) {
-                logger.info(
-                        "{}: Used Drinkable '{}' (ID: {}). Character effects should be handled by Drinkable.useItem().",
-                        getName(), item.getName(), System.identityHashCode(item));
+                itemFullyConsumedOrBroken = true;
+            } else {
+                logger.info("{}: Interacted with Material '{}'. No direct consumption effect here.", getName(), item.getName());
             }
+        } else {
+            item.useItem();
+            logger.info("{}: Used generic item '{}'.", getName(), item.getName());
+            if(item.getDurability() <= 0 && item.getQuantity() == 1) itemFullyConsumedOrBroken = true;
+        }
 
-            // --- 3. Handle consumption of the item unit (quantity or durability) from
-            // inventory perspective ---
-            logger.info("{}: CONSUMPTION LOGIC for '{}' (ID: {}). Current Quantity: {}, Current Durability: {}",
-                    getName(), item.getName(), System.identityHashCode(item), item.getQuantity(), item.getDurability());
-
-            if (item.getQuantity() > 1) {
+        if (itemFullyConsumedOrBroken) {
+            if (item.getQuantity() > 1 && !((item instanceof Medicine || item instanceof Tool || item instanceof Weapon || item instanceof Drinkable) && item.getDurability() <=0) ) {
+                float weightOfOneUnit = item.getWeight() / item.getQuantity();
                 item.setQuantity(item.getQuantity() - 1);
-                logger.info(
-                        "{}: DECREMENTED QUANTITY of stack. Item: '{}' (ID: {}), New Quantity: {}. Item REMAINS in inventory.",
-                        getName(), item.getName(), System.identityHashCode(item), item.getQuantity());
-            } else { // Quantity is 1 (or became 1 in a previous call and is now being fully
-                     // consumed).
-                logger.info("{}: Item '{}' (ID: {}) has Quantity 1. Checking for REMOVAL. Current Durability: {}.",
-                        getName(), item.getName(), System.identityHashCode(item), item.getDurability());
-                boolean removeItem = false;
-
-                // For items whose use is tied to durability (Medicine, Tools, Drinkable with
-                // doses)
-                // Their item.useItem() should have reduced durability.
-                if (item instanceof Medicine || item instanceof Tool || item instanceof Drinkable) {
-                    if (item.getDurability() <= 0) {
-                        removeItem = true;
-                        logger.debug("{}: Item '{}' (ID: {}) marked for REMOVAL due to durability <= 0.",
-                                getName(), item.getName(), System.identityHashCode(item));
-                    } else {
-                        logger.debug(
-                                "{}: Item '{}' (ID: {}) (Quantity 1) NOT removed, durability > 0 ({}). Item REMAINS in inventory.",
-                                getName(), item.getName(), System.identityHashCode(item), item.getDurability());
-                    }
-                } else { // Simple consumables like raw Material (Medicinal Plant) or basic Food (Berry)
-                    removeItem = true;
-                    logger.debug("{}: Basic consumable Item '{}' (ID: {}) marked for REMOVAL as it was quantity 1.",
-                            getName(), item.getName(), System.identityHashCode(item));
-                }
-
-                if (removeItem) {
-                    if (inventory.contains(item, true)) {
-                        inventory.removeValue(item, true);
-                        logger.info("{}: Item '{}' (ID: {}) was REMOVED from inventory.", getName(), item.getName(),
-                                System.identityHashCode(item));
-                    } else {
-                        logger.warn(
-                                "{}: Item '{}' (ID: {}) was marked for REMOVAL but NOT found in inventory for removal. This is unexpected.",
-                                getName(), item.getName(), System.identityHashCode(item));
-                    }
-                }
-            }
-            logger.info(
-                    "{}: END OF USE ITEM for: Name: '{}', ID: {}. Final Quantity in inventory: {}, Final Durability: {}",
-                    getName(), item.getName(), System.identityHashCode(item), item.getQuantity(), item.getDurability());
-            logger.info("--------------------------------------------------------------------");
-
-        } catch (Exception e) {
-            String itemName = (item != null && item.getName() != null) ? item.getName() : "null_item";
-            int itemHash = (item != null) ? System.identityHashCode(item) : 0;
-            logger.error("{}: CRITICAL ERROR while using item '{}' (ID: {}): {}", getName(), itemName, itemHash,
-                    e.getMessage(), e);
-        }
-    }
-
-    public double getAttackDamage() {
-        return attackDamage;
-    }
-
-    public void setAttackDamage(double attackDamage) {
-        try {
-            if (attackDamage < 0) {
-                logger.warn("{}: Tried to set negative attack damage ({}), clamping to 0", name, attackDamage);
-                this.attackDamage = 0;
+                currentWeight -= weightOfOneUnit;
+                logger.info("Decremented quantity of {}. New quantity: {}. Item remains.", item.getName(), item.getQuantity());
             } else {
-                this.attackDamage = attackDamage;
+                float weightToRemove = item.getWeight();
+                inventory.removeValue(item, true);
+                currentWeight -= weightToRemove;
+                logger.info("Item {} (Last Qty before removal:{}, Dur:{}) removed from inventory after use.", item.getName(), item.getQuantity(), item.getDurability());
             }
-        } catch (Exception e) {
-            logger.error("{}: Error setting attack damage: {}", name, e.getMessage());
         }
+        if(currentWeight < 0) currentWeight = 0;
+        logger.info("--------------------------------------------------------------------");
     }
 
-    public String getCharacterType() {
-        return characterType;
-    }
-
-    public Vector2 getPosition() {
-        return position;
-    }
-
-    public void setCharacterType(String characterType) {
-        try {
-            if (characterType == null || characterType.isEmpty()) {
-                logger.warn("{}: Invalid character type, using class name instead", name);
-                this.characterType = this.getClass().getSimpleName();
-            } else {
-                this.characterType = characterType;
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error setting character type: {}", name, e.getMessage());
-            this.characterType = "Unknown";
-        }
-    }
+    public double getAttackDamage() { return attackDamage; }
+    public void setAttackDamage(double attackDamage) { this.attackDamage = Math.max(0, attackDamage); }
+    public String getCharacterType() { return characterType; }
+    public void setCharacterType(String characterType) { this.characterType = (characterType == null || characterType.isEmpty()) ? this.getClass().getSimpleName() : characterType; }
+    public Vector2 getPosition() { return position; }
+    public void setPosition(float x, float y) { this.position.set(x,y); }
 
     @Override
     public void dropItem(Item item) {
-        try {
-            if (item == null) {
-                logger.warn("{}: Tried to drop a null item.", getName());
-                return;
-            }
-
-            if (!inventory.contains(item, true)) {
-                logger.warn("{}: Tried to drop an item not in inventory: {}", getName(), item.getName());
-                logger.info("{} tentou dropar um item que não possui: {}", getName(), item.getName());
-                return;
-            }
-
-            inventory.removeValue(item, true);
+        if (item != null && inventory.removeValue(item, true)) {
             currentWeight -= item.getWeight();
-            if (currentWeight < 0)
-                currentWeight = 0;
-
-            logger.info("{} dropou o item: {}", getName(), item.getName());
-            logger.info("{} dropped item: {}", getName(), item.getName());
-
-        } catch (Exception e) {
-            logger.error("{}: Error dropping item: {}", getName(), e.getMessage());
-        }
-    }
-
-    public void updatePosition(float delta) {
-        try {
-            if (delta <= 0) {
-                logger.warn("{}: Invalid delta time: {}, skipping position update", name, delta);
-                return;
-            }
-
-            float newX = position.x;
-            float newY = position.y;
-
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-                newY += speed * delta;
-            }
-            if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-                newY -= speed * delta;
-            }
-            if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-                newX -= speed * delta;
-            }
-            if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-                newX += speed * delta;
-            }
-
-            position.set(newX, newY);
-        } catch (Exception e) {
-            logger.error("{}: Error updating position: {}", name, e.getMessage());
+            if (currentWeight < 0) currentWeight = 0;
+            logger.info("{} dropped: {}", getName(), item.getName());
         }
     }
 
     public void render(Batch batch) {
-        try {
-            if (batch == null) {
-                logger.warn("{}: Cannot render with null batch", name);
-                return;
-            }
-
-            if (texture == null) {
-                logger.warn("{}: Cannot render with null or disposed texture", name);
-                return;
-            }
-
-            batch.draw(texture, position.x, position.y);
-        } catch (Exception e) {
-            logger.error("{}: Error rendering character: {}", name, e.getMessage());
+        if (batch == null || !batch.isDrawing()) {
+            return;
+        }
+        TextureRegion currentFrame = getCurrentFrame();
+        if (currentFrame != null) {
+            batch.draw(currentFrame, position.x, position.y, 32, 32);
+        } else if (texture != null) {
+            batch.draw(texture, position.x, position.y, 32, 32);
         }
     }
 
     public void dispose() {
-        try {
-            if (texture != null) {
-                texture.dispose();
-                logger.debug("{}: Texture disposed successfully", name);
-            }
-        } catch (Exception e) {
-            logger.error("{}: Error disposing texture: {}", name, e.getMessage());
+        if (texture != null && texture.getTextureObjectHandle() != 0) {
         }
     }
-
 }

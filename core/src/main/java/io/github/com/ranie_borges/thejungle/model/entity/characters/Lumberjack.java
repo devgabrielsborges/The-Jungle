@@ -13,80 +13,67 @@ public class Lumberjack extends Character {
     public Lumberjack(String name, float xPosition, float yPosition) {
         super(
             name,
-            120,
-            100,
-            90,
-            15.0f,
+            120, // life (higher)
+            100, // energy (higher)
+            90,  // sanity
+            10.0f, // attackDamage (good, but Hunter might be more precise)
             xPosition,
             yPosition
         );
-        setInventoryInitialCapacity(6);
+        setInventoryInitialCapacity(8); // More space for wood/materials
     }
 
     @Override
-    public void dropItem(Item item) {
-        getInventory().removeValue(item, true);
-        logger.info("{} dropped item: {}", getName(), item.getName());
+    public float getWoodCuttingYieldModifier() {
+        return 1.5f; // Gets 50% more wood from trees
     }
+
+    // The "Mecânico" aspect (repairing, better crafting) from PDF could be:
+    // @Override
+    // public float getCraftingResourceCostModifier() { return 0.9f; } // 10% cheaper resource costs for crafting
+    // @Override
+    // public float getItemRepairEffectivenessModifier() { return 1.2f; } // 20% more effective repairs
 
     @Override
     public boolean attack(double attackDamage, Creature creature) {
         if (creature == null) return false;
-        double totalDamage = attackDamage + getAttackDamage();
-        logger.info("{} swings axe at {} for {} damage.", getName(), creature.getName(), totalDamage);
-
+        // Lumberjacks are strong
+        double totalDamage = this.getAttackDamage() + attackDamage + 3.0; // Strength bonus
+        logger.info("{} (Lumberjack) swings powerfully at {} for {} damage.", getName(), creature.getName(), totalDamage);
         float creatureLife = creature.getLifeRatio();
         creatureLife -= (float) totalDamage;
         creature.setLifeRatio(Math.max(0, creatureLife));
-
         return creatureLife <= 0;
     }
 
     @Override
     public boolean avoidFight(boolean hasTraitLucky) {
-        boolean avoided = hasTraitLucky && Math.random() > 0.5;
-        logger.info("{} {} the fight.", getName(), avoided ? "avoided" : "couldn't avoid");
+        // Lumberjacks might be less agile for avoiding fights
+        boolean avoided = hasTraitLucky && Math.random() > 0.8; // Lower chance
+        logger.info("{} (Lumberjack) {} the fight.", getName(), avoided ? "managed to avoid" : "faced");
         return avoided;
     }
 
     @Override
     public void collectItem(Item nearbyItem, boolean isInventoryFull) {
-        if (nearbyItem != null && !isInventoryFull && getInventory().size < getInventoryInitialCapacity()) {
-            getInventory().add(nearbyItem);
+        // Bonus for wood collection is handled in cutTree/cutTreeWithAxe
+        // Generic collection for other items.
+        if (nearbyItem != null && !isInventoryFull() && canCarryMore(nearbyItem.getWeight())) {
+            insertItemInInventory(nearbyItem);
             logger.info("{} collected: {}", getName(), nearbyItem.getName());
         } else {
-            logger.warn("{} couldn't collect the item.", getName());
+            if(isInventoryFull()) logger.warn("{} couldn't collect {}: inventory full.", getName(), nearbyItem != null ? nearbyItem.getName() : "item");
+            else if(nearbyItem != null && !canCarryMore(nearbyItem.getWeight())) logger.warn("{} couldn't collect {}: too heavy.", getName(), nearbyItem.getName());
+            else logger.warn("{} couldn't collect item.", getName());
         }
     }
 
     @Override
     public void drink(boolean hasDrinkableItem) {
         if (hasDrinkableItem) {
-            setLife(Math.min(getLife() + 5, 120));
-            logger.info("{} drank and recovered health. Current health: {}", getName(), getLife());
+            logger.info("{} (Lumberjack) has a drinkable item.", getName());
         } else {
-            logger.warn("{} has nothing to drink.", getName());
+            logger.warn("{} (Lumberjack) needs a drink.", getName());
         }
-    }
-
-    @Override
-    public void useItem(Item item) {
-        if (item != null && getInventory().contains(item, true)) {
-            item.useItem();
-            logger.info("{} used: {}", getName(), item.getName());
-            getInventory().removeValue(item, true);
-        } else {
-            logger.warn("{} doesn't have the item: {}", getName(), item != null ? item.getName() : "null");
-        }
-    }
-
-    @Override
-    public void render(Batch batch) {
-        super.render(batch);
-    }
-
-    @Override
-    public void dispose() {
-        super.dispose();
     }
 }

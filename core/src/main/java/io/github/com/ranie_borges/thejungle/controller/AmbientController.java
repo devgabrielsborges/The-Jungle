@@ -26,30 +26,35 @@ import java.util.List;
 import java.util.Set;
 
 public class AmbientController {
-    private final boolean saveExists;
+    private boolean saveExists; // Updated by checking files
     private final SaveManager saveManager;
     private Screen actualScreen;
     private final Main game;
     private static final Logger logger = LoggerFactory.getLogger(AmbientController.class);
 
-    private GameState gameState; // This will be the authoritative GameState instance
+    private GameState gameState;
     private EventController eventController;
     private Clime globalClime;
-    private Set<Ambient> ambients; // Set of all ambient types encountered or available
-    private List<Ambient> visitedAmbients; // History of distinct ambients visited
+    private Set<Ambient> ambients;
+    private List<Ambient> visitedAmbients;
+    private String currentSaveFileName; // To keep track of the loaded/active save file name
 
     public AmbientController(Main game) {
         this.saveManager = new SaveManager();
-        this.saveExists = saveManager.getSaveFiles().length > 0;
         this.game = game;
-
         this.gameState = new GameState();
         this.eventController = new EventController(this.gameState);
         this.gameState.setEventController(this.eventController);
-        this.gameState.setAmbientController(this); // Link this controller to the GameState
+        this.gameState.setAmbientController(this);
 
         this.ambients = new HashSet<>();
         this.visitedAmbients = new ArrayList<>();
+        updateSaveExistsStatus();
+    }
+
+    private void updateSaveExistsStatus() {
+        File[] saveFiles = saveManager.getSaveFiles();
+        this.saveExists = (saveFiles != null && saveFiles.length > 0);
     }
 
     public Screen getActualScreen() {
@@ -64,6 +69,7 @@ public class AmbientController {
     }
 
     public void initializeGame() {
+        updateSaveExistsStatus(); // Ensure status is fresh
         setScreen(new MainMenuScreen(game));
     }
 
@@ -79,9 +85,7 @@ public class AmbientController {
 
     public void navigateToNextScreen() {
         if (actualScreen instanceof MainMenuScreen) {
-            // Logic for MainMenuScreen to decide load or new game is handled within its button listeners
-            // This method is more for sequential screen flow like Loading -> Letter -> Stats
-            setScreen(new LoadingScreen(game)); // Default path if not loading save
+            setScreen(new LoadingScreen(game));
         } else if (actualScreen instanceof LoadingScreen) {
             setScreen(new LetterScreen(game));
         } else if (actualScreen instanceof LetterScreen) {
@@ -89,11 +93,18 @@ public class AmbientController {
         }
     }
 
-    public void loadSavedGame() {
+    // Method to handle game over transition
+    public void triggerGameOver(String saveFileNameToDelete) {
+        logger.info("Game Over triggered. Save file to delete (if applicable): {}", saveFileNameToDelete);
+        this.currentSaveFileName = null; // Reset current save file name
+        setScreen(new GameOverScreen(game, saveFileNameToDelete));
+    }
+
+
+    public void loadSavedGame() { // This is typically called by "Continue" from MainMenu
         try {
             File[] saveFiles = saveManager.getSaveFiles();
             if (saveFiles != null && saveFiles.length > 0) {
-                // Prioritize "autosave.json" if it exists, otherwise take the most recent
                 File fileToLoad = null;
                 for (File f : saveFiles) {
                     if ("autosave.json".equalsIgnoreCase(f.getName())) {
@@ -101,24 +112,40 @@ public class AmbientController {
                         break;
                     }
                 }
-                if (fileToLoad == null) {
+                if (fileToLoad == null) { // If no autosave, load the most recent one
                     Arrays.sort(saveFiles, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
-                    fileToLoad = saveFiles[0];
+                    if (saveFiles.length > 0) fileToLoad = saveFiles[0];
                 }
-                logger.info("Attempting to load save file: {}", fileToLoad.getAbsolutePath());
-                GameState loadedGameState = saveManager.loadGame(fileToLoad.getAbsolutePath());
-                setupLoadedGame(loadedGameState);
+
+                if (fileToLoad != null) {
+                    logger.info("Attempting to load save file: {}", fileToLoad.getName());
+                    currentSaveFileName = fileToLoad.getName(); // Store the name of the save being loaded
+                    GameState loadedGameState = saveManager.loadGame(fileToLoad.getAbsolutePath());
+                    if (loadedGameState != null) {
+                        setupLoadedGame(loadedGameState);
+                    } else {
+                        logger.error("Failed to load GameState from {}. Starting new game.", fileToLoad.getName());
+                        currentSaveFileName = null;
+                        startNewGame();
+                    }
+                } else {
+                    logger.info("No save files found for 'Continue'. Starting new game.");
+                    currentSaveFileName = null;
+                    startNewGame();
+                }
             } else {
-                logger.info("No save files found. Starting a new game.");
-                startNewGame(); // Or navigate to new game sequence
+                logger.info("No save files directory or no files found. Starting new game.");
+                currentSaveFileName = null;
+                startNewGame();
             }
         } catch (Exception e) {
             logger.error("Failed to load saved game: {}. Starting new game.", e.getMessage(), e);
-            startNewGame(); // Or navigate to new game sequence
+            currentSaveFileName = null;
+            startNewGame();
         }
     }
 
-    public void loadSpecificSaveGame(String saveName) {
+    public void loadSpecificSaveGame(String saveName) { // Called if multiple saves were listed and one chosen
         try {
             String fullFilename = saveName.endsWith(".json") ? saveName : saveName + ".json";
             String savePath = "saves/" + fullFilename;
@@ -127,28 +154,30 @@ public class AmbientController {
             GameState loadedGameState = saveManager.loadGame(savePath);
 
             if (loadedGameState != null) {
+                currentSaveFileName = fullFilename; // Store the name of the loaded save
                 setupLoadedGame(loadedGameState);
             } else {
                 logger.error("Failed to load game state from: {}. Starting new game.", savePath);
+                currentSaveFileName = null;
                 startNewGame();
             }
         } catch (Exception e) {
             logger.error("Failed to load specific save game '{}': {}. Starting new game.", saveName, e.getMessage(), e);
+            currentSaveFileName = null;
             startNewGame();
         }
     }
 
     private void setupLoadedGame(GameState loadedGameState) {
         logger.info("Setting up loaded game.");
-        this.gameState = loadedGameState; // Use the GameState loaded from the file
+        this.gameState = loadedGameState;
 
         Character player = this.gameState.getPlayerCharacter();
         Ambient currentAmbient = this.gameState.getCurrentAmbient();
 
         if (player == null) {
             logger.error("Loaded GameState has no player character! Cannot proceed.");
-            // Potentially revert to main menu or show an error
-            setScreen(new MainMenuScreen(game)); // Example fallback
+            setScreen(new MainMenuScreen(game));
             return;
         }
 
@@ -159,7 +188,6 @@ public class AmbientController {
         }
         logger.info("Ambient from loaded GameState: {}", currentAmbient.getName());
 
-        // Re-initialize EventController with the loaded GameState if it wasn't properly linked
         this.eventController = this.gameState.getEventController();
         if (this.eventController == null || this.eventController.getGameState() != this.gameState) {
             logger.warn("Re-initializing EventController for loaded GameState.");
@@ -168,43 +196,31 @@ public class AmbientController {
         }
         this.gameState.setAmbientController(this);
 
-
-        // Initialize ambients and visitedAmbients sets/lists from GameState if needed,
-        // though these are more for tracking during a session rather than direct save/load.
-        // The critical part is that gameState.currentAmbient and gameState.currentMap are correct.
         this.ambients.clear();
         this.visitedAmbients.clear();
-        if(this.gameState.getVisitedAmbients() != null){
-            for(String ambientName : this.gameState.getVisitedAmbients().keySet()){
-                // This is tricky because Ambient objects themselves are not fully serialized, only their type/name.
-                // For now, just add the currentAmbient to our tracking lists.
-            }
-        }
         if (currentAmbient != null) {
-            this.ambients.add(currentAmbient); // Add the current one for tracking
+            this.ambients.add(currentAmbient);
             this.visitedAmbients.add(currentAmbient);
         }
 
-
-        // Pass the loaded gameState, player, and the confirmed currentAmbient
         setScreen(new ProceduralMapScreen(this.gameState, player, currentAmbient));
     }
 
     public void startNewGame() {
-        // This typically navigates to the character creation sequence
         logger.info("Starting new game sequence.");
-        setScreen(new LoadingScreen(game)); // Or StatsScreen if skipping intro
+        currentSaveFileName = "autosave.json"; // New games will use autosave by default
+        setScreen(new LoadingScreen(game));
     }
 
     public void startGameWithCharacter(Character character) {
         logger.info("Starting game with new character: {}", character.getName());
-        this.gameState = new GameState(); // Fresh GameState for a new game
+        this.gameState = new GameState();
         this.gameState.setPlayerCharacter(character);
+        currentSaveFileName = "autosave.json"; // Default save name for new games
 
-        Ambient startingAmbient = new Jungle(); // New games always start in Jungle
+        Ambient startingAmbient = new Jungle();
         this.gameState.setCurrentAmbient(startingAmbient);
 
-        // Ensure EventController is set for the new GameState
         this.eventController = new EventController(this.gameState);
         this.gameState.setEventController(this.eventController);
         this.gameState.setAmbientController(this);
@@ -214,11 +230,24 @@ public class AmbientController {
         this.visitedAmbients = new ArrayList<>();
         this.visitedAmbients.add(startingAmbient);
 
-        // ProceduralMapScreen will generate the initial map for the startingAmbient
-        // based on the GameState it receives.
         setScreen(new ProceduralMapScreen(this.gameState, character, startingAmbient));
     }
 
+    public String getCurrentSaveFileName() {
+        // Prefer specific loaded name, then autosave, then null
+        if (currentSaveFileName != null && !currentSaveFileName.trim().isEmpty()) {
+            return currentSaveFileName;
+        }
+        // If a game is active but no specific save was loaded (e.g. new game started),
+        // it defaults to autosaving.
+        if (actualScreen instanceof ProceduralMapScreen) {
+            return "autosave.json"; // Default for active games not explicitly loaded from a named save
+        }
+        return null; // No active game or save context
+    }
+
+
+    // ... (rest of the methods: modifyResources, regenerateResources, removeResource, setGlobalClime, etc. remain the same)
     public boolean modifyResources(Ambient ambient, Item item) {
         try {
             if (ambient == null) {
@@ -274,7 +303,7 @@ public class AmbientController {
                 throw new IllegalArgumentException("Resource cannot be null");
             }
 
-            boolean removed = ambient.getResources().remove(resource);
+            boolean removed = ambient.getResources().remove(resource); // This might not work correctly if Item doesn't have good equals/hashCode
             if (removed) {
                 logger.info("Resource {} removed from ambient {}", resource.getName(), ambient.getName());
             } else {
@@ -286,24 +315,14 @@ public class AmbientController {
             throw new ResourceOperationException("Failed to remove resource");
         }
     }
-
     public void setGlobalClime(Clime clime) {
         try {
             if (clime == null) {
                 logger.debug("Cannot set global clime: clime is null. This might be intended if ambient has no climes.");
-                this.globalClime = null; // Allow null if no specific clime
+                this.globalClime = null;
                 return;
             }
-
             this.globalClime = clime;
-
-            for (Ambient ambientInstance : ambients) { // Use 'ambients' which tracks distinct ambient types encountered
-                if (ambientInstance.getClimes().isEmpty()) {
-                    // This logic might be too broad; climes should be inherent to ambient types.
-                    // Consider if globalClime should override or be a fallback.
-                    // ambientInstance.addClime(clime);
-                }
-            }
             logger.info("Set global clime to {}", clime);
         } catch (Exception e) {
             logger.error("Failed to set global clime: {}", e.getMessage());
@@ -311,18 +330,9 @@ public class AmbientController {
         }
     }
 
-    public Clime getGlobalClime() {
-        return globalClime;
-    }
-
-    public Set<Ambient> getAmbients() {
-        return ambients;
-    }
-
-    public List<Ambient> getVisitedAmbients() {
-        return visitedAmbients;
-    }
-
+    public Clime getGlobalClime() { return globalClime; }
+    public Set<Ambient> getAmbients() { return ambients; }
+    public List<Ambient> getVisitedAmbients() { return visitedAmbients; }
     public void setVisitedAmbients(List<Ambient> visitedAmbients) {
         try {
             if (visitedAmbients == null) {
@@ -336,12 +346,6 @@ public class AmbientController {
             throw new AmbientControllerException("Failed to set visited ambients", e);
         }
     }
-
-    public AmbientController getScenarioController() {
-        return this;
-    }
-
-    public GameState getGameState() {
-        return gameState;
-    }
+    public AmbientController getScenarioController() { return this; }
+    public GameState getGameState() { return gameState; }
 }
