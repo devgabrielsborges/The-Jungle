@@ -3,9 +3,9 @@ package br.com.thejungle;
 import java.util.Scanner;
 
 public class App {
+    public static boolean isAlive = true;
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        boolean jogoRodando = true;
         int turno = 1;
 
         System.out.println("Bem-vindo ao Última Fronteira!"); // [cite: 1, 256]
@@ -14,7 +14,7 @@ public class App {
         // Exemplo: Personagem jogador = new Personagem("Explorador");
         // Exemplo: Ambiente ambienteAtual = new AmbienteFloresta();
 
-        while (jogoRodando) {
+        while (isAlive) {
             System.out.println("\n--- Turno " + turno + " ---");
 
             // 1. Fase de Início [cite: 135, 390]
@@ -39,7 +39,7 @@ public class App {
 
             if ("4".equals(escolha) || "sair".equalsIgnoreCase(escolha)) {
                 System.out.println("Saindo do jogo...");
-                jogoRodando = false;
+                isAlive = false;
                 continue;
             }
             System.out.println("Ação escolhida: " + escolha + " (lógica a ser implementada)");
