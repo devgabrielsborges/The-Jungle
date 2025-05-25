@@ -1,10 +1,7 @@
 package io.github.com.ranie_borges.thejungle.controller;
 
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish; // Import Fish
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.NPC;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.*;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.events.events.SurvivorRuinsEvent;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -28,9 +25,14 @@ public class ResourceController implements UI {
     private final List<Cannibal> cannibals = new ArrayList<>();
     private final List<Fish> fishes = new ArrayList<>();
     private final List<NPC> NPCS = new ArrayList<>();
+    private final List<Boat> boats = new ArrayList<>();
     private static final float NPC_SPAWN_PROBABILITY = 0.5f;
+    private static final float Boat_SPAWN_PROBABILITY = 1f;
+
     private final Random random = new Random();
     private static final int MAX_NPC_TO_SPAWN = 1;
+    private static final int MAX_Boat_TO_SPAWN = 1;
+
 
     public List<Material> spawnResources(Ambient ambient, int[][] map) {
         materialsOnMap.clear();
@@ -144,6 +146,43 @@ public class ResourceController implements UI {
             // Corrigir a mensagem de log de erro
             logger.error("Error spawning NPCs: {}", e.getMessage(), e); //
             return new ArrayList<>(); //
+        }
+    }
+    public List<Boat> spawnBoat(Ambient ambient, int[][] map) {
+        this.boats.clear();
+        if (!(ambient instanceof LakeRiver)) { //
+            return this.boats;
+        }
+
+        if (random.nextFloat() >= Boat_SPAWN_PROBABILITY) {
+            logger.debug("Boat spawn chance failed for LakeRiver: {}. No boat will be spawned this time.", ambient.getName());
+            return this.boats;
+        }
+
+        int actualBoatSpawnCount = random.nextInt(MAX_Boat_TO_SPAWN + 1);
+
+        if (actualBoatSpawnCount == 0) {
+            logger.debug("Boat spawn event occurred for LakeRiver: {}, but random count was 0. No boat will be spawned.", ambient.getName());
+            return this.boats;
+        }
+
+        try {
+            this.boats.addAll(Creature.regenerateCreatures(
+                actualBoatSpawnCount,
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_WATER,
+                TILE_SIZE,
+                Boat::new,
+                ambient,
+                Boat::canSpawnIn
+            ));
+            logger.debug("Attempted to spawn {} boats in {}. Actually spawned: {}", actualBoatSpawnCount, ambient.getName(), this.boats.size());
+            return this.boats;
+        } catch (Exception e) {
+            logger.error("Error spawning boats: {}", e.getMessage(), e);
+            return new ArrayList<>();
         }
     }
 
