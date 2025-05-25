@@ -35,13 +35,15 @@ import io.github.com.ranie_borges.thejungle.view.helpers.LightingManager;
 import io.github.com.ranie_borges.thejungle.view.helpers.TextureManager;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import io.github.com.ranie_borges.thejungle.core.Main;
-
+import com.badlogic.gdx.audio.Sound;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Mountain;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class ProceduralMapScreen implements Screen, UI {
     private static final Logger logger = LoggerFactory.getLogger(ProceduralMapScreen.class);
@@ -97,6 +99,19 @@ public class ProceduralMapScreen implements Screen, UI {
 
     private float offsetX = 0;
     private float offsetY = 0;
+
+
+    private transient Sound eruptionSound;
+    private long eruptionSoundId = -1;
+    private boolean isEruptionSoundActive = false;
+    private float timeSinceLastEruptionSoundCheck = 0f;
+    private transient Random eventRandomizer = new Random(); // Um único Random para todos os eventos da tela
+
+    private static final float ERUPTION_SOUND_CHECK_INTERVAL = 20f; // Intervalo em segundos
+    private static final float ERUPTION_SOUND_START_CHANCE = 0.20f; // 20% de chance de começar
+    private static final float ERUPTION_SOUND_STOP_CHANCE = 0.35f;  // 35% de chance de parar após duração mínima
+    private static final float MIN_ERUPTION_SOUND_DURATION = 20f;   // Duração mínima em segundos
+    private float currentEruptionSoundActiveTimer = 0f;
 
     public ProceduralMapScreen(Main game, GameState gameState, Character character, Ambient ambient) {
         this.game = game;
@@ -202,6 +217,21 @@ public class ProceduralMapScreen implements Screen, UI {
             font.getData().setScale(2f);
             font.setUseIntegerPositions(true);
 
+            if (eventRandomizer == null) {
+                eventRandomizer = new Random();
+            }
+
+            // Carregar o som da erupção
+            if (eruptionSound == null) {
+                try {
+                    eruptionSound = Gdx.audio.newSound(Gdx.files.internal("sounds/eruption.ogg"));
+                    logger.info("Som de erupção carregado.");
+                } catch (Exception e) {
+                    logger.error("Falha ao carregar o som de erupção: {}", e.getMessage(), e);
+                    eruptionSound = null;
+                }
+            }
+
             if (this.gameState.getCurrentMap() != null && this.gameState.getCurrentMap().length > 0 && this.gameState.getCurrentAmbient() != null) {
                 mapManager.externallySetCurrentAmbient(this.gameState.getCurrentAmbient());
                 mapManager.setCurrentMap(this.gameState.getCurrentMap());
@@ -250,7 +280,68 @@ public class ProceduralMapScreen implements Screen, UI {
             }
         }
     }
+    private void updateEruptionSoundEvent(float delta) {
+        // Se o som não foi carregado, não faz nada
+        if (eruptionSound == null) return;
 
+        // Parar o som imediatamente se não estiver na montanha ou se o jogo acabou/transição
+        if (isEruptionSoundActive && eruptionSoundId != -1 &&
+            (!(this.ambient instanceof Mountain) || gameOverTriggered || mapTransitionTriggered)) {
+            eruptionSound.stop(eruptionSoundId);
+            isEruptionSoundActive = false;
+            eruptionSoundId = -1;
+            currentEruptionSoundActiveTimer = 0f;
+            logger.info("Som de erupção interrompido (ambiente mudou ou estado de jogo mudou).");
+            // Opcional: mensagem no chat que o perigo sonoro passou ao sair da montanha
+            if (this.gameState != null && this.gameState.getChatController() != null && !(this.ambient instanceof Mountain)) {
+                this.gameState.getChatController().addMessage("Os ruídos ameaçadores da montanha ficaram para trás.", Color.GRAY);
+            }
+            return; // Retorna cedo se o som foi parado por sair da montanha
+        }
+
+        // Não processa nova lógica de som se não estiver na montanha ou se o jogo não estiver ativo
+        if (!(this.ambient instanceof Mountain) || gameOverTriggered || mapTransitionTriggered) {
+            return;
+        }
+
+        timeSinceLastEruptionSoundCheck += delta;
+
+        if (isEruptionSoundActive) {
+            currentEruptionSoundActiveTimer -= delta;
+            if (currentEruptionSoundActiveTimer <= 0) {
+                if (eventRandomizer.nextFloat() < ERUPTION_SOUND_STOP_CHANCE) {
+                    if (eruptionSoundId != -1) eruptionSound.stop(eruptionSoundId);
+                    isEruptionSoundActive = false;
+                    eruptionSoundId = -1;
+                    logger.info("Som de erupção (aleatoriamente) parado após duração.");
+                    if (this.gameState != null && this.gameState.getChatController() != null) {
+                        this.gameState.getChatController().addMessage("Os temíveis estrondos da montanha diminuíram...", Color.SLATE);
+                    }
+                } else {
+                    // O som continua por mais um tempo, reseta o timer para uma nova checagem de parada
+                    currentEruptionSoundActiveTimer = MIN_ERUPTION_SOUND_DURATION * 0.5f; // Verifica novamente em menos tempo
+                }
+            }
+        } else {
+            // Se não estiver tocando e estiver na montanha, verifica se deve começar
+            if (timeSinceLastEruptionSoundCheck >= ERUPTION_SOUND_CHECK_INTERVAL) {
+                timeSinceLastEruptionSoundCheck = 0f;
+                if (eventRandomizer.nextFloat() < ERUPTION_SOUND_START_CHANCE) {
+                    eruptionSoundId = eruptionSound.loop(1f); // Volume (0.0 a 1.0)
+                    if (eruptionSoundId == -1) {
+                        logger.warn("Falha ao iniciar o som de erupção em loop (ID -1). Verifique limites de som.");
+                        return;
+                    }
+                    isEruptionSoundActive = true;
+                    currentEruptionSoundActiveTimer = MIN_ERUPTION_SOUND_DURATION;
+                    logger.info("Som de erupção iniciado na Montanha (ID: {}).", eruptionSoundId);
+                    if (this.gameState != null && this.gameState.getChatController() != null) {
+                        this.gameState.getChatController().addMessage("Um estrondo profundo ecoa... A montanha parece instável.", Color.FIREBRICK);
+                    }
+                }
+            }
+        }
+    }
     public void updateScreenMapAndEntities() {
         this.map = mapManager.getMap();
         this.ambient = mapManager.getCurrentAmbient();
@@ -618,6 +709,12 @@ public class ProceduralMapScreen implements Screen, UI {
         if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
             gameStateManager.autosave(character, this.ambient, this.map);
         }
+        if (eruptionSound != null && eruptionSoundId != -1 && isEruptionSoundActive) {
+            eruptionSound.stop(eruptionSoundId);
+            isEruptionSoundActive = false; // Para que não tente continuar de onde parou no resume
+            eruptionSoundId = -1;
+            logger.debug("Som de erupção parado devido à pausa da tela.");
+        }
     }
     @Override
     public void resume() {}
@@ -626,6 +723,14 @@ public class ProceduralMapScreen implements Screen, UI {
 
     @Override
     public void dispose() {
+        if (eruptionSound != null) {
+            if (eruptionSoundId != -1) {
+                eruptionSound.stop(eruptionSoundId); // Garante que pare o som antes de descartar
+            }
+            eruptionSound.dispose();
+            eruptionSound = null;
+            logger.info("Som de erupção descartado.");
+        }
         try {
             if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
                 gameStateManager.autosave(character, this.ambient, this.map);
