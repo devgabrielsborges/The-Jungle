@@ -11,12 +11,13 @@ import java.util.Set;
 public class Climate extends Event {
     private Clime clime;
     private double duration;
-    private Set<String> effects;
-    private final Random rand = new Random();
+    private Set<String> effects; // Example: "REDUCE_VISIBILITY", "INCREASE_THIRST_RATE"
+    private final transient Random rand = new Random(); // Added transient
 
     protected Climate(String name, String description, float probability) {
         super(name, description, probability);
-        this.clime = setRandomClime();
+        this.clime = setRandomClime(); // Initialize with a random clime type
+        // Duration and effects would typically be set based on the clime type
     }
 
     public Clime getClime() {
@@ -39,14 +40,19 @@ public class Climate extends Event {
 
     public void setEffects(Set<String> effects) { this.effects = effects; }
 
-    public Clime setRandomClime() {
-        return Clime.values()[rand.nextInt() * Clime.values().length];
+    private Clime setRandomClime() { // Renamed to avoid conflict with setter
+        Clime[] climeValues = Clime.values();
+        if (climeValues.length == 0) return null; // Should not happen
+        return climeValues[rand.nextInt(climeValues.length)];
     }
 
-    /**
-     */
     @Override
     public void execute(Character character, Ambient ambient) {
-
+        // Implementation for how this climate event affects the character and ambient
+        // e.g., if clime is EXTREMELY_HOT, increase character's thirst rate
+        // or change ambient properties.
+        // For now, it just logs.
+        System.out.println("Climate event '" + getName() + "' (Type: " + clime + ") executed in " + ambient.getName());
+        // Example: ambient.setCurrentClime(this.clime); character.applyEffect(this.effects);
     }
 }
