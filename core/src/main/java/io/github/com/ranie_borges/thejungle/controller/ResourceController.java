@@ -4,11 +4,13 @@ import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish; // Import Fish
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.NPC;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Ruins;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,9 @@ public class ResourceController implements UI {
     private final List<Material> materialsOnMap = new ArrayList<>();
     private final List<Deer> deers = new ArrayList<>();
     private final List<Cannibal> cannibals = new ArrayList<>();
-    private final List<Fish> fishes = new ArrayList<>(); // Added list for fish
+    private final List<Fish> fishes = new ArrayList<>();
+    private final List<NPC> NPCS = new ArrayList<>();
+
 
     public List<Material> spawnResources(Ambient ambient, int[][] map) {
         materialsOnMap.clear();
@@ -95,6 +99,30 @@ public class ResourceController implements UI {
         } catch (Exception e) {
             logger.error("Error spawning fish: {}", e.getMessage(), e);
             return new ArrayList<>(); // Return empty list on error
+        }
+    }
+    public List<NPC> spawnNPC(Ambient ambient, int[][] map) {
+        this.NPCS.clear();
+        if (!(ambient instanceof Ruins)) {
+            return this.NPCS;
+        }
+        try {
+            this.NPCS.addAll(Creature.regenerateCreatures(
+                1,
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_GRASS,
+                TILE_SIZE,
+                NPC::new,
+                ambient,
+                NPC::canSpawnIn
+            ));
+            logger.debug("Spawned {} fishes in {}", this.NPCS.size(), ambient.getName());
+            return this.NPCS;
+        } catch (Exception e) {
+            logger.error("Error spawning fish: {}", e.getMessage(), e);
+            return new ArrayList<>();
         }
     }
 
