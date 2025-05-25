@@ -517,6 +517,32 @@ public class ProceduralMapScreen implements Screen, UI {
                         actionTaken = true; // Marca que uma ação (interação com NPC) foi tomada
                     }
                 }
+                // Verifica se o jogador tentou interagir com um barco
+                if (this.boats != null && !this.boats.isEmpty() && character != null) {
+                    Boat closestBoat = null;
+                    float minDistance = Boat_INTERACTION_RADIUS;
+
+                    for (Boat boat : this.boats) {
+                        if (boat == null) continue;
+                        float distanceToBoat = character.getPosition().dst(boat.getPosition());
+                        if (distanceToBoat < minDistance) {
+                            minDistance = distanceToBoat;
+                            closestBoat = boat;
+                        }
+                    }
+
+                    if (closestBoat != null) {
+                        // Interage com o barco mais próximo encontrado dentro do raio
+                        String dialogue = closestBoat.getDialogue();
+                        if (this.gameState.getChatController() != null) {
+                            // Usar o nome do barco
+                            this.gameState.getChatController().addMessage(closestBoat.getName() + ": " + dialogue, Color.CYAN); // Cor para diálogo
+                        } else {
+                            System.out.println(closestBoat.getName() + ": " + dialogue); // Fallback se ChatController não estiver disponível
+                        }
+                        actionTaken = true; // Marca que uma ação (interação com barco) foi tomada
+                    }
+                }
 
                 // Lógica existente de coleta de material, se nenhuma interação com NPC ocorreu
                 if (!actionTaken && character != null) { //
