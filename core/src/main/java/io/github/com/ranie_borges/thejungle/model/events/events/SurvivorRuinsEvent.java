@@ -17,7 +17,6 @@ public class SurvivorRuinsEvent {
 
             Texture survivorTexture = new Texture(Gdx.files.internal("sprites/npcs/npc3.png"));
 
-            // Gera posição aleatória para o sprite entre 50 e 250 pixels
             int spawnX = 50 + random.nextInt(201);
             int spawnY = 50 + random.nextInt(201);
 
