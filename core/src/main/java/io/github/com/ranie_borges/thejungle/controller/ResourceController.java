@@ -27,7 +27,7 @@ public class ResourceController implements UI {
     private final List<NPC> NPCS = new ArrayList<>();
     private final List<Boat> boats = new ArrayList<>();
     private static final float NPC_SPAWN_PROBABILITY = 0.5f;
-    private static final float Boat_SPAWN_PROBABILITY = 1f;
+    private static final float Boat_SPAWN_PROBABILITY = 0.5f;
 
     private final Random random = new Random();
     private static final int MAX_NPC_TO_SPAWN = 1;
