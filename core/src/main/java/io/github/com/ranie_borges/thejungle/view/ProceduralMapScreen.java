@@ -22,6 +22,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.NPC;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Boat;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
@@ -62,7 +63,11 @@ public class ProceduralMapScreen implements Screen, UI {
     private List<Cannibal> cannibals = new ArrayList<>();
     private List<Fish> fishes = new ArrayList<>();
     private List<NPC> NPCS = new ArrayList<>();
+    private List<Boat> boats = new ArrayList<>();
+
     private static final float NPC_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
+    private static final float Boat_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
+
 
     private Texture classIcon;
     private Texture inventoryBackground, backpackIcon;
@@ -288,6 +293,8 @@ public class ProceduralMapScreen implements Screen, UI {
             materiaisNoMapa = resourceController.spawnResources(this.ambient, this.map); // This should return a list of Material objects
             fishes = resourceController.spawnFish(this.ambient, this.map);
             NPCS = resourceController.spawnNPC(this.ambient, this.map);
+            boats = resourceController.spawnBoat(this.ambient, this.map);
+
 
 
             // Initialize sprites for all spawned materials
@@ -312,6 +319,7 @@ public class ProceduralMapScreen implements Screen, UI {
             if (cannibals != null) for (Cannibal cannibal : cannibals) if (cannibal != null) cannibal.reloadSprites(); else logger.warn("Null cannibal in list.");
             if (fishes != null) for (Fish fish : fishes) if (fish != null) fish.reloadSprites(); else logger.warn("Null fish in list.");
             if (NPCS != null) for (NPC npc : NPCS) if (npc != null) npc.reloadSprites(); else logger.warn("Null NPC in list.");
+            if (boats != null) for (Boat boat : boats) if (boat != null) boat.reloadSprites(); else logger.warn("Null Boat in list.");
 
         } else {
             logger.warn("Cannot spawn resources/creatures: resourceController, ambient, or map is null.");
@@ -432,7 +440,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         renderHelper.renderMap(batch, this.map, textureManager.getFloorTexture(), textureManager.getWallTexture(), this.ambient);
         renderHelper.renderMaterials(batch, materiaisNoMapa);
-        renderHelper.renderCreatures(batch, deers, cannibals, character, fishes,NPCS);
+        renderHelper.renderCreatures(batch, deers, cannibals, character, fishes,NPCS,boats);
 
         if (this.ambient instanceof Jungle) {
             Jungle jungle = (Jungle) this.ambient;
