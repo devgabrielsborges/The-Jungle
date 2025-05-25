@@ -62,7 +62,7 @@ public class ProceduralMapScreen implements Screen, UI {
     private List<Cannibal> cannibals = new ArrayList<>();
     private List<Fish> fishes = new ArrayList<>();
     private List<NPC> NPCS = new ArrayList<>();
-
+    private static final float NPC_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
 
     private Texture classIcon;
     private Texture inventoryBackground, backpackIcon;
@@ -480,27 +480,60 @@ public class ProceduralMapScreen implements Screen, UI {
 
         if (stage != null) { stage.act(delta); stage.draw(); }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            if (!showInventory) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) { //
+            if (!showInventory) { //
                 boolean actionTaken = false;
-                int playerTileX = (int) ((character.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE);
-                int playerTileY = (int) ((character.getPosition().y + TILE_SIZE / 4f) / TILE_SIZE);
-                if (playerTileX >= 0 && playerTileX < MAP_WIDTH && playerTileY >= 0 && playerTileY < MAP_HEIGHT) {
-                    int tileTypeAtPlayer = map[playerTileY][playerTileX];
-                    if (ambient instanceof LakeRiver && tileTypeAtPlayer == TILE_WATER) {
-                        logger.info("{} tries to drink water from {}.", character.getName(), ambient.getName());
-                        actionTaken = true;
+                // Verifica se o jogador tentou interagir com um NPC
+                if (this.NPCS != null && !this.NPCS.isEmpty() && character != null) {
+                    NPC closestNpc = null;
+                    float minDistance = NPC_INTERACTION_RADIUS;
+
+                    for (NPC npc : this.NPCS) {
+                        if (npc == null) continue;
+                        float distanceToNpc = character.getPosition().dst(npc.getPosition());
+                        if (distanceToNpc < minDistance) {
+                            minDistance = distanceToNpc;
+                            closestNpc = npc;
+                        }
+                    }
+
+                    if (closestNpc != null) {
+                        // Interage com o NPC mais próximo encontrado dentro do raio
+                        String dialogue = closestNpc.getDialogue();
+                        if (this.gameState.getChatController() != null) {
+                            // Usar o nome do NPC (que pode ser "Jack" ou o nome do construtor se você mudar getName())
+                            this.gameState.getChatController().addMessage(closestNpc.getName() + ": " + dialogue, Color.CYAN); // Cor para diálogo
+                        } else {
+                            System.out.println(closestNpc.getName() + ": " + dialogue); // Fallback se ChatController não estiver disponível
+                        }
+                        actionTaken = true; // Marca que uma ação (interação com NPC) foi tomada
                     }
                 }
-                if (!actionTaken && character != null) {
-                    character.tryCollectNearbyMaterial(materiaisNoMapa);
+
+                // Lógica existente de coleta de material, se nenhuma interação com NPC ocorreu
+                if (!actionTaken && character != null) { //
+                    // A lógica de beber água estava aqui, mantenha se necessário ou ajuste
+                    int playerTileX = (int) ((character.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE); //
+                    int playerTileY = (int) ((character.getPosition().y + TILE_SIZE / 4f) / TILE_SIZE); //
+                    if (playerTileX >= 0 && playerTileX < MAP_WIDTH && playerTileY >= 0 && playerTileY < MAP_HEIGHT) { //
+                        int tileTypeAtPlayer = map[playerTileY][playerTileX]; //
+                        if (ambient instanceof LakeRiver && tileTypeAtPlayer == TILE_WATER) { //
+                            logger.info("{} tries to drink water from {}.", character.getName(), ambient.getName()); //
+                            // Adicione a lógica de beber água aqui se ela foi removida ou estava implícita
+                            actionTaken = true; //
+                        }
+                    }
+                    if (!actionTaken) { //
+                        character.tryCollectNearbyMaterial(materiaisNoMapa); //
+                    }
                 }
-            } else {
-                if (characterUI != null && character != null) {
-                    Item selectedItem = characterUI.getSelectedItem();
-                    if (selectedItem != null) {
-                        character.useItem(selectedItem);
-                        characterUI.clearSelection();
+
+            } else { // Se o inventário estiver aberto
+                if (characterUI != null && character != null) { //
+                    Item selectedItem = characterUI.getSelectedItem(); //
+                    if (selectedItem != null) { //
+                        character.useItem(selectedItem); //
+                        characterUI.clearSelection(); //
                     }
                 }
             }

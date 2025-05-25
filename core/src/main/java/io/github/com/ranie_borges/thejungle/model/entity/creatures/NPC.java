@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class NPC extends Creature {
+    private boolean hasBeenInteractedWith = false;
 
     protected NPC(
         String name,
@@ -70,7 +71,16 @@ public class NPC extends Creature {
             super.setSpritesAfterLoad(NPC.createSprites());
         }
     }
-
+    public String getDialogue() {
+        String dialogue;
+        if (!hasBeenInteractedWith) {
+            dialogue = "hum survivor!!! I feel so alone...";
+            hasBeenInteractedWith = true;
+        } else {
+            dialogue = "Hello again!";
+        }
+        return dialogue;
+    }
     @Override
     public void attack() {
 
