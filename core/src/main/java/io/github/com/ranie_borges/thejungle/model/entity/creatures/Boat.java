@@ -74,10 +74,10 @@ public class Boat extends Creature {
     public String getDialogue() {
         String dialogue;
         if (!hasBeenInteractedWith) {
-            dialogue = "hum survivor!!! I feel so alone...";
+            dialogue = "I want sleep";
             hasBeenInteractedWith = true;
         } else {
-            dialogue = "Hello again!";
+            dialogue = "shut up and go away";
         }
         return dialogue;
     }
@@ -90,6 +90,6 @@ public class Boat extends Creature {
     }
     @Override
     public String getName() {
-        return "Jack";
+        return "Lucius";
     }
 }
