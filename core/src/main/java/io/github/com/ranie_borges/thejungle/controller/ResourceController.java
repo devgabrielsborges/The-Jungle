@@ -6,6 +6,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish; // Import Fish
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.NPC;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.events.events.SurvivorRuinsEvent;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class ResourceController implements UI {
     private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
@@ -26,7 +28,9 @@ public class ResourceController implements UI {
     private final List<Cannibal> cannibals = new ArrayList<>();
     private final List<Fish> fishes = new ArrayList<>();
     private final List<NPC> NPCS = new ArrayList<>();
-
+    private static final float NPC_SPAWN_PROBABILITY = 0.5f;
+    private final Random random = new Random();
+    private static final int MAX_NPC_TO_SPAWN = 1;
 
     public List<Material> spawnResources(Ambient ambient, int[][] map) {
         materialsOnMap.clear();
@@ -101,28 +105,45 @@ public class ResourceController implements UI {
             return new ArrayList<>(); // Return empty list on error
         }
     }
-    public List<NPC> spawnNPC(Ambient ambient, int[][] map) {
-        this.NPCS.clear();
-        if (!(ambient instanceof Ruins)) {
+    public List<NPC> spawnNPC(Ambient ambient, int[][] map) { //
+        this.NPCS.clear(); //
+        if (!(ambient instanceof Ruins)) { //
+            return this.NPCS; //
+        }
+
+        // **NOVA LÓGICA DE PROBABILIDADE**
+        if (random.nextFloat() >= NPC_SPAWN_PROBABILITY) {
+            logger.debug("NPC spawn chance failed for Ruins: {}. No NPC will be spawned this time.", ambient.getName());
+            return this.NPCS; // Retorna a lista vazia, pois a chance de spawn falhou
+        }
+
+        // Se a chance de spawn for bem-sucedida, determina aleatoriamente quantos NPCs (0 até MAX_NPC_TO_SPAWN)
+        int actualNpcSpawnCount = random.nextInt(MAX_NPC_TO_SPAWN + 1);
+
+        if (actualNpcSpawnCount == 0) {
+            logger.debug("NPC spawn event occurred for Ruins: {}, but random count was 0. No NPC will be spawned.", ambient.getName());
             return this.NPCS;
         }
+
         try {
-            this.NPCS.addAll(Creature.regenerateCreatures(
-                1,
-                map,
-                MAP_WIDTH,
-                MAP_HEIGHT,
-                TILE_GRASS,
-                TILE_SIZE,
-                NPC::new,
-                ambient,
-                NPC::canSpawnIn
+            this.NPCS.addAll(Creature.regenerateCreatures( //
+                actualNpcSpawnCount, // Usa a contagem aleatória (por exemplo, 0 ou 1 se MAX_NPC_TO_SPAWN for 1)
+                map, //
+                MAP_WIDTH, //
+                MAP_HEIGHT, //
+                TILE_GRASS, //
+                TILE_SIZE, //
+                NPC::new, //
+                ambient, //
+                NPC::canSpawnIn //
             ));
-            logger.debug("Spawned {} fishes in {}", this.NPCS.size(), ambient.getName());
-            return this.NPCS;
+            // Corrigir a mensagem de log
+            logger.debug("Attempted to spawn {} NPCs in {}. Actually spawned: {}", actualNpcSpawnCount, ambient.getName(), this.NPCS.size()); //
+            return this.NPCS; //
         } catch (Exception e) {
-            logger.error("Error spawning fish: {}", e.getMessage(), e);
-            return new ArrayList<>();
+            // Corrigir a mensagem de log de erro
+            logger.error("Error spawning NPCs: {}", e.getMessage(), e); //
+            return new ArrayList<>(); //
         }
     }
 
