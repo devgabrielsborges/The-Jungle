@@ -12,10 +12,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.enums.Clime;
 import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Mountain;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Ruins;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.*;
 import io.github.com.ranie_borges.thejungle.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,7 +215,7 @@ public class AmbientController {
         this.gameState.setPlayerCharacter(character);
         currentSaveFileName = "autosave.json"; // Default save name for new games
 
-        Ambient startingAmbient = new Mountain();
+        Ambient startingAmbient = new Cave();
         this.gameState.setCurrentAmbient(startingAmbient);
 
         this.eventController = new EventController(this.gameState);

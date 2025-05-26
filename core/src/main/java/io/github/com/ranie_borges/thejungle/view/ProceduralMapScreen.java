@@ -17,6 +17,7 @@ import io.github.com.ranie_borges.thejungle.controller.managers.CharacterManager
 import io.github.com.ranie_borges.thejungle.controller.managers.GameStateManager;
 import io.github.com.ranie_borges.thejungle.controller.managers.MapManager;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
@@ -112,6 +113,10 @@ public class ProceduralMapScreen implements Screen, UI {
     private static final float ERUPTION_SOUND_STOP_CHANCE = 0.35f;  // 35% de chance de parar após duração mínima
     private static final float MIN_ERUPTION_SOUND_DURATION = 20f;   // Duração mínima em segundos
     private float currentEruptionSoundActiveTimer = 0f;
+
+    private BattleScreen battleScreen;
+    private boolean isBattleActive = false;
+    private boolean skipMapRegeneration = false;
 
     public ProceduralMapScreen(Main game, GameState gameState, Character character, Ambient ambient) {
         this.game = game;
@@ -479,7 +484,6 @@ public class ProceduralMapScreen implements Screen, UI {
 
     @Override
     public void render(float delta) {
-        // ... (render logic as before, ensure renderHelper.renderMaterials is called)
         if (gameOverTriggered) {
             if (stage != null) { stage.act(delta); stage.draw(); }
             return;
@@ -521,6 +525,65 @@ public class ProceduralMapScreen implements Screen, UI {
         if (batch == null || lightingManager == null || renderHelper == null || textureManager == null || character == null || this.ambient == null || this.map == null) {
             if (stage != null) { stage.act(delta); stage.draw(); }
             return;
+        }
+
+        if (gameOverTriggered) {
+            if (stage != null) {
+                stage.act(delta);
+                stage.draw();
+            }
+            return;
+        }
+
+        // Lógica de renderização da tela de batalha
+        if (isBattleActive) {
+            battleScreen.render(batch, shapeRenderer, character, gameState, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                isBattleActive = false;
+            }
+            return;
+        }
+
+        // Lógica de renderização normal da ProceduralMapScreen
+        SnakeEventManager.handleInput();
+        if (SnakeEventManager.isWaitingForSpace()) {
+            Gdx.gl.glClearColor(0, 0, 0, 1);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            if (batch != null && renderHelper != null) {
+                renderHelper.renderSnakeAlertScreen(batch);
+            }
+            return;
+        }
+
+        // Verifica se o jogador inicia uma batalha ao pressionar E
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            Creature enemy = null;
+            // Verifica se há canibal próximo
+            for (Cannibal cannibal : cannibals) {
+                if (cannibal != null && character.getPosition().dst(cannibal.getPosition()) < TILE_SIZE * 1.5f) {
+                    enemy = cannibal;
+                    break;
+                }
+            }
+            // Se não encontrou canibal, procura por cervos
+            if (enemy == null) {
+                for (Deer deer : deers) {
+                    if (deer != null && character.getPosition().dst(deer.getPosition()) < TILE_SIZE * 1.5f) {
+                        enemy = deer;
+                        break;
+                    }
+                }
+            }
+            // Se um inimigo for encontrado, inicia a batalha
+            if (enemy != null) {
+                if (battleScreen == null) {
+                    battleScreen = new BattleScreen(game, this);
+                }
+                battleScreen.resetEnemyHealth();
+                battleScreen.setCurrentEnemy(enemy);
+                isBattleActive = true;
+                return;
+            }
         }
 
         lightingManager.beginLightBuffer();
@@ -673,8 +736,16 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         }
-    }
 
+    }
+    public void removeEnemyFromMap(Creature enemy) {
+        if (enemy instanceof Deer) {
+            deers.remove(enemy);
+        } else if (enemy instanceof Cannibal) {
+            cannibals.remove(enemy);
+        }
+        logger.info("Inimigo {} removido do mapa.", enemy.getName());
+    }
     private void handleGameOver() {
         if (gameOverTriggered) return;
         gameOverTriggered = true;
@@ -694,6 +765,13 @@ public class ProceduralMapScreen implements Screen, UI {
                 ((Main)Gdx.app.getApplicationListener()).getScenarioController().triggerGameOver(saveNameToDelete);
             }
         }
+    }
+    public void setSkipMapRegeneration(boolean skip) {
+        this.skipMapRegeneration = skip;
+    }
+
+    public boolean isSkipMapRegeneration() {
+        return skipMapRegeneration;
     }
 
     @Override
