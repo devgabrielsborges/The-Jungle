@@ -726,6 +726,15 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            int tileSize = UI.TILE_SIZE;
+            int tileX = (int)((character.getPosition().x + tileSize / 2f) / tileSize);
+            int tileY = (int)((character.getPosition().y + tileSize / 2f) / tileSize);
+            if (map[tileY][tileX] == TILE_WATER) {
+                character.drinkWater();
+                gameState.getChatController().addMessage("bebeu água infectada e tomou 15 de dano ", Color.RED);
+            }
+        }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
             if (character != null && ambient instanceof LakeRiver) {
                 boolean captured = character.tryCaptureFish(fishes);
