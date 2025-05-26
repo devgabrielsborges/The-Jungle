@@ -557,17 +557,32 @@ public class ProceduralMapScreen implements Screen, UI {
 
         // Verifica se o jogador inicia uma batalha ao pressionar E
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            for (Deer deer : deers) {
-                if (deer != null && character.getPosition().dst(deer.getPosition()) < TILE_SIZE * 1.5f) {
-                    if (battleScreen == null) {
-                        battleScreen = new BattleScreen(game, this);
-                    }
-                    // Restaura a vida do inimigo para 100 através do novo método
-                    battleScreen.resetEnemyHealth();
-                    battleScreen.setCurrentEnemy(deer);
-                    isBattleActive = true;
-                    return;
+            Creature enemy = null;
+            // Verifica se há canibal próximo
+            for (Cannibal cannibal : cannibals) {
+                if (cannibal != null && character.getPosition().dst(cannibal.getPosition()) < TILE_SIZE * 1.5f) {
+                    enemy = cannibal;
+                    break;
                 }
+            }
+            // Se não encontrou canibal, procura por cervos
+            if (enemy == null) {
+                for (Deer deer : deers) {
+                    if (deer != null && character.getPosition().dst(deer.getPosition()) < TILE_SIZE * 1.5f) {
+                        enemy = deer;
+                        break;
+                    }
+                }
+            }
+            // Se um inimigo for encontrado, inicia a batalha
+            if (enemy != null) {
+                if (battleScreen == null) {
+                    battleScreen = new BattleScreen(game, this);
+                }
+                battleScreen.resetEnemyHealth();
+                battleScreen.setCurrentEnemy(enemy);
+                isBattleActive = true;
+                return;
             }
         }
 
