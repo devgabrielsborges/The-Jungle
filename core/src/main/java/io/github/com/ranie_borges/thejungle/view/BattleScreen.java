@@ -1,3 +1,4 @@
+// Arquivo: core/src/main/java/io/github/com/ranie_borges/thejungle/view/BattleScreen.java
 package io.github.com.ranie_borges.thejungle.view;
 
 import com.badlogic.gdx.Gdx;
@@ -9,12 +10,11 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.com.ranie_borges.thejungle.core.Main;
-import io.github.com.ranie_borges.thejungle.model.entity.Creature;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 
-
-public class BattleScreen implements Screen {
+public class BattleScreen {
     private final SpriteBatch batch;
     private final ShapeRenderer renderer;
     private final Texture background;
@@ -23,12 +23,16 @@ public class BattleScreen implements Screen {
     private final BitmapFont font;
     private final Main game;
     private final Screen previousScreen;
-    private int playerHealth = 100;
     private int enemyHealth = 100;
     private String battleMessage = "O que você quer fazer?";
     private int selectedAction = 0;
     private final String[] actions = {"Atacar", "Usar Item", "Fugir"};
     private Creature currentEnemy;
+
+    // Campos para as barras
+    private float barX;
+    private float baseY;
+    private float spacing;
 
     public BattleScreen(Main game, Screen previousScreen) {
         this.game = game;
@@ -39,102 +43,111 @@ public class BattleScreen implements Screen {
         playerSprite = new Texture("sprites/character/personagem_luta.png");
         enemySprite = new Texture("sprites/criaturas/veado_luta.png");
         font = new BitmapFont();
+
+        // Inicializa a posição e espaçamento das barras
+        barX = 50;
+        baseY = Gdx.graphics.getHeight() - 150;
+        spacing = 20;
     }
 
-    @Override
-    public void render(float delta) {
+    private void drawBar(ShapeRenderer renderer, Color color, float progress, float x, float y) {
+        float barWidth = 200;
+        float barHeight = 15;
+        // Desenha o fundo da barra
+        renderer.setColor(Color.DARK_GRAY);
+        renderer.rect(x, y, barWidth, barHeight);
+        // Desenha a barra preenchida conforme o progresso
+        renderer.setColor(color);
+        renderer.rect(x, y, progress * barWidth, barHeight);
+    }
+
+    public void setCurrentEnemy(Creature enemy) {
+        this.currentEnemy = enemy;
+    }
+
+    public void render(SpriteBatch batch, ShapeRenderer shapeRenderer, Character character, GameState gameState,
+                       int width, int height) {
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.draw(playerSprite, 100, 100, 512, 512);
         batch.draw(enemySprite, 1400, 800, 256, 256);
 
-        // Exibe as barras de vida
-        font.draw(batch, "Vida do Jogador: " + playerHealth, 50, Gdx.graphics.getHeight() - 50);
+        // Exibe a vida atual do personagem
+        font.draw(batch, "Vida do Jogador: " + character.getLife(), 50, Gdx.graphics.getHeight() - 50);
         font.draw(batch, "Vida do Inimigo: " + enemyHealth, Gdx.graphics.getWidth() - 300, Gdx.graphics.getHeight() - 50);
 
         font.draw(batch, battleMessage, 50, 50);
 
         for (int i = 0; i < actions.length - 1; i++) { // Exclui a última ação ("Fugir")
             if (i == selectedAction) {
-                font.setColor(1, 1, 0, 1); // Amarelo para a ação selecionada
+                font.setColor(1, 1, 0, 1);
             } else {
-                font.setColor(1, 1, 1, 1); // Branco para as outras ações
+                font.setColor(1, 1, 1, 1);
             }
             font.draw(batch, actions[i], 50, 100 - i * 20);
         }
 
-        // Exibe o texto fixo para "Fugir"
-        font.setColor(1, 1, 1, 1); // Branco
+        font.setColor(1, 1, 1, 1);
         font.draw(batch, "Clique ESC para fugir", 50, 100 - (actions.length - 1) * 20);
 
         batch.end();
 
-        handleInput();
+        // Renderiza a barra de vida do jogador usando os valores de character
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        drawBar(shapeRenderer, Color.RED, character.getLife() / 100f, barX, baseY);
+        shapeRenderer.end();
+
+        handleInput(character);
     }
 
-
-    private void handleInput() {
+    private void handleInput(Character character) {
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             selectedAction = (selectedAction - 1 + actions.length) % actions.length;
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
             selectedAction = (selectedAction + 1) % actions.length;
         } else if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            executeAction();
+            executeAction(character);
         }
     }
 
-    private void executeAction() {
+    private void executeAction(Character character) {
         switch (selectedAction) {
             case 0: // Atacar
-                enemyHealth -= 80; // Reduz a vida do inimigo
+                enemyHealth -= 80;
                 battleMessage = "Você atacou! Vida do inimigo: " + enemyHealth;
-
-                // O inimigo também ataca
-                playerHealth -= 5;
-                battleMessage += "\nO inimigo contra-atacou! Sua vida: " + playerHealth;
-
-                // Verifica se alguém perdeu
-                checkBattleEnd();
+                // Dano refletido na barra de vida do jogador
+                character.setLife(character.getLife() - 5);
+                battleMessage += "\nO inimigo contra-atacou! Sua vida: " + character.getLife();
+                checkBattleEnd(character);
                 break;
             case 1: // Usar Item
-                playerHealth = Math.min(playerHealth + 20, 100); // Cura o jogador, mas não ultrapassa 100
-                battleMessage = "Você usou um item e recuperou vida! Sua vida: " + playerHealth;
+                // Exemplo de recuperação
+                character.setLife(Math.min(character.getLife() + 20, 100));
+                battleMessage = "Você usou um item e recuperou vida! Sua vida: " + character.getLife();
                 break;
         }
     }
-    public void setCurrentEnemy(Creature enemy) {
-        this.currentEnemy = enemy;
-    }
-    private void checkBattleEnd() {
+
+    private void checkBattleEnd(Character character) {
         if (enemyHealth <= 0) {
             battleMessage = "Você venceu a batalha!";
-            if (previousScreen instanceof ProceduralMapScreen && currentEnemy != null) {
-                ((ProceduralMapScreen) previousScreen).removeEnemyFromMap(currentEnemy);
-            }
-        } else if (playerHealth <= 0) {
+            // Ações de fim de batalha podem ser adicionadas aqui.
+        } else if (character.getLife() <= 0) {
             battleMessage = "Você perdeu a batalha!";
         }
     }
+
     public void reset() {
         battleMessage = "O que você quer fazer?";
         selectedAction = 0;
     }
-    @Override
+
     public void resize(int width, int height) {}
-
-    @Override
     public void show() {}
-
-    @Override
     public void hide() {}
-
-    @Override
     public void pause() {}
-
-    @Override
     public void resume() {}
 
-    @Override
     public void dispose() {
         batch.dispose();
         renderer.dispose();
