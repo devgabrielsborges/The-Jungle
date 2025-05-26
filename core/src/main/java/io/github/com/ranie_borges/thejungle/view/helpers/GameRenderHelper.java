@@ -9,9 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.*;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
@@ -217,7 +215,7 @@ public class GameRenderHelper implements UI {
         }
     }
 
-    public void renderCreatures(SpriteBatch batch, List<Deer> deers, List<Cannibal> cannibals, Character character, List<Fish> fishes) {
+    public void renderCreatures(SpriteBatch batch, List<Deer> deers, List<Cannibal> cannibals, Character character, List<Fish> fishes,List<NPC> NPCS,List<Boat> boats) {
         if (batch == null || !batch.isDrawing()) {
             logger.warn("renderCreatures called while batch is null or not drawing!");
             return;
@@ -256,6 +254,32 @@ public class GameRenderHelper implements UI {
                     float x = fish.getPosition().x + offsetX; float y = fish.getPosition().y + offsetY;
                     if (x < -30 || x > Gdx.graphics.getWidth() || y < -30 || y > Gdx.graphics.getHeight()) continue;
                     sprite.setSize(30, 30);
+                    sprite.setPosition(x + (TILE_SIZE - sprite.getWidth()) / 2, y + (TILE_SIZE - sprite.getHeight()) / 2);
+                    sprite.draw(batch);
+                }
+            }
+        }
+        if (NPCS != null) {
+            for (NPC npc : NPCS) {
+                if (npc == null || npc.getSprites() == null) continue;
+                Sprite sprite = npc.getSprites().get("idle");
+                if (sprite != null && sprite.getTexture() != null) {
+                    float x = npc.getPosition().x + offsetX; float y = npc.getPosition().y + offsetY;
+                    if (x < -40 || x > Gdx.graphics.getWidth() || y < -40 || y > Gdx.graphics.getHeight()) continue;
+                    sprite.setSize(40, 40);
+                    sprite.setPosition(x + (TILE_SIZE - sprite.getWidth()) / 2, y + (TILE_SIZE - sprite.getHeight()) / 2);
+                    sprite.draw(batch);
+                }
+            }
+        }
+        if (boats != null) {
+            for (Boat boat : boats) {
+                if (boat == null || boat.getSprites() == null) continue;
+                Sprite sprite = boat.getSprites().get("idle");
+                if (sprite != null && sprite.getTexture() != null) {
+                    float x = boat.getPosition().x + offsetX; float y = boat.getPosition().y + offsetY;
+                    if (x < -50 || x > Gdx.graphics.getWidth() || y < -50 || y > Gdx.graphics.getHeight()) continue;
+                    sprite.setSize(50, 50);
                     sprite.setPosition(x + (TILE_SIZE - sprite.getWidth()) / 2, y + (TILE_SIZE - sprite.getHeight()) / 2);
                     sprite.draw(batch);
                 }

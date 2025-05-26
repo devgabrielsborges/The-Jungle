@@ -1,20 +1,21 @@
 package io.github.com.ranie_borges.thejungle.controller;
 
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
-import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish; // Import Fish
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.*;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.events.events.SurvivorRuinsEvent;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Ruins;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class ResourceController implements UI {
     private static final Logger logger = LoggerFactory.getLogger(ResourceController.class);
@@ -22,7 +23,16 @@ public class ResourceController implements UI {
     private final List<Material> materialsOnMap = new ArrayList<>();
     private final List<Deer> deers = new ArrayList<>();
     private final List<Cannibal> cannibals = new ArrayList<>();
-    private final List<Fish> fishes = new ArrayList<>(); // Added list for fish
+    private final List<Fish> fishes = new ArrayList<>();
+    private final List<NPC> NPCS = new ArrayList<>();
+    private final List<Boat> boats = new ArrayList<>();
+    private static final float NPC_SPAWN_PROBABILITY = 0.5f;
+    private static final float Boat_SPAWN_PROBABILITY = 0.5f;
+
+    private final Random random = new Random();
+    private static final int MAX_NPC_TO_SPAWN = 1;
+    private static final int MAX_Boat_TO_SPAWN = 1;
+
 
     public List<Material> spawnResources(Ambient ambient, int[][] map) {
         materialsOnMap.clear();
@@ -95,6 +105,84 @@ public class ResourceController implements UI {
         } catch (Exception e) {
             logger.error("Error spawning fish: {}", e.getMessage(), e);
             return new ArrayList<>(); // Return empty list on error
+        }
+    }
+    public List<NPC> spawnNPC(Ambient ambient, int[][] map) { //
+        this.NPCS.clear(); //
+        if (!(ambient instanceof Ruins)) { //
+            return this.NPCS; //
+        }
+
+        // **NOVA LÓGICA DE PROBABILIDADE**
+        if (random.nextFloat() >= NPC_SPAWN_PROBABILITY) {
+            logger.debug("NPC spawn chance failed for Ruins: {}. No NPC will be spawned this time.", ambient.getName());
+            return this.NPCS; // Retorna a lista vazia, pois a chance de spawn falhou
+        }
+
+        // Se a chance de spawn for bem-sucedida, determina aleatoriamente quantos NPCs (0 até MAX_NPC_TO_SPAWN)
+        int actualNpcSpawnCount = random.nextInt(MAX_NPC_TO_SPAWN + 1);
+
+        if (actualNpcSpawnCount == 0) {
+            logger.debug("NPC spawn event occurred for Ruins: {}, but random count was 0. No NPC will be spawned.", ambient.getName());
+            return this.NPCS;
+        }
+
+        try {
+            this.NPCS.addAll(Creature.regenerateCreatures( //
+                actualNpcSpawnCount, // Usa a contagem aleatória (por exemplo, 0 ou 1 se MAX_NPC_TO_SPAWN for 1)
+                map, //
+                MAP_WIDTH, //
+                MAP_HEIGHT, //
+                TILE_GRASS, //
+                TILE_SIZE, //
+                NPC::new, //
+                ambient, //
+                NPC::canSpawnIn //
+            ));
+            // Corrigir a mensagem de log
+            logger.debug("Attempted to spawn {} NPCs in {}. Actually spawned: {}", actualNpcSpawnCount, ambient.getName(), this.NPCS.size()); //
+            return this.NPCS; //
+        } catch (Exception e) {
+            // Corrigir a mensagem de log de erro
+            logger.error("Error spawning NPCs: {}", e.getMessage(), e); //
+            return new ArrayList<>(); //
+        }
+    }
+    public List<Boat> spawnBoat(Ambient ambient, int[][] map) {
+        this.boats.clear();
+        if (!(ambient instanceof LakeRiver)) { //
+            return this.boats;
+        }
+
+        if (random.nextFloat() >= Boat_SPAWN_PROBABILITY) {
+            logger.debug("Boat spawn chance failed for LakeRiver: {}. No boat will be spawned this time.", ambient.getName());
+            return this.boats;
+        }
+
+        int actualBoatSpawnCount = random.nextInt(MAX_Boat_TO_SPAWN + 1);
+
+        if (actualBoatSpawnCount == 0) {
+            logger.debug("Boat spawn event occurred for LakeRiver: {}, but random count was 0. No boat will be spawned.", ambient.getName());
+            return this.boats;
+        }
+
+        try {
+            this.boats.addAll(Creature.regenerateCreatures(
+                actualBoatSpawnCount,
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_WATER,
+                TILE_SIZE,
+                Boat::new,
+                ambient,
+                Boat::canSpawnIn
+            ));
+            logger.debug("Attempted to spawn {} boats in {}. Actually spawned: {}", actualBoatSpawnCount, ambient.getName(), this.boats.size());
+            return this.boats;
+        } catch (Exception e) {
+            logger.error("Error spawning boats: {}", e.getMessage(), e);
+            return new ArrayList<>();
         }
     }
 

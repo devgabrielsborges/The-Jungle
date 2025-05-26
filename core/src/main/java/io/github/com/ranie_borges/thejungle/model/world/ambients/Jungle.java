@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Drinkable;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Food;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
+import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 
 import java.util.Random;
@@ -54,12 +55,11 @@ public class Jungle extends Ambient {
         int tileY = (int)(pos.y / 32f);
 
         if (isTallGrass(tileX, tileY)) {
-            // FIXME
-            // Snake bite logic, potentially using this.random
-            // float chance = 0.1f; // Example: 10% chance
-            // if (this.random.nextFloat() < chance) {
-            // SnakeEventManager.triggerSnakeBite();
-            // }
+//             Snake bite logic, potentially using this.random
+//             float chance = 1f; // Example: 10% chance
+//             if (this.random.nextFloat() < chance) {
+//             SnakeEventManager.triggerSnakeBite();
+//             }
         }
     }
 

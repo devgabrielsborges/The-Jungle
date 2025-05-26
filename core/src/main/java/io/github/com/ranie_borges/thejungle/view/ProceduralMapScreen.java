@@ -21,6 +21,8 @@ import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.NPC;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Boat;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
@@ -33,13 +35,15 @@ import io.github.com.ranie_borges.thejungle.view.helpers.LightingManager;
 import io.github.com.ranie_borges.thejungle.view.helpers.TextureManager;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import io.github.com.ranie_borges.thejungle.core.Main;
-
+import com.badlogic.gdx.audio.Sound;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.Mountain;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class ProceduralMapScreen implements Screen, UI {
     private static final Logger logger = LoggerFactory.getLogger(ProceduralMapScreen.class);
@@ -60,6 +64,12 @@ public class ProceduralMapScreen implements Screen, UI {
     private List<Deer> deers = new ArrayList<>();
     private List<Cannibal> cannibals = new ArrayList<>();
     private List<Fish> fishes = new ArrayList<>();
+    private List<NPC> NPCS = new ArrayList<>();
+    private List<Boat> boats = new ArrayList<>();
+
+    private static final float NPC_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
+    private static final float Boat_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
+
 
     private Texture classIcon;
     private Texture inventoryBackground, backpackIcon;
@@ -89,6 +99,19 @@ public class ProceduralMapScreen implements Screen, UI {
 
     private float offsetX = 0;
     private float offsetY = 0;
+
+
+    private transient Sound eruptionSound;
+    private long eruptionSoundId = -1;
+    private boolean isEruptionSoundActive = false;
+    private float timeSinceLastEruptionSoundCheck = 0f;
+    private transient Random eventRandomizer = new Random(); // Um único Random para todos os eventos da tela
+
+    private static final float ERUPTION_SOUND_CHECK_INTERVAL = 20f; // Intervalo em segundos
+    private static final float ERUPTION_SOUND_START_CHANCE = 0.20f; // 20% de chance de começar
+    private static final float ERUPTION_SOUND_STOP_CHANCE = 0.35f;  // 35% de chance de parar após duração mínima
+    private static final float MIN_ERUPTION_SOUND_DURATION = 20f;   // Duração mínima em segundos
+    private float currentEruptionSoundActiveTimer = 0f;
 
     public ProceduralMapScreen(Main game, GameState gameState, Character character, Ambient ambient) {
         this.game = game;
@@ -194,6 +217,21 @@ public class ProceduralMapScreen implements Screen, UI {
             font.getData().setScale(2f);
             font.setUseIntegerPositions(true);
 
+            if (eventRandomizer == null) {
+                eventRandomizer = new Random();
+            }
+
+            // Carregar o som da erupção
+            if (eruptionSound == null) {
+                try {
+                    eruptionSound = Gdx.audio.newSound(Gdx.files.internal("sounds/eruption.ogg"));
+                    logger.info("Som de erupção carregado.");
+                } catch (Exception e) {
+                    logger.error("Falha ao carregar o som de erupção: {}", e.getMessage(), e);
+                    eruptionSound = null;
+                }
+            }
+
             if (this.gameState.getCurrentMap() != null && this.gameState.getCurrentMap().length > 0 && this.gameState.getCurrentAmbient() != null) {
                 mapManager.externallySetCurrentAmbient(this.gameState.getCurrentAmbient());
                 mapManager.setCurrentMap(this.gameState.getCurrentMap());
@@ -242,7 +280,68 @@ public class ProceduralMapScreen implements Screen, UI {
             }
         }
     }
+    private void updateEruptionSoundEvent(float delta) {
+        // Se o som não foi carregado, não faz nada
+        if (eruptionSound == null) return;
 
+        // Parar o som imediatamente se não estiver na montanha ou se o jogo acabou/transição
+        if (isEruptionSoundActive && eruptionSoundId != -1 &&
+            (!(this.ambient instanceof Mountain) || gameOverTriggered || mapTransitionTriggered)) {
+            eruptionSound.stop(eruptionSoundId);
+            isEruptionSoundActive = false;
+            eruptionSoundId = -1;
+            currentEruptionSoundActiveTimer = 0f;
+            logger.info("Som de erupção interrompido (ambiente mudou ou estado de jogo mudou).");
+            // Opcional: mensagem no chat que o perigo sonoro passou ao sair da montanha
+            if (this.gameState != null && this.gameState.getChatController() != null && !(this.ambient instanceof Mountain)) {
+                this.gameState.getChatController().addMessage("Os ruídos ameaçadores da montanha ficaram para trás.", Color.GRAY);
+            }
+            return; // Retorna cedo se o som foi parado por sair da montanha
+        }
+
+        // Não processa nova lógica de som se não estiver na montanha ou se o jogo não estiver ativo
+        if (!(this.ambient instanceof Mountain) || gameOverTriggered || mapTransitionTriggered) {
+            return;
+        }
+
+        timeSinceLastEruptionSoundCheck += delta;
+
+        if (isEruptionSoundActive) {
+            currentEruptionSoundActiveTimer -= delta;
+            if (currentEruptionSoundActiveTimer <= 0) {
+                if (eventRandomizer.nextFloat() < ERUPTION_SOUND_STOP_CHANCE) {
+                    if (eruptionSoundId != -1) eruptionSound.stop(eruptionSoundId);
+                    isEruptionSoundActive = false;
+                    eruptionSoundId = -1;
+                    logger.info("Som de erupção (aleatoriamente) parado após duração.");
+                    if (this.gameState != null && this.gameState.getChatController() != null) {
+                        this.gameState.getChatController().addMessage("Os temíveis estrondos da montanha diminuíram...", Color.SLATE);
+                    }
+                } else {
+                    // O som continua por mais um tempo, reseta o timer para uma nova checagem de parada
+                    currentEruptionSoundActiveTimer = MIN_ERUPTION_SOUND_DURATION * 0.5f; // Verifica novamente em menos tempo
+                }
+            }
+        } else {
+            // Se não estiver tocando e estiver na montanha, verifica se deve começar
+            if (timeSinceLastEruptionSoundCheck >= ERUPTION_SOUND_CHECK_INTERVAL) {
+                timeSinceLastEruptionSoundCheck = 0f;
+                if (eventRandomizer.nextFloat() < ERUPTION_SOUND_START_CHANCE) {
+                    eruptionSoundId = eruptionSound.loop(1f); // Volume (0.0 a 1.0)
+                    if (eruptionSoundId == -1) {
+                        logger.warn("Falha ao iniciar o som de erupção em loop (ID -1). Verifique limites de som.");
+                        return;
+                    }
+                    isEruptionSoundActive = true;
+                    currentEruptionSoundActiveTimer = MIN_ERUPTION_SOUND_DURATION;
+                    logger.info("Som de erupção iniciado na Montanha (ID: {}).", eruptionSoundId);
+                    if (this.gameState != null && this.gameState.getChatController() != null) {
+                        this.gameState.getChatController().addMessage("Um estrondo profundo ecoa... A montanha parece instável.", Color.FIREBRICK);
+                    }
+                }
+            }
+        }
+    }
     public void updateScreenMapAndEntities() {
         this.map = mapManager.getMap();
         this.ambient = mapManager.getCurrentAmbient();
@@ -284,6 +383,10 @@ public class ProceduralMapScreen implements Screen, UI {
             cannibals = resourceController.spawnCannibals(this.ambient, this.map);
             materiaisNoMapa = resourceController.spawnResources(this.ambient, this.map); // This should return a list of Material objects
             fishes = resourceController.spawnFish(this.ambient, this.map);
+            NPCS = resourceController.spawnNPC(this.ambient, this.map);
+            boats = resourceController.spawnBoat(this.ambient, this.map);
+
+
 
             // Initialize sprites for all spawned materials
             if (materiaisNoMapa != null && textureManager != null) {
@@ -306,6 +409,8 @@ public class ProceduralMapScreen implements Screen, UI {
             if (deers != null) for (Deer deer : deers) if (deer != null) deer.reloadSprites(); else logger.warn("Null deer in list.");
             if (cannibals != null) for (Cannibal cannibal : cannibals) if (cannibal != null) cannibal.reloadSprites(); else logger.warn("Null cannibal in list.");
             if (fishes != null) for (Fish fish : fishes) if (fish != null) fish.reloadSprites(); else logger.warn("Null fish in list.");
+            if (NPCS != null) for (NPC npc : NPCS) if (npc != null) npc.reloadSprites(); else logger.warn("Null NPC in list.");
+            if (boats != null) for (Boat boat : boats) if (boat != null) boat.reloadSprites(); else logger.warn("Null Boat in list.");
 
         } else {
             logger.warn("Cannot spawn resources/creatures: resourceController, ambient, or map is null.");
@@ -426,7 +531,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         renderHelper.renderMap(batch, this.map, textureManager.getFloorTexture(), textureManager.getWallTexture(), this.ambient);
         renderHelper.renderMaterials(batch, materiaisNoMapa);
-        renderHelper.renderCreatures(batch, deers, cannibals, character, fishes);
+        renderHelper.renderCreatures(batch, deers, cannibals, character, fishes,NPCS,boats);
 
         if (this.ambient instanceof Jungle) {
             Jungle jungle = (Jungle) this.ambient;
@@ -474,27 +579,86 @@ public class ProceduralMapScreen implements Screen, UI {
 
         if (stage != null) { stage.act(delta); stage.draw(); }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            if (!showInventory) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) { //
+            if (!showInventory) { //
                 boolean actionTaken = false;
-                int playerTileX = (int) ((character.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE);
-                int playerTileY = (int) ((character.getPosition().y + TILE_SIZE / 4f) / TILE_SIZE);
-                if (playerTileX >= 0 && playerTileX < MAP_WIDTH && playerTileY >= 0 && playerTileY < MAP_HEIGHT) {
-                    int tileTypeAtPlayer = map[playerTileY][playerTileX];
-                    if (ambient instanceof LakeRiver && tileTypeAtPlayer == TILE_WATER) {
-                        logger.info("{} tries to drink water from {}.", character.getName(), ambient.getName());
-                        actionTaken = true;
+                // Verifica se o jogador tentou interagir com um NPC
+                if (this.NPCS != null && !this.NPCS.isEmpty() && character != null) {
+                    NPC closestNpc = null;
+                    float minDistance = NPC_INTERACTION_RADIUS;
+
+                    for (NPC npc : this.NPCS) {
+                        if (npc == null) continue;
+                        float distanceToNpc = character.getPosition().dst(npc.getPosition());
+                        if (distanceToNpc < minDistance) {
+                            minDistance = distanceToNpc;
+                            closestNpc = npc;
+                        }
+                    }
+
+                    if (closestNpc != null) {
+                        // Interage com o NPC mais próximo encontrado dentro do raio
+                        String dialogue = closestNpc.getDialogue();
+                        if (this.gameState.getChatController() != null) {
+                            // Usar o nome do NPC (que pode ser "Jack" ou o nome do construtor se você mudar getName())
+                            this.gameState.getChatController().addMessage(closestNpc.getName() + ": " + dialogue, Color.CYAN); // Cor para diálogo
+                        } else {
+                            System.out.println(closestNpc.getName() + ": " + dialogue); // Fallback se ChatController não estiver disponível
+                        }
+                        actionTaken = true; // Marca que uma ação (interação com NPC) foi tomada
                     }
                 }
-                if (!actionTaken && character != null) {
-                    character.tryCollectNearbyMaterial(materiaisNoMapa);
+                // Verifica se o jogador tentou interagir com um barco
+                if (this.boats != null && !this.boats.isEmpty() && character != null) {
+                    Boat closestBoat = null;
+                    float minDistance = Boat_INTERACTION_RADIUS;
+
+                    for (Boat boat : this.boats) {
+                        if (boat == null) continue;
+                        float distanceToBoat = character.getPosition().dst(boat.getPosition());
+                        if (distanceToBoat < minDistance) {
+                            minDistance = distanceToBoat;
+                            closestBoat = boat;
+                        }
+                    }
+
+                    if (closestBoat != null) {
+                        // Interage com o barco mais próximo encontrado dentro do raio
+                        String dialogue = closestBoat.getDialogue();
+                        if (this.gameState.getChatController() != null) {
+                            // Usar o nome do barco
+                            this.gameState.getChatController().addMessage(closestBoat.getName() + ": " + dialogue, Color.CYAN); // Cor para diálogo
+                        } else {
+                            System.out.println(closestBoat.getName() + ": " + dialogue); // Fallback se ChatController não estiver disponível
+                        }
+                        actionTaken = true; // Marca que uma ação (interação com barco) foi tomada
+                    }
                 }
-            } else {
-                if (characterUI != null && character != null) {
-                    Item selectedItem = characterUI.getSelectedItem();
-                    if (selectedItem != null) {
-                        character.useItem(selectedItem);
-                        characterUI.clearSelection();
+
+                // Lógica existente de coleta de material, se nenhuma interação com NPC ocorreu
+                if (!actionTaken && character != null) { //
+                    // A lógica de beber água estava aqui, mantenha se necessário ou ajuste
+                    int playerTileX = (int) ((character.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE); //
+                    int playerTileY = (int) ((character.getPosition().y + TILE_SIZE / 4f) / TILE_SIZE); //
+                    if (playerTileX >= 0 && playerTileX < MAP_WIDTH && playerTileY >= 0 && playerTileY < MAP_HEIGHT) { //
+                        int tileTypeAtPlayer = map[playerTileY][playerTileX]; //
+                        if (ambient instanceof LakeRiver && tileTypeAtPlayer == TILE_WATER) { //
+                            logger.info("{} tries to drink water from {}.", character.getName(), ambient.getName()); //
+                            // Adicione a lógica de beber água aqui se ela foi removida ou estava implícita
+                            actionTaken = true; //
+                        }
+                    }
+                    if (!actionTaken) { //
+                        character.tryCollectNearbyMaterial(materiaisNoMapa); //
+                    }
+                }
+
+            } else { // Se o inventário estiver aberto
+                if (characterUI != null && character != null) { //
+                    Item selectedItem = characterUI.getSelectedItem(); //
+                    if (selectedItem != null) { //
+                        character.useItem(selectedItem); //
+                        characterUI.clearSelection(); //
                     }
                 }
             }
@@ -545,6 +709,12 @@ public class ProceduralMapScreen implements Screen, UI {
         if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
             gameStateManager.autosave(character, this.ambient, this.map);
         }
+        if (eruptionSound != null && eruptionSoundId != -1 && isEruptionSoundActive) {
+            eruptionSound.stop(eruptionSoundId);
+            isEruptionSoundActive = false; // Para que não tente continuar de onde parou no resume
+            eruptionSoundId = -1;
+            logger.debug("Som de erupção parado devido à pausa da tela.");
+        }
     }
     @Override
     public void resume() {}
@@ -553,6 +723,14 @@ public class ProceduralMapScreen implements Screen, UI {
 
     @Override
     public void dispose() {
+        if (eruptionSound != null) {
+            if (eruptionSoundId != -1) {
+                eruptionSound.stop(eruptionSoundId); // Garante que pare o som antes de descartar
+            }
+            eruptionSound.dispose();
+            eruptionSound = null;
+            logger.info("Som de erupção descartado.");
+        }
         try {
             if (gameStateManager != null && character != null && this.ambient != null && this.map != null && !gameOverTriggered) {
                 gameStateManager.autosave(character, this.ambient, this.map);
