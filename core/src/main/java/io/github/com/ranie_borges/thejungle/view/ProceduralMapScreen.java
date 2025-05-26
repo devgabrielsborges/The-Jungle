@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -585,7 +586,9 @@ public class ProceduralMapScreen implements Screen, UI {
                 return;
             }
         }
-
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            character.CutTree(materiaisNoMapa);
+        }
         lightingManager.beginLightBuffer();
         batch.begin();
         renderHelper.updateCameraOffset(character.getPosition().x, character.getPosition().y, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());

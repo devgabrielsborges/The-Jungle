@@ -231,7 +231,19 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
             }
         }
     }
-
+    public void CutTree(List<Material> materiaisNoMapa) {
+        Iterator<Material> iterator = materiaisNoMapa.iterator();
+        while (iterator.hasNext()) {
+            Material material = iterator.next();
+            if ("Tree".equalsIgnoreCase(material.getName())) {
+                iterator.remove();
+                logger.info(getName() + " cortou e removeu a árvore do mapa.");
+                // Chama o método já existente que trata o corte e coleta de madeira
+                cutTree();
+                return;
+            }
+        }
+    }
     private void updatePlayerState() {
         if (isMoving) {
             switch (lastDirection) {
