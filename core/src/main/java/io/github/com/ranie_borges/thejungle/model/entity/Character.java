@@ -655,18 +655,18 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
             if (distanceToFish < fishingRange) {
                 if (random.nextFloat() < 0.70f) {
                     logger.info("{} attempts to spear a fish...", getName());
-                    fishIterator.remove(); // Remove fish from the ambient list
+                    fishIterator.remove();
 
-                    Set<Item> drops = Fish.createDrops(); // Static method to get drops
+                    Set<Item> drops = Fish.createDrops();
                     for (Item drop : drops) {
                         if (drop.getName().equalsIgnoreCase("Raw Fish")) {
                             if (canCarryMore(drop.getWeight())) {
-                                insertItemInInventory(drop); // Add "Raw Fish" to inventory
+                                insertItemInInventory(drop);
                                 logger.info("{} successfully speared a {} and obtained {}!", getName(), fish.getName(), drop.getName());
 
-                                spear.useItem(); // Spear durability decreases
+                                spear.useItem();
                                 if (spear.getDurability() <= 0) {
-                                    dropItem(spear); // Use character's dropItem to handle weight etc.
+                                    dropItem(spear);
                                     logger.info("The {} broke after fishing.", spear.getName());
                                 }
                                 return true; // Fish captured
