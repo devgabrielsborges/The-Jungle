@@ -537,7 +537,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         // Lógica de renderização da tela de batalha
         if (isBattleActive) {
-            battleScreen.render(delta);
+            battleScreen.render(batch, shapeRenderer, character, gameState, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
                 isBattleActive = false;
             }
