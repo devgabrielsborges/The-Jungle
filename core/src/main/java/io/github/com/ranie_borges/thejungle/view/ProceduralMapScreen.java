@@ -602,6 +602,7 @@ public class ProceduralMapScreen implements Screen, UI {
             }
             if (selectedTree != null) {
                 character.cutTree(selectedTree);
+
             } else {
                 Gdx.app.log("ProceduralMapScreen", "Nenhuma árvore exata encontrada para cortar.");
             }
