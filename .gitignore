@@ -13,7 +13,6 @@ logs/
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.ear
 *.zip
@@ -66,8 +65,6 @@ tmp/
 # NetBeans
 /nbproject/private/
 /nbbuild/
-/dist/
-/nbdist/
 /.nb-gradle/
 build.xml
 
