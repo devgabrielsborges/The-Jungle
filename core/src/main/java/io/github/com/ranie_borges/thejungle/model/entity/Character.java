@@ -263,7 +263,7 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
             }
         }
 
-        // Remove a árvore do mapa chamando o método removeTreeFromMap na tela atual
+
         if (com.badlogic.gdx.Gdx.app.getApplicationListener() instanceof Main) {
             Main main = (Main)com.badlogic.gdx.Gdx.app.getApplicationListener();
             if (main.getScreen() instanceof io.github.com.ranie_borges.thejungle.view.ProceduralMapScreen) {
