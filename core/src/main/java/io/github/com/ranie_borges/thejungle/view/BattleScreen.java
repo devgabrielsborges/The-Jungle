@@ -7,6 +7,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.com.ranie_borges.thejungle.core.Main;
@@ -59,10 +60,14 @@ public class BattleScreen {
     private void drawBar(ShapeRenderer renderer, Color color, float progress, float x, float y) {
         float barWidth = 200;
         float barHeight = 15;
-        // Desenha o fundo da barra
+
+        // Desenha borda
+        renderer.setColor(0, 0, 0, 0.7f);
+        renderer.rect(x - 2, y - 2, barWidth + 4, barHeight + 4);
+        // Fundo da barra
         renderer.setColor(Color.DARK_GRAY);
         renderer.rect(x, y, barWidth, barHeight);
-        // Desenha a barra preenchida conforme o progresso
+        // Progresso
         renderer.setColor(color);
         renderer.rect(x, y, progress * barWidth, barHeight);
     }
@@ -77,40 +82,69 @@ public class BattleScreen {
                        int width, int height) {
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        batch.setColor(0, 0, 0, 0.5f);
+        batch.draw(playerSprite, 105, 95, 512, 512);
+        batch.setColor(Color.WHITE);
         batch.draw(playerSprite, 100, 100, 512, 512);
 
         if (currentEnemy != null) {
-            // Aplica tint se o inimigo estiver morto
             if (enemyHealth == 0) {
                 batch.setColor(Color.RED);
             }
-
             if (currentEnemy instanceof Cannibal) {
                 batch.draw(cannibalSprite, 1400, 800, 256, 256);
             } else {
                 batch.draw(enemySprite, 1400, 800, 256, 256);
             }
-
-            // Restaura a cor padrão
             batch.setColor(Color.WHITE);
         }
 
-// Outras renderizações permanecem inalteradas
+        // Fundo semitransparente para a área de texto
+        batch.setColor(0, 0, 0, 0.5f);
+        batch.draw(background, 30, 20, 600, 120);
+        batch.setColor(Color.WHITE);
+
         font.draw(batch, "Vida do Jogador: " + character.getLife(), 50, Gdx.graphics.getHeight() - 50);
         font.draw(batch, "Vida do Inimigo: " + enemyHealth, Gdx.graphics.getWidth() - 300, Gdx.graphics.getHeight() - 50);
-        font.draw(batch, battleMessage, 50, 50);
+        font.draw(batch, battleMessage, 50, 100);
 
-        for (int i = 0; i < actions.length - 1; i++) {
+        // Desenha as ações centralizadas com fonte maior
+        float previousScaleX = font.getData().scaleX;
+        float previousScaleY = font.getData().scaleY;
+        font.getData().setScale(2f); // aumenta a fonte
+        GlyphLayout layout = new GlyphLayout();
+        float screenWidth = Gdx.graphics.getWidth();
+        float centerY = Gdx.graphics.getHeight() / 2f;
+        float totalHeight = 0;
+        float spacing = 20;
+
+        // Calcula altura total do menu
+        for (String action : actions) {
+            layout.setText(font, action);
+            totalHeight += layout.height + spacing;
+        }
+        totalHeight -= spacing; // remove o espaçamento extra
+
+        float startY = centerY + totalHeight / 2f;
+
+        for (int i = 0; i < actions.length; i++) {
+            String action = actions[i];
+            layout.setText(font, action);
+            float textWidth = layout.width;
+            float x = (screenWidth - textWidth) / 2f;
             if (i == selectedAction) {
                 font.setColor(1, 1, 0, 1);
             } else {
                 font.setColor(1, 1, 1, 1);
             }
-            font.draw(batch, actions[i], 50, 100 - i * 20);
+            font.draw(batch, action, x, startY - i * (layout.height + spacing));
         }
-        font.setColor(1, 1, 1, 1);
-        font.draw(batch, "Clique ESC para fugir", 50, 100 - (actions.length - 1) * 20);
+        // Restaura a escala original
+        font.getData().setScale(previousScaleX, previousScaleY);
+
         batch.end();
+
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         drawBar(shapeRenderer, Color.RED, character.getLife() / 100f, barX, baseY);
         shapeRenderer.end();
@@ -143,22 +177,31 @@ public class BattleScreen {
                 if (enemyHealth == 0) {
                     battleMessage = "Você venceu a batalha!";
                     if (currentEnemy != null) {
-                        // Verifica se a tela atual é do tipo ProceduralMapScreen
                         if (game.getScreen() instanceof ProceduralMapScreen) {
                             ((ProceduralMapScreen) game.getScreen()).removeEnemyFromMap(currentEnemy);
                         }
                         currentEnemy = null;
                     }
                 } else {
-                    // Realiza contra-ataque somente se o inimigo ainda estiver vivo
-                    character.setLife(character.getLife() - 5);
-                    battleMessage += "\nO inimigo contra-atacou! Sua vida: " + character.getLife();
+                    // Realiza contra-ataque com base no tipo de inimigo
+                    if (currentEnemy instanceof Cannibal) {
+                        // O canibal causa mais dano (ex.: 10 pontos)
+                        character.setLife(character.getLife() - 10);
+                        battleMessage += "\nO canibal contra-atacou! Sua vida: " + character.getLife();
+                    } else {
+                        // O deer causa menos dano (ex.: 5 pontos)
+                        character.setLife(character.getLife() - 5);
+                        battleMessage += "\nO inimigo contra-atacou! Sua vida: " + character.getLife();
+                    }
                 }
                 checkBattleEnd(character);
                 break;
             case 1: // Usar Item
                 character.setLife(Math.min(character.getLife() + 20, 100));
                 battleMessage = "Você usou um item e recuperou vida! Sua vida: " + character.getLife();
+                break;
+            case 2: // Fugir
+                battleMessage = "Você fugiu da batalha!";
                 break;
         }
     }
