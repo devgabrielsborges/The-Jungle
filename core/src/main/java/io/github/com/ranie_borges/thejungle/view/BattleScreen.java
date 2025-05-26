@@ -3,11 +3,16 @@ package io.github.com.ranie_borges.thejungle.view;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.com.ranie_borges.thejungle.core.Main;
+import io.github.com.ranie_borges.thejungle.model.entity.Creature;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import io.github.com.ranie_borges.thejungle.model.entity.Character;
+
 
 public class BattleScreen implements Screen {
     private final SpriteBatch batch;
@@ -23,6 +28,7 @@ public class BattleScreen implements Screen {
     private String battleMessage = "O que você quer fazer?";
     private int selectedAction = 0;
     private final String[] actions = {"Atacar", "Usar Item", "Fugir"};
+    private Creature currentEnemy;
 
     public BattleScreen(Main game, Screen previousScreen) {
         this.game = game;
@@ -80,7 +86,7 @@ public class BattleScreen implements Screen {
     private void executeAction() {
         switch (selectedAction) {
             case 0: // Atacar
-                enemyHealth -= 10; // Reduz a vida do inimigo
+                enemyHealth -= 80; // Reduz a vida do inimigo
                 battleMessage = "Você atacou! Vida do inimigo: " + enemyHealth;
 
                 // O inimigo também ataca
@@ -96,10 +102,15 @@ public class BattleScreen implements Screen {
                 break;
         }
     }
-
+    public void setCurrentEnemy(Creature enemy) {
+        this.currentEnemy = enemy;
+    }
     private void checkBattleEnd() {
         if (enemyHealth <= 0) {
             battleMessage = "Você venceu a batalha!";
+            if (previousScreen instanceof ProceduralMapScreen && currentEnemy != null) {
+                ((ProceduralMapScreen) previousScreen).removeEnemyFromMap(currentEnemy);
+            }
         } else if (playerHealth <= 0) {
             battleMessage = "Você perdeu a batalha!";
         }

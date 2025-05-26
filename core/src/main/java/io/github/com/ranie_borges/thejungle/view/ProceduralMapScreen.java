@@ -17,6 +17,7 @@ import io.github.com.ranie_borges.thejungle.controller.managers.CharacterManager
 import io.github.com.ranie_borges.thejungle.controller.managers.GameStateManager;
 import io.github.com.ranie_borges.thejungle.controller.managers.MapManager;
 import io.github.com.ranie_borges.thejungle.model.entity.Character;
+import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
@@ -561,6 +562,7 @@ public class ProceduralMapScreen implements Screen, UI {
                     if (battleScreen == null) {
                         battleScreen = new BattleScreen(game, this);
                     }
+                    battleScreen.setCurrentEnemy(deer); // Define o inimigo atual
                     isBattleActive = true;
                     return;
                 }
@@ -719,7 +721,14 @@ public class ProceduralMapScreen implements Screen, UI {
         }
 
     }
-
+    public void removeEnemyFromMap(Creature enemy) {
+        if (enemy instanceof Deer) {
+            deers.remove(enemy);
+        } else if (enemy instanceof Cannibal) {
+            cannibals.remove(enemy);
+        }
+        logger.info("Inimigo {} removido do mapa.", enemy.getName());
+    }
     private void handleGameOver() {
         if (gameOverTriggered) return;
         gameOverTriggered = true;
