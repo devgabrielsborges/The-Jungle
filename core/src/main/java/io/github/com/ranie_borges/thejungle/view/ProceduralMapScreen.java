@@ -562,7 +562,9 @@ public class ProceduralMapScreen implements Screen, UI {
                     if (battleScreen == null) {
                         battleScreen = new BattleScreen(game, this);
                     }
-                    battleScreen.setCurrentEnemy(deer); // Define o inimigo atual
+                    // Restaura a vida do inimigo para 100 através do novo método
+                    battleScreen.resetEnemyHealth();
+                    battleScreen.setCurrentEnemy(deer);
                     isBattleActive = true;
                     return;
                 }
