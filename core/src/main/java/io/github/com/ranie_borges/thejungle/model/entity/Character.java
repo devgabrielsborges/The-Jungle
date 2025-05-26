@@ -2,6 +2,7 @@ package io.github.com.ranie_borges.thejungle.model.entity;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI; // For TILE_SIZE
+import io.github.com.ranie_borges.thejungle.model.stats.GameState;
 
 import java.util.*;
 
@@ -75,6 +77,7 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
     private transient Animation<TextureRegion> playerWalkDown;
     private transient Animation<TextureRegion> playerWalkLeft;
     private transient Animation<TextureRegion> playerWalkRight;
+    private transient GameState gameState;
 
     private enum PlayerState {
         IDLE_UP, IDLE_DOWN, IDLE_LEFT, IDLE_RIGHT, WALK_UP, WALK_DOWN, WALK_LEFT, WALK_RIGHT
@@ -190,7 +193,12 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
             return false;
         }
     }
-
+    public GameState getGameState() {
+        return gameState;
+    }
+    public void setGameState(GameState gameState) {
+        this.gameState = gameState;
+    }
     private Animation<TextureRegion> loadAnimation(String filename, float frameDuration, int framesCount) {
         try {
             Texture spriteSheet = new Texture(Gdx.files.internal("sprites/character/" + filename));
@@ -205,6 +213,22 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
         } catch (Exception e) {
             logger.error("Failed to load animation sprite sheet: sprites/character/{}", filename, e);
             return null;
+        }
+    }
+    public void drinkWater() {
+        if (Math.random() < 0.1) {
+            for (int i = 0; i < 3; i++) {
+                setLife(getLife() - 5);
+            }
+            if (this.gameState != null && this.gameState.getChatController() != null) {
+                this.gameState.getChatController().addMessage(getName() + " bebeu água infectada e tomou dano.", Color.CYAN);
+            }
+        } else {
+            float waterRestoration = 20f;
+            setThirsty(Math.min(100, getThirsty() + waterRestoration));
+            if (this.gameState != null && this.gameState.getChatController() != null) {
+                this.gameState.getChatController().addMessage(getName() + " bebeu água e restaurou a sede em " + waterRestoration + " pontos.", Color.CYAN);
+            }
         }
     }
 

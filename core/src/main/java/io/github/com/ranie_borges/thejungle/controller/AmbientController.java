@@ -215,7 +215,7 @@ public class AmbientController {
         this.gameState.setPlayerCharacter(character);
         currentSaveFileName = "autosave.json"; // Default save name for new games
 
-        Ambient startingAmbient = new Cave();
+        Ambient startingAmbient = new LakeRiver();
         this.gameState.setCurrentAmbient(startingAmbient);
 
         this.eventController = new EventController(this.gameState);
