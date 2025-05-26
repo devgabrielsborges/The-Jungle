@@ -60,7 +60,9 @@ public class BattleScreen {
         renderer.setColor(color);
         renderer.rect(x, y, progress * barWidth, barHeight);
     }
-
+    public void resetEnemyHealth() {
+        enemyHealth = 100;
+    }
     public void setCurrentEnemy(Creature enemy) {
         this.currentEnemy = enemy;
     }
@@ -111,17 +113,34 @@ public class BattleScreen {
     }
 
     private void executeAction(Character character) {
+        // Bloqueia o ataque se o inimigo já estiver morto
+        if (selectedAction == 0 && enemyHealth <= 0) {
+            battleMessage = "O inimigo está morto! Não é possível atacar.";
+            return;
+        }
+
         switch (selectedAction) {
             case 0: // Atacar
-                enemyHealth -= 80;
+                enemyHealth = Math.max(enemyHealth - 80, 0);
                 battleMessage = "Você atacou! Vida do inimigo: " + enemyHealth;
-                // Dano refletido na barra de vida do jogador
-                character.setLife(character.getLife() - 5);
-                battleMessage += "\nO inimigo contra-atacou! Sua vida: " + character.getLife();
+                // Se o inimigo morrer, remove-o do mapa e finaliza a batalha
+                if (enemyHealth == 0) {
+                    battleMessage = "Você venceu a batalha!";
+                    if (currentEnemy != null) {
+                        // Verifica se a tela atual é do tipo ProceduralMapScreen
+                        if (game.getScreen() instanceof ProceduralMapScreen) {
+                            ((ProceduralMapScreen) game.getScreen()).removeEnemyFromMap(currentEnemy);
+                        }
+                        currentEnemy = null;
+                    }
+                } else {
+                    // Realiza contra-ataque somente se o inimigo ainda estiver vivo
+                    character.setLife(character.getLife() - 5);
+                    battleMessage += "\nO inimigo contra-atacou! Sua vida: " + character.getLife();
+                }
                 checkBattleEnd(character);
                 break;
             case 1: // Usar Item
-                // Exemplo de recuperação
                 character.setLife(Math.min(character.getLife() + 20, 100));
                 battleMessage = "Você usou um item e recuperou vida! Sua vida: " + character.getLife();
                 break;
