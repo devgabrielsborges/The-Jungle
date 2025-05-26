@@ -587,7 +587,24 @@ public class ProceduralMapScreen implements Screen, UI {
             }
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            character.CutTree(materiaisNoMapa);
+            Material selectedTree = null;
+            int playerTileX = (int)((character.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE);
+            int playerTileY = (int)((character.getPosition().y + TILE_SIZE / 2f) / TILE_SIZE);
+            for (Material material : materiaisNoMapa) {
+                if ("Tree".equalsIgnoreCase(material.getName())) {
+                    int treeTileX = (int)((material.getPosition().x + TILE_SIZE / 2f) / TILE_SIZE);
+                    int treeTileY = (int)((material.getPosition().y + TILE_SIZE / 2f) / TILE_SIZE);
+                    if (playerTileX == treeTileX && playerTileY == treeTileY) {
+                        selectedTree = material;
+                        break;
+                    }
+                }
+            }
+            if (selectedTree != null) {
+                character.cutTree(selectedTree);
+            } else {
+                Gdx.app.log("ProceduralMapScreen", "Nenhuma árvore exata encontrada para cortar.");
+            }
         }
         lightingManager.beginLightBuffer();
         batch.begin();
@@ -757,6 +774,14 @@ public class ProceduralMapScreen implements Screen, UI {
             cannibals.remove(enemy);
         }
         logger.info("Inimigo {} removido do mapa.", enemy.getName());
+    }
+   public void removeTreeFromMap(Material tree) {
+        if (materiaisNoMapa != null && materiaisNoMapa.contains(tree)) {
+            materiaisNoMapa.remove(tree);
+            logger.info("Árvore {} removida do mapa.", tree.getName());
+        } else {
+            logger.warn("Árvore {} não encontrada no mapa para remoção.", tree.getName());
+        }
     }
     private void handleGameOver() {
         if (gameOverTriggered) return;
