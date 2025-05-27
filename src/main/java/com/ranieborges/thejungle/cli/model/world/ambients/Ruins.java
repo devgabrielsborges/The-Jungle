@@ -20,7 +20,7 @@ public class Ruins extends Ambient {
     public Ruins() {
         super("Abandoned Ruins",
                 "The crumbling remains of an ancient structure. It might hold valuable supplies or hidden dangers.",
-                1.1f, 
+                1.1f,
                 "Dusty and Still");
     }
 
