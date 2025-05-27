@@ -24,6 +24,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.NPC;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Boat;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.RadioGuy;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Medicine;
 import io.github.com.ranie_borges.thejungle.model.events.events.SnakeEventManager;
@@ -68,10 +69,12 @@ public class ProceduralMapScreen implements Screen, UI {
     private List<Fish> fishes = new ArrayList<>();
     private List<NPC> NPCS = new ArrayList<>();
     private List<Boat> boats = new ArrayList<>();
+    private List<RadioGuy> radioguys = new ArrayList<>();
+
 
     private static final float NPC_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
     private static final float Boat_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
-
+    private static final float RadioGuy_INTERACTION_RADIUS = TILE_SIZE * 1.5f;
 
     private Texture classIcon;
     private Texture inventoryBackground, backpackIcon;
@@ -329,7 +332,6 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         } else {
-            // Se não estiver tocando e estiver na montanha, verifica se deve começar
             if (timeSinceLastEruptionSoundCheck >= ERUPTION_SOUND_CHECK_INTERVAL) {
                 timeSinceLastEruptionSoundCheck = 0f;
                 if (eventRandomizer.nextFloat() < ERUPTION_SOUND_START_CHANCE) {
@@ -391,6 +393,7 @@ public class ProceduralMapScreen implements Screen, UI {
             fishes = resourceController.spawnFish(this.ambient, this.map);
             NPCS = resourceController.spawnNPC(this.ambient, this.map);
             boats = resourceController.spawnBoat(this.ambient, this.map);
+            radioguys = resourceController.spawnRadioGuy(this.ambient, this.map);
 
 
 
@@ -417,6 +420,7 @@ public class ProceduralMapScreen implements Screen, UI {
             if (fishes != null) for (Fish fish : fishes) if (fish != null) fish.reloadSprites(); else logger.warn("Null fish in list.");
             if (NPCS != null) for (NPC npc : NPCS) if (npc != null) npc.reloadSprites(); else logger.warn("Null NPC in list.");
             if (boats != null) for (Boat boat : boats) if (boat != null) boat.reloadSprites(); else logger.warn("Null Boat in list.");
+            if (radioguys != null) for (RadioGuy radioguy : radioguys) if (radioguy != null) radioguy.reloadSprites(); else logger.warn("Null RadioGuy in list.");
 
         } else {
             logger.warn("Cannot spawn resources/creatures: resourceController, ambient, or map is null.");
@@ -615,7 +619,7 @@ public class ProceduralMapScreen implements Screen, UI {
 
         renderHelper.renderMap(batch, this.map, textureManager.getFloorTexture(), textureManager.getWallTexture(), this.ambient);
         renderHelper.renderMaterials(batch, materiaisNoMapa);
-        renderHelper.renderCreatures(batch, deers, cannibals, character, fishes,NPCS,boats);
+        renderHelper.renderCreatures(batch, deers, cannibals, character, fishes,NPCS,boats, radioguys);
 
         if (this.ambient instanceof Jungle) {
             Jungle jungle = (Jungle) this.ambient;
@@ -718,6 +722,32 @@ public class ProceduralMapScreen implements Screen, UI {
                         actionTaken = true; // Marca que uma ação (interação com barco) foi tomada
                     }
                 }
+                // Verifica se o jogador tentou interagir com um rádio
+                if (this.radioguys != null && !this.radioguys.isEmpty() && character != null) {
+                    RadioGuy closestRadioGuy = null;
+                    float minDistance = RadioGuy_INTERACTION_RADIUS;
+
+                    for (RadioGuy radioguy : this.radioguys) {
+                        if (radioguy == null) continue;
+                        float distanceToRadioGuy = character.getPosition().dst(radioguy.getPosition());
+                        if (distanceToRadioGuy < minDistance) {
+                            minDistance = distanceToRadioGuy;
+                            closestRadioGuy = radioguy;
+                        }
+                    }
+
+                    if (closestRadioGuy != null) {
+                        // Interage com o rádio mais próximo encontrado dentro do raio
+                        String dialogue = closestRadioGuy.getDialogue();
+                        if (this.gameState.getChatController() != null) {
+                            // Usar o nome do rádio
+                            this.gameState.getChatController().addMessage(closestRadioGuy.getName() + ": " + dialogue, Color.CYAN); // Cor para diálogo
+                        } else {
+                            System.out.println(closestRadioGuy.getName() + ": " + dialogue); // Fallback se ChatController não estiver disponível
+                        }
+                        actionTaken = true; // Marca que uma ação (interação com rádio) foi tomada
+                    }
+                }
 
                 // Lógica existente de coleta de material, se nenhuma interação com NPC ocorreu
                 if (!actionTaken && character != null) { //
@@ -744,6 +774,16 @@ public class ProceduralMapScreen implements Screen, UI {
                         character.useItem(selectedItem); //
                         characterUI.clearSelection(); //
                     }
+                }
+            }
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F) && character != null && this.radioguys != null && !this.radioguys.isEmpty()) {
+            // Supondo um raio de proximidade de 50 pixels
+            float interactRadius = 50f;
+            for (io.github.com.ranie_borges.thejungle.model.entity.creatures.RadioGuy rg : this.radioguys) {
+                if (character.getPosition().dst(rg.getPosition()) <= interactRadius) {
+                    rg.interact(character, game);
+                    break;
                 }
             }
         }

@@ -77,6 +77,9 @@ public class Material extends Item {
                     texturePath = "scenarios/jungle/berry.png";
                 }
                 break;
+            case "coin":
+                texturePath = "scenarios/ruins/coin.png";
+                break;
             default:
                 logger.warn("No specific sprite path defined for material name: '{}', type: '{}'. Will attempt fallback icon.", getName(), this.type);
                 break;
@@ -121,7 +124,7 @@ public class Material extends Item {
     public static Material createTree() { return new Material("Tree", 5.0f, 10.0f, "Wood", 2.0f); }
     public static Material createMedicinalPlant() { return new Material("Medicinal", 0.2f, 1.0f, "Plant", 0.9f); }
     public static Material createBerryBush() { return new Material("Berry", 0.2f, 1.0f, "Berry", 0.2f); }
-
+    public static Material createCoin() { return new Material("Coin", 0.05f, 1.0f, "Currency", 0.1f); }
 
     public static List<Material> spawnSmallRocks(int q, int[][] m, int mW, int mH, int tC, int tS) { return spawnGeneric(q,m,mW,mH,tC,tS, Material::createSmallRock); }
     public static List<Material> spawnSticksAndRocks(int q, int[][] m, int mW, int mH, int tG, int tS) {
@@ -134,7 +137,7 @@ public class Material extends Item {
     public static List<Material> spawnTrees(int q, int[][] m, int mW, int mH, int tG, int tS) { return spawnGeneric(q,m,mW,mH,tG,tS, Material::createTree); }
     public static List<Material> spawnMedicinalPlants(int q, int[][] m, int mW, int mH, int tG, int tS) { return spawnGeneric(q,m,mW,mH,tG,tS, Material::createMedicinalPlant); }
     public static List<Material> spawnBerryBushes(int q, int[][] m, int mW, int mH, int tG, int tS) { return spawnGeneric(q,m,mW,mH,tG,tS, Material::createBerryBush); }
-
+    public static List<Material> spawnCoins(int q, int[][] m, int mW, int mH, int tG, int tS) { return spawnGeneric(q,m,mW,mH,tG,tS, Material::createCoin); }
     private static List<Material> spawnGeneric(int quantidade, int[][] mapa, int mapWidth, int mapHeight,
                                                int validTile, int tileSize, java.util.function.Supplier<Material> constructor) {
         List<Material> materiais = new ArrayList<>();
