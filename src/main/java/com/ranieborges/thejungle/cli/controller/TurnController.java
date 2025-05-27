@@ -27,8 +27,7 @@ public class TurnController {
     private final CraftingService craftingService;
     private String previousTurnSummary;
 
-    // Victory Condition: Survive for a certain number of turns
-    private static final int VICTORY_TURN_THRESHOLD = 30; // Example: Survive 30 turns to win
+    private static final int VICTORY_TURN_THRESHOLD = 30;
 
     public TurnController(Character playerCharacter, Scanner scanner, Random random,
                           AmbientController ambientController, EventManager eventManager) {
@@ -434,12 +433,9 @@ public class TurnController {
             return false;
         }
         if (playerCharacter.getSanity() <= 0) { // Sanity is 0 or less
-            // Message for sanity loss is in Character.setSanity,
-            // but here we confirm it's a game-ending condition.
             Message.displayOnScreen(TerminalStyler.error(playerCharacter.getName() + " has lost their grip on reality... The jungle claims another mind."));
             return false;
         }
-        // Hunger and Thirst at 0 lead to health loss, which is covered by !playerCharacter.isAlive() eventually.
         return true;
     }
 
@@ -448,15 +444,14 @@ public class TurnController {
      * @return The appropriate GameStatus for game over.
      */
     private GameStatus determineGameOverStatus() {
-        if (!playerCharacter.isAlive()) { // Primary check: health
+        if (!playerCharacter.isAlive()) {
             this.previousTurnSummary = playerCharacter.getName() + " could not endure the hardships and perished.";
             return GameStatus.PLAYER_DEFEATED;
         }
         if (playerCharacter.getSanity() <= 0) {
             this.previousTurnSummary = playerCharacter.getName() + "'s mind shattered under the strain of survival.";
-            return GameStatus.SURVIVAL_FAILURE; // Using SURVIVAL_FAILURE for sanity loss
+            return GameStatus.SURVIVAL_FAILURE;
         }
-        // Fallback, though should be covered by above.
         this.previousTurnSummary = playerCharacter.getName() + " succumbed to the unforgiving jungle.";
         return GameStatus.SURVIVAL_FAILURE;
     }

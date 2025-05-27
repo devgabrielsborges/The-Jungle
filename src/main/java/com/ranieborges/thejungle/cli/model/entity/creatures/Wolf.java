@@ -28,9 +28,8 @@ public class Wolf extends Creature {
             return;
         }
         System.out.println(getName() + " lunges and bites " + target.getName() + "!");
-        // Add more complex attack logic, e.g., chance to hit based on speed/traits
-        float damageDealt = getAttackDamage() + (random.nextFloat() * 5 - 2.5f); // Small damage variance
-        target.changeHealth(-Math.max(0, damageDealt)); // Ensure non-negative damage
+        float damageDealt = getAttackDamage() + (random.nextFloat() * 5 - 2.5f);
+        target.changeHealth(-Math.max(0, damageDealt));
     }
 
     @Override
@@ -49,11 +48,11 @@ public class Wolf extends Creature {
     @Override
     public List<Item> dropLoot() {
         List<Item> loot = new ArrayList<>();
-        if (!isAlive()) { // Should only drop loot if dead
-            if (random.nextFloat() < 0.6) { // 60% chance to drop raw meat
+        if (!isAlive()) {
+            if (random.nextFloat() < 0.6) {
                 loot.add(new Food("Raw Wolf Meat", "Meat from a wolf, needs cooking.", 1.5f, 20f, FoodType.MEAT_RAW, 2, 0.5f, 0.6f));
             }
-            if (random.nextFloat() < 0.4) { // 40% chance to drop wolf pelt
+            if (random.nextFloat() < 0.4) {
                 loot.add(new Material("Wolf Pelt", "The fur of a wolf.", 0.8f, MaterialType.LEATHER, 15));
             }
         }

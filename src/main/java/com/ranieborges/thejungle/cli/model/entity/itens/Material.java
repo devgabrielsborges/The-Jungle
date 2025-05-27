@@ -32,7 +32,7 @@ public class Material extends Item {
     @Override
     public boolean use(Character user) {
         Message.displayOnScreen(user.getName() + " examines " + getName() + ". It's a " + materialType.getDisplayName() + ".");
-        return false; // Not consumed by this action
+        return false;
     }
 
     /**

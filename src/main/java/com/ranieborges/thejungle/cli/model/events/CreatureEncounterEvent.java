@@ -15,15 +15,15 @@ import java.util.List;
 @Getter
 public class CreatureEncounterEvent extends Event {
 
-    private final String creatureClassName; // Changed from Class<? extends Creature>
+    private final String creatureClassName;
 
     public CreatureEncounterEvent(String name, String description, double baseProbability,
-                                  Class<? extends Creature> creatureClassToSpawn) { // Constructor still takes Class for convenience
+                                  Class<? extends Creature> creatureClassToSpawn) {
         super(name, description, baseProbability);
         if (creatureClassToSpawn == null) {
             throw new IllegalArgumentException("Creature class to spawn cannot be null.");
         }
-        this.creatureClassName = creatureClassToSpawn.getName(); // Store the class name
+        this.creatureClassName = creatureClassToSpawn.getName();
     }
 
     /**
@@ -31,13 +31,13 @@ public class CreatureEncounterEvent extends Event {
      * This method handles potential ClassNotFoundException.
      * @return The Class object, or null if the class cannot be found.
      */
-    @SuppressWarnings("unchecked") // For the cast to Class<? extends Creature>
+    @SuppressWarnings("unchecked")
     public Class<? extends Creature> getCreatureClass() {
         try {
             return (Class<? extends Creature>) Class.forName(creatureClassName);
         } catch (ClassNotFoundException e) {
             System.err.println(TerminalStyler.error("Error finding creature class for event: " + creatureClassName + " - " + e.getMessage()));
-            return null; // Or handle more gracefully, maybe throw a runtime exception
+            return null;
         }
     }
 
@@ -91,7 +91,7 @@ public class CreatureEncounterEvent extends Event {
         List<Class<? extends Creature>> typicalCreatures = ambient.getTypicalCreatures();
         Class<? extends Creature> creatureClassToSpawn = getCreatureClass();
 
-        if (creatureClassToSpawn == null) return false; // If class name is invalid
+        if (creatureClassToSpawn == null) return false;
 
         return (typicalCreatures != null && typicalCreatures.contains(creatureClassToSpawn)) ||
                 (typicalCreatures == null || typicalCreatures.isEmpty());

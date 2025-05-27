@@ -2,14 +2,18 @@ package com.ranieborges.thejungle.cli.model.world.ambients;
 
 import com.ranieborges.thejungle.cli.model.entity.Character;
 import com.ranieborges.thejungle.cli.model.entity.Creature;
+import com.ranieborges.thejungle.cli.model.entity.Item;
 import com.ranieborges.thejungle.cli.model.entity.creatures.Wolf; // Example
+import com.ranieborges.thejungle.cli.model.entity.itens.Food;
+import com.ranieborges.thejungle.cli.model.entity.itens.Material;
+import com.ranieborges.thejungle.cli.model.entity.utils.enums.FoodType;
+import com.ranieborges.thejungle.cli.model.entity.utils.enums.Hostility;
+import com.ranieborges.thejungle.cli.model.entity.utils.enums.MaterialType;
 import com.ranieborges.thejungle.cli.model.world.Ambient;
 import com.ranieborges.thejungle.cli.view.Message;
+import com.ranieborges.thejungle.cli.view.utils.TerminalStyler;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Mountain extends Ambient {
 
@@ -34,12 +38,87 @@ public class Mountain extends Ambient {
         } else if (outcome < 40) { // Encounter Creature (less frequent but potentially tougher)
             exploreMsg += " A shadow passes overhead... a Mountain Eagle circles!";
             Message.displayOnScreen("A large Mountain Eagle circles above, watching you!");
-            // TODO: Instantiate Eagle and combat
-        } else if (outcome < 60) { // Minor Discovery: Cave Entrance
+            exploreMsg += " Uma águia de montanha surge dos céus!";
+            Message.displayOnScreen(TerminalStyler.warning("Uma enorme águia mergulha do alto em sua direção!"));
+
+            Creature eagle = new Creature("Águia de Montanha", 50, 15, 20, Hostility.NEUTRAL) {
+                @Override
+                public void attack(Character target) {
+                    float damage = getAttackDamage() * (random.nextFloat() * 0.3f + 0.7f);
+                    target.changeHealth(-damage);
+                    Message.displayOnScreen(TerminalStyler.warning(getName() + " ataca " + target.getName() + " com suas garras afiadas!"));
+                    target.changeSanity(-3);
+                    Message.displayOnScreen("O ataque súbito da águia te deixa atordoado! (-3 sanidade)");
+                }
+
+                @Override
+                public void act(Character player) {
+                    if (isAlive()) {
+                        if (getHealth() < getMaxHealth() * 0.3) {
+                            setHostility(Hostility.FLEEING);
+                            Message.displayOnScreen(getName() + " parece ferida e tenta escapar!");
+                        } else {
+                            attack(player);
+                        }
+                    }
+                }
+
+                @Override
+                public List<Item> dropLoot() {
+                    List<Item> loot = new ArrayList<>();
+                    if (random.nextFloat() < 0.6f) {
+                        loot.add(new Food("Carne de Ave", "Carne magra de uma ave de rapina", 0.5f,
+                            20f, FoodType.MEAT_RAW, 2, 0.1f, 0.3f));
+                    }
+                    if (random.nextFloat() < 0.7f) {
+                        loot.add(new Material("Penas de Águia", "Penas grandes e resistentes", 0.1f, MaterialType.FIBER, 3));
+                    }
+                    return loot;
+                }
+            };
+
+// Anunciar o encontro
+            Message.displayOnScreen("Uma " + eagle.getName() + " ataca das alturas!");
+            eagle.displayStatus();
+
+// A águia ataca o personagem
+            eagle.attack(character);
+
+// Perda de sanidade pelo encontro
+            character.changeSanity(-2);        } else if (outcome < 60) { // Minor Discovery: Cave Entrance
             exploreMsg += " Discovered the entrance to a dark cave.";
             Message.displayOnScreen("You find the narrow entrance to a dark cave system.");
-            // TODO: Option to enter cave (change ambient)
-        } else { // Nothing or minor environmental challenge
+            exploreMsg += " Discovered the entrance to a dark cave.";
+            Message.displayOnScreen("You find the narrow entrance to a dark cave system.");
+
+// Opção para entrar na caverna
+            Message.displayOnScreen("\nDo you want to enter the cave? (yes/no)");
+            Scanner scanner = new Scanner(System.in);
+            String choice = scanner.nextLine().trim().toLowerCase();
+
+            if (choice.startsWith("y")) {
+                Message.displayOnScreen(TerminalStyler.style("You venture into the darkness of the cave...", TerminalStyler.CYAN));
+
+                // Custo de energia para entrar na caverna
+                character.changeEnergy(-10);
+
+                // Mudança de ambiente
+                Cave caveAmbient = new Cave();
+                character.setCurrentAmbient(caveAmbient);
+
+                // Aviso de mudança de ambiente
+                Message.displayOnScreen(TerminalStyler.info("You are now in: " + caveAmbient.getName()));
+
+                // Efeito na sanidade - a escuridão pode ser perturbadora
+                character.changeSanity(-5);
+                Message.displayOnScreen("The oppressive darkness of the cave grates on your nerves. (-5 sanity)");
+
+                // Adicionar à mensagem de exploração
+                exploreMsg += " You decided to explore the cave.";
+            } else {
+                Message.displayOnScreen("You decide not to enter the cave for now and continue exploring the mountain.");
+            }
+        } else { // Nothing or minor environmental challenge        } else { // Nothing or minor environmental challenge
             exploreMsg += " The wind howls, making progress difficult.";
             Message.displayOnScreen("The biting wind makes it hard to continue. You find little of interest.");
             character.changeSanity(-2);

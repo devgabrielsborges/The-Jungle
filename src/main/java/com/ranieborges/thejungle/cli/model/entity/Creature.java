@@ -21,9 +21,9 @@ public abstract class Creature {
     private float health;
     private final float maxHealth;
     @Setter private float attackDamage;
-    @Setter private float speed; // Can influence attack order, chance to hit/dodge
+    @Setter private float speed;
     @Setter private Hostility hostility;
-    protected static final Random random = new Random(); // For random behaviors
+    protected static final Random random = new Random();
 
     /**
      * Constructor for a Creature.
@@ -73,7 +73,7 @@ public abstract class Creature {
      * @param amount The amount of damage to take.
      */
     public void takeDamage(float amount) {
-        if (amount < 0) return; // Cannot take negative damage
+        if (amount < 0) return;
         Message.displayOnScreen(TerminalStyler.style(this.name + " takes " + String.format("%.1f", amount) + " damage.", TerminalStyler.RED));
         setHealth(this.health - amount);
     }

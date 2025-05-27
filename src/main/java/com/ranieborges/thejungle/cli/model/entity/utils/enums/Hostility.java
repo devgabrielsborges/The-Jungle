@@ -7,7 +7,7 @@ public enum Hostility {
     HOSTILE("Hostil", "Will attack on sight."),
     NEUTRAL("Neutro", "Will only attack if provoked."),
     FLEEING("Assustado", "Will try to flee if approached or attacked."),
-    PASSIVE("Passivo", "Will not attack, even if provoked."); // e.g., small insects, some birds
+    PASSIVE("Passivo", "Will not attack, even if provoked.");
 
     private final String displayName;
     private final String description;

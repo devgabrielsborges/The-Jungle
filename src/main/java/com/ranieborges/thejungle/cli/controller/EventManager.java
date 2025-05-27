@@ -32,8 +32,8 @@ import static com.ranieborges.thejungle.cli.model.entity.utils.enums.MedicineEff
 public class EventManager {
 
     private List<Event> availableEvents;
-    private transient Random random;     // Transient: re-initialize after load
-    private transient Scanner scanner;   // Transient: re-initialize after load, if needed for pauses
+    private transient Random random;
+    private transient Scanner scanner;
 
     public EventManager(Random randomInstance, Scanner scannerInstance) {
         this.random = randomInstance;
@@ -47,7 +47,7 @@ public class EventManager {
         }
         if (this.scanner == null) {
             System.err.println("EventManager Constructor: Scanner instance was null, creating a new one. Ensure reinitializeTransientFields is called after loading if this was unintended.");
-            this.scanner = new Scanner(System.in); // Fallback, ideally provided
+            this.scanner = new Scanner(System.in);
         }
     }
 
@@ -132,7 +132,7 @@ public class EventManager {
             if (random.nextDouble() < probability) {
                 String eventOutcome = event.execute(player, ambient, turnController);
                 Message.displayOnScreen("Press Enter to continue after the event...");
-                scanner.nextLine(); // Use the EventManager's scanner instance for the pause
+                scanner.nextLine();
                 return eventOutcome;
             }
         }
@@ -149,10 +149,9 @@ public class EventManager {
         }
         if (this.scanner == null) {
             System.err.println("EventManager.reinitializeTransientFields: Scanner instance is null, creating a new one.");
-            this.scanner = new Scanner(System.in); // Fallback
+            this.scanner = new Scanner(System.in);
         }
 
-        // If availableEvents was not serialized and needs to be setup fresh:
         if (this.availableEvents == null || this.availableEvents.isEmpty()) {
             System.out.println("EventManager: availableEvents list is empty after load or reinitialization. Re-populating default events.");
             initializeEvents();

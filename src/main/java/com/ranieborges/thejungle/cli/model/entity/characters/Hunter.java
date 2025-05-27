@@ -11,12 +11,11 @@ import java.util.EnumSet;
  */
 public class Hunter extends Character {
 
-    // Specific default stats for a Hunter
     private static final float HUNTER_INITIAL_SANITY = 60f;
-    private static final float HUNTER_ATTACK_DAMAGE = 30f; // Good with hunting tools
-    private static final float HUNTER_SPEED = 65f;      // Faster for tracking/chasing
+    private static final float HUNTER_ATTACK_DAMAGE = 30f;
+    private static final float HUNTER_SPEED = 65f;
     private static final float HUNTER_MAX_CARRY_WEIGHT = 65f;
-    private static final float HUNTER_ABILITY_COST = 20f; // Energy cost for special ability
+    private static final float HUNTER_ABILITY_COST = 20f;
     private static final float HUNTER_INITIAL_HEALTH = 90f;
 
     public Hunter(String name) {
@@ -41,13 +40,9 @@ public class Hunter extends Character {
         if (getEnergy() >= HUNTER_ABILITY_COST) {
             setEnergy(getEnergy() - HUNTER_ABILITY_COST);
             System.out.println(getName() + " uses 'Track Prey', keenly observing the surroundings...");
-            // In a full implementation, this might:
-            // - Reveal a nearby animal on the map.
-            // - Guarantee finding food on the next 'explore' action.
-            // - Directly add a small amount of food to inventory.
+
             System.out.println(getName() + " has a better chance of finding food now (conceptual).");
-            // For example, conceptually finding some berries or a small game
-            // getInventory().addItem(new FoodItem("Berries", 10)); // Example
+
             System.out.println(getName() + " consumed " + HUNTER_ABILITY_COST + " energy. Energy left: " + String.format("%.1f", getEnergy()));
         } else {
             System.out.println(getName() + " doesn't have enough energy to use 'Track Prey'. Needs " + HUNTER_ABILITY_COST + " energy.");

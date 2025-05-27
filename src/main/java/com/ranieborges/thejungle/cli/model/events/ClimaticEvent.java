@@ -22,7 +22,7 @@ public class ClimaticEvent extends Event {
     }
 
     @Override
-    public String execute(Character player, Ambient ambient, TurnController turnController) { // Added turnController parameter
+    public String execute(Character player, Ambient ambient, TurnController turnController) {
         announceEvent();
         String outcomeSummary = "The weather has drastically changed to a " + climateType.getDisplayName() + ".";
         Message.displayOnScreen(TerminalStyler.info("The current weather in " + ambient.getName() + " is now: " + climateType.getDisplayName()));
@@ -33,7 +33,7 @@ public class ClimaticEvent extends Event {
             case BLIZZARD:
                 Message.displayOnScreen(TerminalStyler.warning("The biting cold of the blizzard chills you to the bone!"));
                 player.changeEnergy(-20);
-                player.changeThirst(-10); // Cold can make you thirsty, or it could be less due to snow
+                player.changeThirst(-10);
                 player.changeSanity(-10);
                 outcomeSummary += " It's freezing and hard to see.";
                 break;
@@ -59,25 +59,20 @@ public class ClimaticEvent extends Event {
                 break;
         }
 
-        // The TurnController or an ActiveEventManager would be responsible for tracking the duration.
-        // This event just sets the initial state.
         Message.displayOnScreen(TerminalStyler.debug("This climatic condition ("+ climateType.getDisplayName() +") might persist for approximately " + durationTurns + " turns. (Tracking not yet implemented)"));
 
-        // Climatic events usually don't need the turnController directly for their immediate execution,
-        // but it's passed for consistency with the Event interface.
-        // The turnController might later query active climatic events to apply ongoing effects.
 
         return outcomeSummary;
     }
 
     @Override
     public boolean canOccur(Character player, Ambient ambient) {
-        // Example: Blizzards might only occur in Mountains or cold weather
+
         if (this.climateType == ClimateType.BLIZZARD &&
                 !(ambient.getName().toLowerCase().contains("mountain") || ambient.getCurrentWeather().toLowerCase().contains("cold"))) {
             return false;
         }
-        // Heat wave less likely in very cold places
+
         if (this.climateType == ClimateType.HEAT_WAVE && ambient.getName().toLowerCase().contains("mountain") && ambient.getCurrentWeather().toLowerCase().contains("blizzard")) {
             return false;
         }

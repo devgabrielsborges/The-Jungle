@@ -8,13 +8,13 @@ import lombok.Getter;
  */
 @Getter
 public enum WeaponType {
-    MELEE_SLASHING("Corpo a Corpo - Cortante"), // e.g., Machete, Sword
-    MELEE_PIERCING("Corpo a Corpo - Perfurante"), // e.g., Spear, Dagger
+    MELEE_SLASHING("Corpo a Corpo - Cortante"),
+    MELEE_PIERCING("Corpo a Corpo - Perfurante"),
     RANGED_BOW("À Distância - Arco"),
     RANGED_CROSSBOW("À Distância - Besta"),
     RANGED_FIREARM_PISTOL("À Distância - Arma de Fogo (Pistola)"),
     RANGED_FIREARM_RIFLE("À Distância - Arma de Fogo (Rifle)"),
-    RANGED_THROWN("À Distância - Arremessável"), // e.g., Throwing Knives, Rocks
+    RANGED_THROWN("À Distância - Arremessável"),
     OTHER("Outra Arma");
 
     private final String displayName;

@@ -38,7 +38,7 @@ public class Drinkable extends Item {
         }
         this.thirstRestored = thirstRestored;
         this.purity = purity;
-        this.diseaseChance = (purity == Purity.CONTAMINATED) ? diseaseChance : 0; // Disease only if contaminated
+        this.diseaseChance = (purity == Purity.CONTAMINATED) ? diseaseChance : 0;
     }
 
     /**
@@ -58,24 +58,22 @@ public class Drinkable extends Item {
     @Override
     public boolean use(Character user) {
         System.out.println(user.getName() + " drinks " + getName() + ".");
-        user.changeThirst(this.thirstRestored); // Positive value should increase thirst stat towards max
+        user.changeThirst(this.thirstRestored);
         System.out.println(user.getName() + "'s thirst is now " + String.format("%.1f", user.getThirst()) + "/" + Character.CHARACTER_DEFAULT_MAX_STAT);
 
         if (this.purity == Purity.CONTAMINATED) {
             System.out.println("The " + getName() + " looks " + this.purity.getDisplayName().toLowerCase() + "...");
             if (Math.random() < this.diseaseChance) {
-                // Apply negative effects - this is conceptual and needs further game mechanics
-                // For example, set a "diseased" status on the character, or reduce health/sanity.
                 System.out.println(user.getName() + " feels unwell after drinking it!");
-                user.changeHealth(-10); // Example: lose 10 health
-                user.changeSanity(-5);  // Example: lose 5 sanity
+                user.changeHealth(-10);
+                user.changeSanity(-5);
             } else {
                 System.out.println(user.getName() + " seems to have gotten away with it... for now.");
             }
         } else if (this.purity == Purity.UNKNOWN) {
             System.out.println("The purity of " + getName() + " is uncertain. " + user.getName() + " takes a risk.");
-            // Could have a smaller chance of negative effects or a mix of outcomes
-            if (Math.random() < (this.diseaseChance / 2)) { // Example: half chance if unknown
+
+            if (Math.random() < (this.diseaseChance / 2)) {
                 System.out.println(user.getName() + " feels a bit queasy.");
                 user.changeSanity(-2);
             }

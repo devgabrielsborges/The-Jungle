@@ -9,10 +9,10 @@ import lombok.Getter;
 @Getter
 public enum AmmunitionType {
     ARROW("Flecha"),
-    BOLT("Virote de Besta"), // Crossbow bolt
+    BOLT("Virote de Besta"),
     BULLET_HANDGUN("Munição de Pistola"),
     BULLET_RIFLE("Munição de Rifle"),
-    NONE("Nenhuma"); // For melee or thrown weapons not requiring separate ammo items
+    NONE("Nenhuma");
 
     private final String displayName;
 
