@@ -12,7 +12,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class BoatMan {
     private static final Random random = new Random();
-    private static final float EVENT_PROBABILITY = 0.01f;// probabaility of the event occurring
+    private static final float EVENT_PROBABILITY = 0.01f;// probability of the event occurring
 
     public static void triggerEvent(LakeRiver lakeriver, SpriteBatch batch) {
         if (random.nextFloat() < EVENT_PROBABILITY) {
