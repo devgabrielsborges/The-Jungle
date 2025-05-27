@@ -200,7 +200,7 @@ public class ResourceController implements UI {
         }
 
         if (random.nextFloat() >= RadioGuy_SPAWN_PROBABILITY) {
-            logger.debug("radioGuys spawn chance failed for Mountain: {}. No boat will be spawned this time.", ambient.getName());
+            logger.debug("radioGuys spawn chance failed for Mountain: {}. No radioGuy will be spawned this time.", ambient.getName());
             return this.radioGuys;
         }
 
