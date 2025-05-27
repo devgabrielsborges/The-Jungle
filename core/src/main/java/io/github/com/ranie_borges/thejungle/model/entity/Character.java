@@ -428,6 +428,8 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
                     itemToCollect = Material.createSmallRock();
                 } else if ("stick".equalsIgnoreCase(materialOnMap.getName())) {
                     itemToCollect = Material.createStick();
+                } else if ("coin".equalsIgnoreCase(materialOnMap.getName())) {
+                    itemToCollect = Material.createCoin();
                 } else if ("Tree".equalsIgnoreCase(materialOnMap.getName())) {
                     continue;
                 }

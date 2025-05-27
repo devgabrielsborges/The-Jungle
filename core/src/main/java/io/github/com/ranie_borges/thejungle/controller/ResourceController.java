@@ -32,6 +32,7 @@ public class ResourceController implements UI {
     private static final int MAX_NPC_TO_SPAWN = 1;
     private static final int MAX_Boat_TO_SPAWN = 1;
     private static final int MAX_RADIOGUY_TO_SPAWN = 1;
+    private static final float COIN_SPAWN_PROBABILITY = 0.5f; // chance de spawn
 
 
 
@@ -45,6 +46,10 @@ public class ResourceController implements UI {
                 materialsOnMap.addAll(Material.spawnTrees(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                 materialsOnMap.addAll(Material.spawnMedicinalPlants(3, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
                 materialsOnMap.addAll(Material.spawnBerryBushes(4, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+            } else if (ambient instanceof Ruins) {
+                if (random.nextFloat() < COIN_SPAWN_PROBABILITY) {
+                    materialsOnMap.addAll(Material.spawnCoins(1, map, MAP_WIDTH, MAP_HEIGHT, TILE_GRASS, TILE_SIZE));
+                }
             }
             logger.debug("Spawned {} materials for ambient: {}", materialsOnMap.size(), ambient.getName());
             return materialsOnMap;
