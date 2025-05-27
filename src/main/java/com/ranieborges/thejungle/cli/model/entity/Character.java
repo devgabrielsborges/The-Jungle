@@ -54,8 +54,8 @@ public abstract class Character {
 
         this.inventory = new Inventory(Math.max(10.0f, maxCarryWeight));
         this.traits = traits;
-        if (this.currentAmbient == null) { // Should be set by AmbientController after instantiation
-            this.currentAmbient = new Jungle(); // Fallback
+        if (this.currentAmbient == null) {
+            this.currentAmbient = new Jungle();
         }
     }
 
@@ -103,7 +103,7 @@ public abstract class Character {
     }
 
     public abstract void useSpecialAbility();
-    public abstract String getDescription(); // This should return a string, display logic is elsewhere
+    public abstract String getDescription();
 
     public void changeHealth(float amount) {
         float oldHealth = this.health;

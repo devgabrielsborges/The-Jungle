@@ -10,9 +10,9 @@ public enum ToolType {
     SHOVEL("Pá"),
     HAMMER("Martelo"),
     FISHING_ROD("Vara de Pescar"),
-    LIGHTER("Isqueiro"), // "Isqueiro"
-    FLASHLIGHT("Lanterna"), // "Lanterna"
-    POT("Panela"), // For cooking
+    LIGHTER("Isqueiro"),
+    FLASHLIGHT("Lanterna"),
+    POT("Panela"),
     REPAIR_KIT("Kit de Reparo"),
     SEWING_KIT("Kit de Costura"),
     WATER_FILTER("Filtro de Água Portátil"),

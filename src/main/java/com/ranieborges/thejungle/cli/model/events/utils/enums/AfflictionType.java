@@ -7,11 +7,11 @@ public enum AfflictionType {
     MINOR_CUT("Corte Leve"),
     SPRAINED_ANKLE("Tornozelo Torcido"),
     FOOD_POISONING("Intoxicação Alimentar"),
-    INFECTION("Infecção (de ferida anterior)"), // Would require tracking wounds
+    INFECTION("Infecção (de ferida anterior)"),
     HYPOTHERMIA("Hipotermia"),
-    DEHYDRATION_SPELL("Episódio de Desidratação Aguda"), // Sudden worsening
+    DEHYDRATION_SPELL("Episódio de Desidratação Aguda"),
     FEVER("Febre Súbita"),
-    FRACTURE("Fratura Simples"); // More severe
+    FRACTURE("Fratura Simples");
 
     private final String displayName;
     AfflictionType(String displayName) { this.displayName = displayName; }

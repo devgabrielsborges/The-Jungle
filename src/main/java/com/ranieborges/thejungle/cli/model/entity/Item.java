@@ -50,7 +50,7 @@ public abstract class Item {
      * @param weight      The weight of the item.
      */
     public Item(String name, String description, float weight) {
-        this(name, description, weight, 0); // Durability 0 means not applicable or infinite
+        this(name, description, weight, 0);
     }
 
     /**
@@ -70,11 +70,9 @@ public abstract class Item {
      * @param durability The new durability value.
      */
     public void setDurability(int durability) {
-        if (this.maxDurability > 0) { // Only for items that are meant to have durability
+        if (this.maxDurability > 0) {
             this.durability = Math.max(0, Math.min(durability, this.maxDurability));
         } else {
-            // For items with no maxDurability (e.g., constructed with durability 0),
-            // durability remains unchanged or is considered not applicable.
             this.durability = 0;
         }
     }
@@ -87,14 +85,14 @@ public abstract class Item {
      * @return true if the item broke (durability reached 0) as a result, false otherwise.
      */
     protected boolean decreaseDurability(int amount) {
-        if (this.maxDurability > 0) { // Only if it's a durable item
+        if (this.maxDurability > 0) {
             this.setDurability(this.durability - amount);
             if (this.durability == 0) {
                 Message.displayOnScreen(TerminalStyler.error(this.name + " broke!"));
-                return true; // Item broke
+                return true;
             }
         }
-        return false; // Item not broken or not durable
+        return false;
     }
 
     /**
@@ -114,5 +112,5 @@ public abstract class Item {
         }
         return String.format("%s (Desc: %s, Wt: %.1f%s)", name, description, weight, durabilityInfo);
     }
-    
+
 }

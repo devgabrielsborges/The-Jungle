@@ -6,9 +6,9 @@ import lombok.Getter;
 public enum MaterialType {
     WOOD("Madeira"),
     STONE("Pedra"),
-    METAL_ORE("Minério de Metal"), // Raw ore
-    METAL_INGOT("Barra de Metal"), // Processed metal
-    FIBER("Fibra Vegetal"),      // For ropes, cloth
+    METAL_ORE("Minério de Metal"),
+    METAL_INGOT("Barra de Metal"),
+    FIBER("Fibra Vegetal"),
     CLAY("Argila"),
     LEATHER("Couro"),
     BONE("Osso"),

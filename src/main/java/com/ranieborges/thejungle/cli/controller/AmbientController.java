@@ -21,7 +21,6 @@ public class AmbientController {
     private Map<String, Ambient> worldMap;
     private Ambient currentAmbient;
 
-    // Transient fields: these will not be saved by GSON and must be re-initialized after loading
     private transient Scanner scanner;
     private transient Random random;
 
@@ -34,9 +33,9 @@ public class AmbientController {
 
         if (this.playerCharacter != null && this.playerCharacter.getCurrentAmbient() == null) {
             this.currentAmbient = worldMap.get("Jungle");
-            if (this.currentAmbient == null && !worldMap.isEmpty()) { // Fallback if "Jungle" isn't the exact key
+            if (this.currentAmbient == null && !worldMap.isEmpty()) {
                 this.currentAmbient = worldMap.values().iterator().next();
-            } else if (this.currentAmbient == null) { // If worldMap is also empty
+            } else if (this.currentAmbient == null) {
                 Message.displayOnScreen("Warning: World map is empty. Creating a default Jungle ambient.");
                 this.currentAmbient = new Jungle();
                 this.worldMap.put(this.currentAmbient.getName(), this.currentAmbient);
@@ -44,12 +43,12 @@ public class AmbientController {
             this.playerCharacter.setCurrentAmbient(this.currentAmbient);
         } else if (this.playerCharacter != null) {
             this.currentAmbient = worldMap.get(playerCharacter.getCurrentAmbient().getName());
-            if (this.currentAmbient == null) { // Should not happen if save data is consistent
+            if (this.currentAmbient == null) {
                 Message.displayOnScreen("Warning: Loaded character's current ambient not found in worldMap. Re-assigning.");
-                this.currentAmbient = playerCharacter.getCurrentAmbient(); // Use the character's loaded ambient
-                if (this.currentAmbient != null) { // If it's not null, add it to the map
+                this.currentAmbient = playerCharacter.getCurrentAmbient();
+                if (this.currentAmbient != null) {
                     this.worldMap.put(this.currentAmbient.getName(), this.currentAmbient);
-                } else { // This would be a critical load error
+                } else {
                     Message.displayOnScreen("Error: Player's loaded ambient is null. Defaulting to Jungle.");
                     this.currentAmbient = new Jungle();
                     this.worldMap.put(this.currentAmbient.getName(), this.currentAmbient);
@@ -57,7 +56,6 @@ public class AmbientController {
                 }
             }
         } else if (worldMap.isEmpty()) {
-            // Both player and worldMap are null, initialize minimally.
             initializeWorldMap();
             this.currentAmbient = worldMap.getOrDefault("Jungle", new Jungle());
             if (!worldMap.containsKey(this.currentAmbient.getName())) {
@@ -73,16 +71,10 @@ public class AmbientController {
         if (this.worldMap == null) {
             this.worldMap = new HashMap<>();
         } else {
-            // If re-initializing, decide if you want to clear or add to existing
-            // For a save/load system, GSON should populate worldMap.
-            // This method is more for initial setup of a new game.
-            // If called after load and worldMap is already populated by GSON, this might overwrite.
-            // Let's assume if worldMap is populated, we don't need to re-init fully.
             if (!this.worldMap.isEmpty() && this.worldMap.values().stream().anyMatch(Jungle.class::isInstance)) {
-                // Potentially already loaded, skip full re-init to preserve loaded state
                 return;
             }
-            this.worldMap.clear(); // Clear for a fresh setup
+            this.worldMap.clear();
         }
 
         Ambient jungle = new Jungle();
@@ -99,27 +91,20 @@ public class AmbientController {
     }
 
     public Ambient getCurrentAmbient() {
-        // Sync currentAmbient with playerCharacter's ambient after potential deserialization
         if (playerCharacter != null && playerCharacter.getCurrentAmbient() != null) {
-            // Ensure this.currentAmbient refers to the instance from worldMap
             Ambient characterAmbient = playerCharacter.getCurrentAmbient();
             String ambientName = characterAmbient.getName();
             if (worldMap.containsKey(ambientName)) {
                 this.currentAmbient = worldMap.get(ambientName);
-                // Ensure player's reference is also to the map's instance if different
                 if (playerCharacter.getCurrentAmbient() != this.currentAmbient) {
                     playerCharacter.setCurrentAmbient(this.currentAmbient);
                 }
             } else {
-                // If not in map, it means the loaded ambient instance for player isn't in controller's map.
-                // This might happen if worldMap itself was not fully restored or got re-initialized.
-                // Add it to the map and set currentAmbient.
                 Message.displayOnScreen("Warning: Player's current ambient '"+ambientName+"' not in worldMap. Adding it.");
                 worldMap.put(ambientName, characterAmbient);
                 this.currentAmbient = characterAmbient;
             }
         } else if (this.currentAmbient == null && worldMap != null && !worldMap.isEmpty()) {
-            // If currentAmbient is null but worldMap is not, pick a default
             this.currentAmbient = worldMap.getOrDefault("Jungle", worldMap.values().iterator().next());
             if (playerCharacter != null) {
                 playerCharacter.setCurrentAmbient(this.currentAmbient);
@@ -141,7 +126,7 @@ public class AmbientController {
     public void moveToAmbient(String newAmbientKey) {
         Ambient targetAmbient = worldMap.get(newAmbientKey);
         if (targetAmbient != null) {
-            Ambient oldAmbient = getCurrentAmbient(); // Use getter to ensure it's synced
+            Ambient oldAmbient = getCurrentAmbient();
             Message.displayOnScreen(playerCharacter.getName() + " travels from " + (oldAmbient != null ? oldAmbient.getName() : "an unknown place") + " to " + targetAmbient.getName() + "...");
             this.currentAmbient = targetAmbient;
             playerCharacter.setCurrentAmbient(targetAmbient);
@@ -157,7 +142,7 @@ public class AmbientController {
             Message.displayOnScreen("Error: Scanner not initialized in AmbientController. Cannot offer movement.");
             return;
         }
-        Ambient current = getCurrentAmbient(); // Use getter
+        Ambient current = getCurrentAmbient();
         if (current == null) {
             Message.displayOnScreen("Error: Current ambient is unknown. Cannot determine movement options.");
             return;
@@ -194,7 +179,7 @@ public class AmbientController {
     }
 
     public void updateAmbientResources() {
-        Ambient current = getCurrentAmbient(); // Use getter
+        Ambient current = getCurrentAmbient();
         if (current != null) {
             current.updateResources();
         }
@@ -226,16 +211,13 @@ public class AmbientController {
             initializeWorldMap();
         }
 
-        // Sync currentAmbient and playerCharacter's currentAmbient with instances from the (potentially re-initialized) worldMap.
         if (this.playerCharacter != null && this.playerCharacter.getCurrentAmbient() != null) {
             String loadedPlayerAmbientName = this.playerCharacter.getCurrentAmbient().getName();
             Ambient mapInstance = this.worldMap.get(loadedPlayerAmbientName);
             if (mapInstance != null) {
                 this.currentAmbient = mapInstance;
-                this.playerCharacter.setCurrentAmbient(mapInstance); // Ensure player also refers to the map instance
+                this.playerCharacter.setCurrentAmbient(mapInstance);
             } else {
-                // This means the player's loaded ambient doesn't exist in our re-initialized map
-                // Add it, or default player to a known ambient.
                 Message.displayOnScreen("Warning: Player's loaded ambient '" + loadedPlayerAmbientName + "' not found in re-initialized worldMap. Adding it or defaulting.");
                 this.worldMap.put(loadedPlayerAmbientName, this.playerCharacter.getCurrentAmbient());
                 this.currentAmbient = this.playerCharacter.getCurrentAmbient();

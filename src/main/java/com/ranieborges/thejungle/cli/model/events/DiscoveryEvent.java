@@ -62,13 +62,11 @@ public class DiscoveryEvent extends Event {
             }
         }
 
-        // Specific effects based on discovery type
+
         switch (discoveryType) {
             case ABANDONED_SHELTER:
                 Message.displayOnScreen("This shelter could offer temporary protection or contain more supplies.");
-                // Could change ambient, or offer a "rest here" option with bonuses.
-                // Could also have a chance of being occupied (triggering another event/encounter).
-                if (random.nextDouble() < 0.2) { // 20% chance it's occupied
+                if (random.nextDouble() < 0.2) {
                     Message.displayOnScreen(TerminalStyler.warning("But wait... you hear sounds from inside!"));
                     // TODO: Trigger a CreatureEncounterEvent or NPC encounter
                     outcomeSummary += " The shelter seemed occupied!";

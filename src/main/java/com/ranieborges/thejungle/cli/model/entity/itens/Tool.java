@@ -12,9 +12,9 @@ import lombok.Getter;
  */
 @Getter
 public class Tool extends Item {
-    private final ToolType toolType;      // "Tipo (machado, faca, isqueiro, lanterna)"
-    private final float efficiency;       // "Eficiência (impacta a rapidez ao coletar recursos)"
-    private final float damageAsWeapon;   // Some tools can also be used as makeshift weapons
+    private final ToolType toolType;
+    private final float efficiency;
+    private final float damageAsWeapon;
 
     /**
      * Constructor for a Tool item.
@@ -70,36 +70,34 @@ public class Tool extends Item {
 
         System.out.println(user.getName() + " uses " + getName() + " (" + toolType.getDisplayName() + ").");
 
-        // Specific tool logic would go here, often triggered by player actions in the game loop
-        // rather than just "using" the item from inventory without context.
-        // For example, if the player chooses "Chop Wood" and has an Axe equipped:
+
         switch (this.toolType) {
             case AXE:
                 System.out.println("Swinging the axe... (Conceptual: gather wood, efficiency: " + this.efficiency + ")");
-                // gameLogic.gatherResource(ResourceType.WOOD, this.efficiency);
+
                 break;
             case KNIFE:
                 System.out.println("Using the knife... (Conceptual: skin animal, carve wood, efficiency: " + this.efficiency + ")");
-                // gameLogic.performAction(ActionType.CARVE, this.efficiency);
+
                 break;
             case PICKAXE:
                 System.out.println("Swinging the pickaxe... (Conceptual: mine ore, efficiency: " + this.efficiency + ")");
                 break;
             case LIGHTER:
                 System.out.println("Flicking the lighter... (Conceptual: start fire)");
-                // gameLogic.startFire();
+
                 break;
             case FLASHLIGHT:
                 System.out.println("Turning on the flashlight... (Conceptual: provide light)");
-                // gameLogic.toggleLightSource(this);
+
                 break;
-            // Add cases for other tool types
+
             default:
                 System.out.println("This tool doesn't have a generic 'use' action in this context.");
                 break;
         }
 
-        return decreaseDurability(); // Returns true if the tool broke
+        return decreaseDurability();
     }
 
     /**
@@ -110,7 +108,7 @@ public class Tool extends Item {
     public void attackWithTool(Character user, Character target) {
         if (this.damageAsWeapon > 0 && getDurability() > 0) {
             System.out.println(user.getName() + " attacks " + (target != null ? target.getName() : "something") + " with " + getName() + "!");
-            float actualDamage = this.damageAsWeapon + user.getAttackDamage(); // Base tool damage + character's own attack
+            float actualDamage = this.damageAsWeapon + user.getAttackDamage();
             if(target != null) target.changeHealth(-actualDamage);
             System.out.println(getName() + " dealt " + this.damageAsWeapon + " damage (base).");
             if (decreaseDurability()) {

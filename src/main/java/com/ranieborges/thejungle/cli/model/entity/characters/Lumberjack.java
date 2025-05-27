@@ -26,9 +26,8 @@ public class Lumberjack extends Character {
                 LUMBERJACK_ATTACK_DAMAGE,
                 LUMBERJACK_SPEED,
                 LUMBERJACK_MAX_CARRY_WEIGHT,
-                EnumSet.of(Trait.STRONG, Trait.FIRE_MAKER, Trait.MECHANIC) // Mechanic for tool upkeep
+                EnumSet.of(Trait.STRONG, Trait.FIRE_MAKER, Trait.MECHANIC)
         );
-        // Note: initial health, hunger, thirst, energy are set by Character's constructor.
     }
 
     /**
@@ -41,8 +40,7 @@ public class Lumberjack extends Character {
         if (getEnergy() >= LUMBERJACK_ABILITY_COST) {
             setEnergy(getEnergy() - LUMBERJACK_ABILITY_COST);
             System.out.println(getName() + " shouts 'Timber!' and expertly fells a tree.");
-            // In a full implementation, this would add wood to the inventory.
-            // e.g., getInventory().addItem(new WoodItem(5)); // Assuming WoodItem and quantity
+
             System.out.println(getName() + " gathered a good amount of wood (conceptual).");
             System.out.println(getName() + " consumed " + LUMBERJACK_ABILITY_COST + " energy. Energy left: " + String.format("%.1f", getEnergy()));
 

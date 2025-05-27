@@ -30,15 +30,15 @@ public class Weapon extends Item {
         this.range = range;
         this.ammoType = ammoType;
         this.maxAmmoInClip = (this.ammoType == AmmunitionType.NONE) ? 0 : maxAmmoInClip;
-        this.currentAmmoInClip = 0; // Start empty; requires explicit loading for clip-based weapons
-        // For single-shot, ammo is drawn from inventory per shot.
+        this.currentAmmoInClip = 0;
+
     }
 
     public Weapon(String name, String description, float weight, int durability,
                   WeaponType weaponType, float damage) {
         this(name, description, weight, durability, weaponType, damage, 0f, AmmunitionType.NONE, 0);
         if (!weaponType.name().startsWith("MELEE_")) {
-            // System.out.println("Warning: Melee constructor used for a non-melee weapon type: " + weaponType.getDisplayName());
+
         }
     }
 
@@ -50,25 +50,25 @@ public class Weapon extends Item {
 
         // Ammunition Handling
         if (this.ammoType != AmmunitionType.NONE) {
-            if (this.maxAmmoInClip > 0) { // Weapon uses a clip/magazine
+            if (this.maxAmmoInClip > 0) {
                 if (this.currentAmmoInClip <= 0) {
                     Message.displayOnScreen(TerminalStyler.warning(getName() + " is out of ammunition! Needs to be reloaded."));
-                    return false; // Cannot attack, weapon not consumed/broken by this attempt
+                    return false;
                 }
                 this.currentAmmoInClip--;
                 Message.displayOnScreen(TerminalStyler.info(getName() + " fired. Ammo left in clip: " + this.currentAmmoInClip + "/" + this.maxAmmoInClip));
-            } else { // Single-shot weapon (e.g., bow), consumes ammo directly from inventory
+            } else {
                 if (user.getInventory().countAmmunitionByType(this.ammoType) > 0) {
                     if (user.getInventory().removeAmmunitionByType(this.ammoType, 1)) {
                         Message.displayOnScreen(TerminalStyler.info(user.getName() + " used one " + this.ammoType.getDisplayName() + " with " + getName() + "."));
                     } else {
-                        // Should not happen if countAmmunitionByType was > 0 and removeAmmunitionByType is correct
+
                         Message.displayOnScreen(TerminalStyler.error("Error consuming " + this.ammoType.getDisplayName() + ". Attack failed."));
                         return false;
                     }
                 } else {
                     Message.displayOnScreen(TerminalStyler.warning(user.getName() + " has no " + this.ammoType.getDisplayName() + " to use with " + getName() + "."));
-                    return false; // Cannot attack
+                    return false;
                 }
             }
         }
@@ -77,19 +77,19 @@ public class Weapon extends Item {
 
         if (target != null) {
             float totalDamage = this.damage + user.getAttackDamage();
-            target.changeHealth(-totalDamage); // changeHealth should handle its own messages
+            target.changeHealth(-totalDamage);
             Message.displayOnScreen(TerminalStyler.info(getName() + " dealt " + String.format("%.1f", this.damage) + " base damage to " + target.getName() + "."));
         } else {
             Message.displayOnScreen(TerminalStyler.info(getName() + " dealt " + String.format("%.1f", this.damage) + " base damage."));
         }
 
-        return decreaseDurability(); // Returns true if the weapon broke
+        return decreaseDurability();
     }
 
     @Override
     public boolean use(Character user) {
         Message.displayOnScreen(user.getName() + " readies " + getName() + ".");
-        // Could implement equipping logic here.
+
         return false;
     }
 
@@ -132,7 +132,7 @@ public class Weapon extends Item {
             if (maxAmmoInClip > 0) {
                 ammoInfo = String.format(", Ammo: %d/%d %s", currentAmmoInClip, maxAmmoInClip, ammoType.getDisplayName());
             } else {
-                ammoInfo = String.format(", Uses: %s", ammoType.getDisplayName()); // For single-shot weapons
+                ammoInfo = String.format(", Uses: %s", ammoType.getDisplayName());
             }
         }
         return String.format("%s (Type: %s, Dmg: %.1f, Rng: %.1f%s, Dur: %d/%d, Wt: %.1f)",
