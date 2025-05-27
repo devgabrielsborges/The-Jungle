@@ -32,7 +32,6 @@ public abstract class Character {
     @Setter private Set<Trait> traits;
     @Setter private Ambient currentAmbient;
 
-    // Faction Reputation System
     private Map<String, Integer> factionReputationPoints; // Key: Faction ID, Value: points
     private Map<String, FactionReputationLevel> factionReputationLevels; // Key: Faction ID, Value: Level
 
@@ -85,9 +84,6 @@ public abstract class Character {
         int currentPoints = getReputationPoints(faction);
         int newPoints = currentPoints + pointsChange;
 
-        // Clamp points if necessary, though FactionReputationLevel handles overflow display
-        // newPoints = Math.max(FactionReputationLevel.HATED.getMinPoints(), Math.min(newPoints, FactionReputationLevel.ALLIED.getMaxPoints()));
-
         factionReputationPoints.put(factionId, newPoints);
         FactionReputationLevel oldLevel = getReputationLevel(faction);
         FactionReputationLevel newLevel = FactionReputationLevel.fromPoints(newPoints);
@@ -108,7 +104,6 @@ public abstract class Character {
         }
     }
 
-    // Call this method to initialize reputation for all known factions (e.g., at game start)
     public void initializeFactionReputations(List<Faction> allFactions) {
         for (Faction faction : allFactions) {
             if (!factionReputationPoints.containsKey(faction.getId())) {
@@ -119,7 +114,6 @@ public abstract class Character {
     }
 
 
-    // --- Existing Character methods ---
     public void setHealth(float health) {
         this.health = Math.max(0, Math.min(health, CHARACTER_DEFAULT_MAX_HEALTH));
         if (this.health == 0) {
@@ -237,12 +231,9 @@ public abstract class Character {
             Message.displayOnScreen("Traits: None");
         }
 
-        // Display Faction Reputations
         if (factionReputationLevels != null && !factionReputationLevels.isEmpty()) {
             Message.displayOnScreen(TerminalStyler.style("Faction Reputations:", TerminalStyler.YELLOW));
             factionReputationLevels.forEach((factionId, level) -> {
-                // To get faction name, we'd ideally have access to FactionManager here
-                // For now, just using ID. FactionManager can provide the display name later.
                 Message.displayOnScreen(String.format(" - %s: %s (%d pts)", factionId, level.getDisplayName(), factionReputationPoints.getOrDefault(factionId, 0)));
             });
         }
