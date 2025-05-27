@@ -80,7 +80,7 @@ public class Tool extends Item {
      * @return A Tool representing an Axe
      */
     public static Tool createAxe() {
-        return new Tool("Axe", 2.5f, 1.0f, 1.5f, 1.2f);
+        return new Tool("Axe", 2.5f, 3f, 1.5f, 1.2f);
     }
 
     /**

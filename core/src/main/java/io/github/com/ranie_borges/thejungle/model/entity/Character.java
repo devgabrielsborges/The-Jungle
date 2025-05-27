@@ -11,8 +11,11 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.google.gson.annotations.Expose;
+import io.github.com.ranie_borges.thejungle.core.Main;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Doctor;
 import io.github.com.ranie_borges.thejungle.model.entity.characters.Lumberjack;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Cannibal;
+import io.github.com.ranie_borges.thejungle.model.entity.creatures.Deer;
 import io.github.com.ranie_borges.thejungle.model.entity.creatures.Fish; // Import Fish
 import io.github.com.ranie_borges.thejungle.model.entity.itens.*;
 import io.github.com.ranie_borges.thejungle.model.enums.Trait;
@@ -231,7 +234,51 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
             }
         }
     }
+    public void cutTree(Material tree) {
+        Tool axe = null;
+        for (Item item : inventory) {
+            if (item instanceof Tool && item.getName().equalsIgnoreCase("Axe")) {
+                axe = (Tool) item;
+                break;
+            }
+        }
+        if (axe == null) {
+            logger.warn("{} tentou cortar uma árvore sem ter um machado.", getName());
+            return;
+        }
+        int woodYield = (int) (2 * getWoodCuttingYieldModifier());
+        logger.info("{} tenta cortar uma árvore com um machado. Rendimento modificado: {}", getName(), woodYield);
+        for (int i = 0; i < woodYield; i++) {
+            if (isInventoryFull()) {
+                logger.warn("{}'s inventário está cheio. Não pode coletar mais madeira.", getName());
+                break;
+            }
+            Material woodLog = Material.createWoodLog();
+            if (canCarryMore(woodLog.getWeight())) {
+                insertItemInInventory(woodLog);
+                logger.info("{} coletou um Tronco de Madeira utilizando o Machado.", getName());
+            } else {
+                logger.warn("{} não consegue carregar mais madeira.", getName());
+                break;
+            }
+        }
 
+
+        if (com.badlogic.gdx.Gdx.app.getApplicationListener() instanceof Main) {
+            Main main = (Main)com.badlogic.gdx.Gdx.app.getApplicationListener();
+            if (main.getScreen() instanceof io.github.com.ranie_borges.thejungle.view.ProceduralMapScreen) {
+                io.github.com.ranie_borges.thejungle.view.ProceduralMapScreen screen =
+                    (io.github.com.ranie_borges.thejungle.view.ProceduralMapScreen) main.getScreen();
+                screen.removeTreeFromMap(tree);
+            }
+        }
+
+        axe.useItem();
+        if (axe.getDurability() <= 0) {
+            dropItem(axe);
+            logger.info("O Machado quebrou após o uso e foi descartado.");
+        }
+    }
     private void updatePlayerState() {
         if (isMoving) {
             switch (lastDirection) {
@@ -451,68 +498,8 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
         }
     }
 
-    public void cutTree() {
-        int woodYield = (int) (1 * getWoodCuttingYieldModifier());
-        logger.info("{} attempts to cut a tree. Modified yield: {}", getName(), woodYield);
-        for (int i = 0; i < woodYield; i++) {
-            if (isInventoryFull()) {
-                logger.warn("{}'s inventory is full. Cannot collect more wood.", getName());
-                break;
-            }
-            Material woodLog = Material.createWoodLog();
-            if (canCarryMore(woodLog.getWeight())) {
-                insertItemInInventory(woodLog);
-                logger.info("{} collected a Wood Log.", getName());
-            } else {
-                logger.warn("{} cannot carry more wood.", getName());
-                break;
-            }
-        }
-        if (getWoodCuttingYieldModifier() > 1.0f && woodYield > 1) {
-            logger.info("Lumberjack's skill yielded extra wood!");
-        }
-    }
 
-    public void cutTreeWithAxe() {
-        Tool axe = null;
-        for (Item item : inventory) {
-            if (item instanceof Tool && item.getName().equalsIgnoreCase("Axe")) {
-                axe = (Tool) item;
-                break;
-            }
-        }
-        if (axe == null) {
-            logger.warn("{} tried to cut a tree with an axe, but has no Axe. Defaulting to manual cutting.", getName());
-            cutTree();
-            return;
-        }
-        int woodYield = (int) (2 * getWoodCuttingYieldModifier());
-        logger.info("{} attempts to cut a tree with an Axe. Modified yield: {}", getName(), woodYield);
-        for (int i = 0; i < woodYield; i++) {
-            if (isInventoryFull()) {
-                logger.warn("{}'s inventory is full. Cannot collect more wood.", getName());
-                break;
-            }
-            Material woodLog = Material.createWoodLog();
-            if (canCarryMore(woodLog.getWeight())) {
-                insertItemInInventory(woodLog);
-                logger.info("{} collected a Wood Log using Axe.", getName());
-            } else {
-                logger.warn("{} cannot carry more wood with Axe.", getName());
-                break;
-            }
-        }
-        if (getWoodCuttingYieldModifier() > 1.0f && woodYield > 2) {
-            logger.info("Lumberjack's skill with Axe yielded extra wood!");
-        }
-        axe.useItem();
-        if (axe.getDurability() <= 0) {
-            dropItem(axe);
-            logger.info("The Axe broke after use and was dropped.");
-        }
-    }
 
-    public void collectWithKnife(Item resource) { /* ... implementation ... */ }
     public void emptyInventory() { inventory.clear(); currentWeight = 0; }
     @Override
     public boolean canCarryMore(float itemWeight) { return (currentWeight + itemWeight) <= maxCarryWeight; }
@@ -668,18 +655,18 @@ public abstract class Character implements ICharacter, IInventory, UI { // Imple
             if (distanceToFish < fishingRange) {
                 if (random.nextFloat() < 0.70f) {
                     logger.info("{} attempts to spear a fish...", getName());
-                    fishIterator.remove(); // Remove fish from the ambient list
+                    fishIterator.remove();
 
-                    Set<Item> drops = Fish.createDrops(); // Static method to get drops
+                    Set<Item> drops = Fish.createDrops();
                     for (Item drop : drops) {
                         if (drop.getName().equalsIgnoreCase("Raw Fish")) {
                             if (canCarryMore(drop.getWeight())) {
-                                insertItemInInventory(drop); // Add "Raw Fish" to inventory
+                                insertItemInInventory(drop);
                                 logger.info("{} successfully speared a {} and obtained {}!", getName(), fish.getName(), drop.getName());
 
-                                spear.useItem(); // Spear durability decreases
+                                spear.useItem();
                                 if (spear.getDurability() <= 0) {
-                                    dropItem(spear); // Use character's dropItem to handle weight etc.
+                                    dropItem(spear);
                                     logger.info("The {} broke after fishing.", spear.getName());
                                 }
                                 return true; // Fish captured

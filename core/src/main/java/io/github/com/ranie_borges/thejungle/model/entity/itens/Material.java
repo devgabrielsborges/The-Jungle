@@ -116,7 +116,7 @@ public class Material extends Item {
     public void setResistance(float resistance) { this.resistance = Math.max(0, resistance); }
 
     public static Material createSmallRock() { return new Material("rock", 0.2f, 1.0f, "Rock", 0.5f); }
-    public static Material createWoodLog() { return new Material("Wood Log", 1.2f, 1.0f, "Wood", 0.6f); }
+    public static Material createWoodLog() { return new Material("wood", 1.2f, 1.0f, "Wood", 0.6f); }
     public static Material createStick() { return new Material("stick", 0.1f, 1.0f, "Wood", 0.3f); }
     public static Material createTree() { return new Material("Tree", 5.0f, 10.0f, "Wood", 2.0f); }
     public static Material createMedicinalPlant() { return new Material("Medicinal", 0.2f, 1.0f, "Plant", 0.9f); }
