@@ -5,10 +5,7 @@ import io.github.com.ranie_borges.thejungle.model.entity.creatures.*;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Material;
 import io.github.com.ranie_borges.thejungle.model.events.events.SurvivorRuinsEvent;
 import io.github.com.ranie_borges.thejungle.model.world.Ambient;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Cave;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Jungle;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
-import io.github.com.ranie_borges.thejungle.model.world.ambients.Ruins;
+import io.github.com.ranie_borges.thejungle.model.world.ambients.*;
 import io.github.com.ranie_borges.thejungle.view.interfaces.UI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +23,16 @@ public class ResourceController implements UI {
     private final List<Fish> fishes = new ArrayList<>();
     private final List<NPC> NPCS = new ArrayList<>();
     private final List<Boat> boats = new ArrayList<>();
+    private final List<RadioGuy> radioGuys = new ArrayList<>();
     private static final float NPC_SPAWN_PROBABILITY = 0.5f;
     private static final float Boat_SPAWN_PROBABILITY = 0.5f;
+    private static final float RadioGuy_SPAWN_PROBABILITY = 0.9f;
 
     private final Random random = new Random();
     private static final int MAX_NPC_TO_SPAWN = 1;
     private static final int MAX_Boat_TO_SPAWN = 1;
+    private static final int MAX_RADIOGUY_TO_SPAWN = 1;
+
 
 
     public List<Material> spawnResources(Ambient ambient, int[][] map) {
@@ -182,6 +183,43 @@ public class ResourceController implements UI {
             return this.boats;
         } catch (Exception e) {
             logger.error("Error spawning boats: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+
+
+    }
+    public List<RadioGuy> spawnRadioGuy(Ambient ambient, int[][] map) {
+        this.radioGuys.clear();
+        if (!(ambient instanceof Mountain)) { //
+            return this.radioGuys;
+        }
+
+        if (random.nextFloat() >= RadioGuy_SPAWN_PROBABILITY) {
+            logger.debug("radioGuys spawn chance failed for Mountain: {}. No boat will be spawned this time.", ambient.getName());
+            return this.radioGuys;
+        }
+
+        int actualRadioGuySpawnCount = random.nextInt(MAX_RADIOGUY_TO_SPAWN + 1);
+
+        if (actualRadioGuySpawnCount == 0) {
+            return this.radioGuys;
+        }
+
+        try {
+            this.radioGuys.addAll(Creature.regenerateCreatures(
+                actualRadioGuySpawnCount,
+                map,
+                MAP_WIDTH,
+                MAP_HEIGHT,
+                TILE_GRASS,
+                TILE_SIZE,
+                RadioGuy::new,
+                ambient,
+                RadioGuy::canSpawnIn
+            ));
+            logger.debug("Attempted to spawn {} radioGuys in {}. Actually spawned: {}", actualRadioGuySpawnCount, ambient.getName(), this.radioGuys.size());
+            return this.radioGuys;
+        } catch (Exception e) {
             return new ArrayList<>();
         }
     }

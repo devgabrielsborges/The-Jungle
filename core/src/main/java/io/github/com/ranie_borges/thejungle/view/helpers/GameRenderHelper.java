@@ -215,7 +215,7 @@ public class GameRenderHelper implements UI {
         }
     }
 
-    public void renderCreatures(SpriteBatch batch, List<Deer> deers, List<Cannibal> cannibals, Character character, List<Fish> fishes,List<NPC> NPCS,List<Boat> boats) {
+    public void renderCreatures(SpriteBatch batch, List<Deer> deers, List<Cannibal> cannibals, Character character, List<Fish> fishes,List<NPC> NPCS,List<Boat> boats, List<RadioGuy> radioGuys) {
         if (batch == null || !batch.isDrawing()) {
             logger.warn("renderCreatures called while batch is null or not drawing!");
             return;
@@ -278,6 +278,19 @@ public class GameRenderHelper implements UI {
                 Sprite sprite = boat.getSprites().get("idle");
                 if (sprite != null && sprite.getTexture() != null) {
                     float x = boat.getPosition().x + offsetX; float y = boat.getPosition().y + offsetY;
+                    if (x < -50 || x > Gdx.graphics.getWidth() || y < -50 || y > Gdx.graphics.getHeight()) continue;
+                    sprite.setSize(50, 50);
+                    sprite.setPosition(x + (TILE_SIZE - sprite.getWidth()) / 2, y + (TILE_SIZE - sprite.getHeight()) / 2);
+                    sprite.draw(batch);
+                }
+            }
+        }
+        if (radioGuys != null) {
+            for (RadioGuy radioGuy : radioGuys) {
+                if (radioGuy == null || radioGuy.getSprites() == null) continue;
+                Sprite sprite = radioGuy.getSprites().get("idle");
+                if (sprite != null && sprite.getTexture() != null) {
+                    float x = radioGuy.getPosition().x + offsetX; float y = radioGuy.getPosition().y + offsetY;
                     if (x < -50 || x > Gdx.graphics.getWidth() || y < -50 || y > Gdx.graphics.getHeight()) continue;
                     sprite.setSize(50, 50);
                     sprite.setPosition(x + (TILE_SIZE - sprite.getWidth()) / 2, y + (TILE_SIZE - sprite.getHeight()) / 2);
