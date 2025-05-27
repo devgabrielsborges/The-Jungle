@@ -3,6 +3,7 @@ package io.github.com.ranie_borges.thejungle.model.entity.creatures;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import io.github.com.ranie_borges.thejungle.core.Main;
 import io.github.com.ranie_borges.thejungle.model.entity.Creature;
 import io.github.com.ranie_borges.thejungle.model.entity.Item;
 import io.github.com.ranie_borges.thejungle.model.entity.itens.Food;
@@ -11,6 +12,7 @@ import io.github.com.ranie_borges.thejungle.model.world.Ambient;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.LakeRiver;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Mountain;
 import io.github.com.ranie_borges.thejungle.model.world.ambients.Ruins;
+import io.github.com.ranie_borges.thejungle.view.GameWinScreen;
 
 
 import java.util.HashMap;
@@ -61,7 +63,33 @@ public class RadioGuy extends Creature {
         Set<Item> drops = new HashSet<>();
         return drops;
     }
-
+    public void interact(io.github.com.ranie_borges.thejungle.model.entity.Character player, Main game) {
+        int coinsNeeded = 2;
+        int totalCoins = 0;
+        for (Item item : player.getInventory()) {
+            if (item.getName().equalsIgnoreCase("Coin")) {
+                totalCoins += item.getQuantity();
+            }
+        }
+        if (totalCoins >= coinsNeeded) {
+            int toRemove = coinsNeeded;
+            for (Item item : player.getInventory()) {
+                if (item.getName().equalsIgnoreCase("Coin")) {
+                    int qty = item.getQuantity();
+                    if (qty >= toRemove) {
+                        item.setQuantity(qty - toRemove);
+                        break;
+                    } else {
+                        toRemove -= qty;
+                        item.setQuantity(0);
+                    }
+                }
+            }
+            game.setScreen(new GameWinScreen(game, ""));
+        } else {
+            System.out.println("Moedas insuficientes para usar a rádio!");
+        }
+    }
     public static boolean canSpawnIn(Ambient ambient) {
         return ambient instanceof Mountain;
     }

@@ -777,6 +777,16 @@ public class ProceduralMapScreen implements Screen, UI {
                 }
             }
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F) && character != null && this.radioguys != null && !this.radioguys.isEmpty()) {
+            // Supondo um raio de proximidade de 50 pixels
+            float interactRadius = 50f;
+            for (io.github.com.ranie_borges.thejungle.model.entity.creatures.RadioGuy rg : this.radioguys) {
+                if (character.getPosition().dst(rg.getPosition()) <= interactRadius) {
+                    rg.interact(character, game);
+                    break;
+                }
+            }
+        }
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             int tileSize = UI.TILE_SIZE;
             int tileX = (int)((character.getPosition().x + tileSize / 2f) / tileSize);

@@ -32,7 +32,7 @@ public class ResourceController implements UI {
     private static final int MAX_NPC_TO_SPAWN = 1;
     private static final int MAX_Boat_TO_SPAWN = 1;
     private static final int MAX_RADIOGUY_TO_SPAWN = 1;
-    private static final float COIN_SPAWN_PROBABILITY = 0.5f; // chance de spawn
+    private static final float COIN_SPAWN_PROBABILITY = 1f; // chance de spawn
 
 
 
