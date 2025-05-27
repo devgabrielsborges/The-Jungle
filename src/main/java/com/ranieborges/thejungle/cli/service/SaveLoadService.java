@@ -10,10 +10,12 @@ import com.ranieborges.thejungle.cli.model.entity.Creature;
 import com.ranieborges.thejungle.cli.model.entity.Item;
 import com.ranieborges.thejungle.cli.model.entity.characters.*;
 import com.ranieborges.thejungle.cli.model.entity.creatures.*;
-import com.ranieborges.thejungle.cli.model.entity.itens.*; // Should include Ammunition.java
+import com.ranieborges.thejungle.cli.model.entity.itens.*;
 import com.ranieborges.thejungle.cli.model.events.*;
+import com.ranieborges.thejungle.cli.model.factions.Faction; // Import Faction
 import com.ranieborges.thejungle.cli.model.world.Ambient;
 import com.ranieborges.thejungle.cli.model.world.ambients.*;
+import com.ranieborges.thejungle.cli.service.ClassTypeAdapter;
 
 
 import java.io.File;
@@ -35,55 +37,59 @@ public class SaveLoadService {
 
     public SaveLoadService() {
         RuntimeTypeAdapterFactory<Item> itemAdapterFactory = RuntimeTypeAdapterFactory
-                .of(Item.class, "itemType")
-                .registerSubtype(Food.class)
-                .registerSubtype(Drinkable.class)
-                .registerSubtype(Material.class)
-                .registerSubtype(Medicine.class)
-                .registerSubtype(Tool.class)
-                .registerSubtype(Weapon.class)
-                .registerSubtype(Ammunition.class); // <-- Add Ammunition here
+            .of(Item.class, "itemType")
+            .registerSubtype(Food.class)
+            .registerSubtype(Drinkable.class)
+            .registerSubtype(Material.class)
+            .registerSubtype(Medicine.class)
+            .registerSubtype(Tool.class)
+            .registerSubtype(Weapon.class)
+            .registerSubtype(Ammunition.class);
 
         RuntimeTypeAdapterFactory<Event> eventAdapterFactory = RuntimeTypeAdapterFactory
-                .of(Event.class, "eventType")
-                .registerSubtype(ClimaticEvent.class)
-                .registerSubtype(CreatureEncounterEvent.class)
-                .registerSubtype(DiscoveryEvent.class)
-                .registerSubtype(HealthEvent.class);
+            .of(Event.class, "eventType")
+            .registerSubtype(ClimaticEvent.class)
+            .registerSubtype(CreatureEncounterEvent.class)
+            .registerSubtype(DiscoveryEvent.class)
+            .registerSubtype(HealthEvent.class)
+            .registerSubtype(FactionInteractionEvent.class); // <-- Add FactionInteractionEvent
 
         RuntimeTypeAdapterFactory<Ambient> ambientAdapterFactory = RuntimeTypeAdapterFactory
-                .of(Ambient.class, "ambientType")
-                .registerSubtype(Jungle.class)
-                .registerSubtype(Mountain.class)
-                .registerSubtype(Cave.class)
-                .registerSubtype(LakeRiver.class)
-                .registerSubtype(Ruins.class);
+            .of(Ambient.class, "ambientType")
+            .registerSubtype(Jungle.class)
+            .registerSubtype(Mountain.class)
+            .registerSubtype(Cave.class)
+            .registerSubtype(LakeRiver.class)
+            .registerSubtype(Ruins.class);
 
         RuntimeTypeAdapterFactory<Character> characterAdapterFactory = RuntimeTypeAdapterFactory
-                .of(Character.class, "characterClass")
-                .registerSubtype(Doctor.class)
-                .registerSubtype(Hunter.class)
-                .registerSubtype(Lumberjack.class)
-                .registerSubtype(Survivor.class);
+            .of(Character.class, "characterClass")
+            .registerSubtype(Doctor.class)
+            .registerSubtype(Hunter.class)
+            .registerSubtype(Lumberjack.class)
+            .registerSubtype(Survivor.class);
 
         RuntimeTypeAdapterFactory<Creature> creatureAdapterFactory = RuntimeTypeAdapterFactory
-                .of(Creature.class, "creatureType")
-                .registerSubtype(Bear.class)
-                .registerSubtype(Deer.class)
-                .registerSubtype(Fish.class)
-                .registerSubtype(Wolf.class);
+            .of(Creature.class, "creatureType")
+            .registerSubtype(Bear.class)
+            .registerSubtype(Deer.class)
+            .registerSubtype(Fish.class)
+            .registerSubtype(Wolf.class);
+
+        // Faction is a concrete class, GSON should handle it directly if FactionManager is serialized.
+        // If Faction had subtypes, you'd add a factory for it.
 
         this.gson = new GsonBuilder()
-                .setPrettyPrinting()
-                .excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.STATIC)
-                .registerTypeAdapterFactory(itemAdapterFactory)
-                .registerTypeAdapterFactory(eventAdapterFactory)
-                .registerTypeAdapterFactory(ambientAdapterFactory)
-                .registerTypeAdapterFactory(characterAdapterFactory)
-                .registerTypeAdapterFactory(creatureAdapterFactory)
-                .registerTypeAdapter(Class.class, new ClassTypeAdapter())
-                .enableComplexMapKeySerialization()
-                .create();
+            .setPrettyPrinting()
+            .excludeFieldsWithModifiers(Modifier.TRANSIENT, Modifier.STATIC)
+            .registerTypeAdapterFactory(itemAdapterFactory)
+            .registerTypeAdapterFactory(eventAdapterFactory)
+            .registerTypeAdapterFactory(ambientAdapterFactory)
+            .registerTypeAdapterFactory(characterAdapterFactory)
+            .registerTypeAdapterFactory(creatureAdapterFactory)
+            .registerTypeAdapter(Class.class, new ClassTypeAdapter())
+            .enableComplexMapKeySerialization()
+            .create();
 
         File savesDir = new File(SAVE_FILE_DIRECTORY);
         if (!savesDir.exists()) {
@@ -93,10 +99,11 @@ public class SaveLoadService {
         }
     }
 
-    public void saveGame(GameState gameState, String saveName) {
+    // saveGame, loadGame, autoSaveExists, deleteSaveGame, listSaveGames methods remain the same
+    public boolean saveGame(GameState gameState, String saveName) {
         if (saveName == null || saveName.trim().isEmpty()) {
             System.out.println("Save name cannot be empty.");
-            return;
+            return false;
         }
         String sanitizedSaveName = saveName.replaceAll("[^a-zA-Z0-9_.-]", "_");
         String filePath = SAVE_FILE_DIRECTORY + sanitizedSaveName + SAVE_FILE_EXTENSION;
@@ -106,9 +113,11 @@ public class SaveLoadService {
             if (!saveName.equals(AUTOSAVE_FILENAME)) {
                 System.out.println("Game saved successfully as " + filePath);
             }
+            return true;
         } catch (Exception e) {
             System.err.println("An unexpected error occurred while saving game to " + filePath + ": " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 
