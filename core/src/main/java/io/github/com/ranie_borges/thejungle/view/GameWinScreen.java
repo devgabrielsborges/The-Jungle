@@ -27,14 +27,14 @@ public class GameWinScreen implements Screen {
 
         try {
             this.skin = new Skin(Gdx.files.internal("mainMenu/lgdxs-ui.json"));
-            logger.info("Successfully loaded 'mainMenu/lgdxs-ui.json' for GameOverScreen.");
+            logger.info("Successfully loaded 'mainMenu/lgdxs-ui.json' for GameWinScreen.");
         } catch (Exception e) {
-            logger.error("Failed to load 'mainMenu/lgdxs-ui.json' for GameOverScreen. Attempting fallback 'uiskin.json'.", e);
+            logger.error("Failed to load 'mainMenu/lgdxs-ui.json' for GameWinScreen. Attempting fallback 'uiskin.json'.", e);
             try {
                 this.skin = new Skin(Gdx.files.internal("uiskin.json"));
-                logger.info("Successfully loaded fallback 'uiskin.json' for GameOverScreen.");
+                logger.info("Successfully loaded fallback 'uiskin.json' for GameWinScreen.");
             } catch (Exception e2) {
-                logger.error("Failed to load fallback 'uiskin.json' for GameOverScreen. UI might be broken.", e2);
+                logger.error("Failed to load fallback 'uiskin.json' for GameWinScreen. UI might be broken.", e2);
             }
         }
 
