@@ -64,7 +64,7 @@ public class RadioGuy extends Creature {
         return drops;
     }
     public void interact(io.github.com.ranie_borges.thejungle.model.entity.Character player, Main game) {
-        int coinsNeeded = 2;
+        int coinsNeeded = 10;
         int totalCoins = 0;
         for (Item item : player.getInventory()) {
             if (item.getName().equalsIgnoreCase("Coin")) {
