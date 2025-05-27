@@ -12,10 +12,8 @@ import com.ranieborges.thejungle.cli.model.entity.characters.*;
 import com.ranieborges.thejungle.cli.model.entity.creatures.*;
 import com.ranieborges.thejungle.cli.model.entity.itens.*;
 import com.ranieborges.thejungle.cli.model.events.*;
-import com.ranieborges.thejungle.cli.model.factions.Faction; // Import Faction
 import com.ranieborges.thejungle.cli.model.world.Ambient;
 import com.ranieborges.thejungle.cli.model.world.ambients.*;
-import com.ranieborges.thejungle.cli.service.ClassTypeAdapter;
 
 
 import java.io.File;

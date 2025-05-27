@@ -6,7 +6,7 @@ import com.ranieborges.thejungle.cli.model.entity.Character;
 import com.ranieborges.thejungle.cli.model.entity.Creature;
 import com.ranieborges.thejungle.cli.model.entity.Item;
 import com.ranieborges.thejungle.cli.model.entity.itens.Food;
-import com.ranieborges.thejungle.cli.model.factions.Faction; // For displaying faction info
+import com.ranieborges.thejungle.cli.model.Faction; // For displaying faction info
 import com.ranieborges.thejungle.cli.service.CraftingService;
 import com.ranieborges.thejungle.cli.view.Art;
 import com.ranieborges.thejungle.cli.view.Message;
@@ -16,7 +16,6 @@ import com.ranieborges.thejungle.cli.view.utils.TerminalUtils;
 import lombok.Getter;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Scanner;
 

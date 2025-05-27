@@ -2,7 +2,7 @@ package com.ranieborges.thejungle.cli.model.entity;
 
 import com.ranieborges.thejungle.cli.model.Inventory;
 import com.ranieborges.thejungle.cli.model.entity.utils.enums.Trait;
-import com.ranieborges.thejungle.cli.model.factions.Faction; // Import Faction
+import com.ranieborges.thejungle.cli.model.Faction; // Import Faction
 import com.ranieborges.thejungle.cli.model.factions.FactionReputationLevel; // Import FactionReputationLevel
 import com.ranieborges.thejungle.cli.model.world.Ambient;
 import com.ranieborges.thejungle.cli.model.world.ambients.Jungle;

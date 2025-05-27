@@ -1,15 +1,13 @@
 package com.ranieborges.thejungle.cli.controller;
 
 import com.ranieborges.thejungle.cli.model.entity.Character; // For type hinting
-import com.ranieborges.thejungle.cli.model.factions.Faction;
+import com.ranieborges.thejungle.cli.model.Faction;
 import com.ranieborges.thejungle.cli.model.factions.FactionDisposition;
 import com.ranieborges.thejungle.cli.model.factions.FactionReputationLevel;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -18,15 +16,12 @@ import java.util.Optional;
 public class FactionManager {
     private final List<Faction> allFactions;
     // Player's reputation is stored in Character.java to keep it with the player state.
-    // This manager primarily knows about the factions themselves.
-
     public FactionManager() {
         this.allFactions = new ArrayList<>();
         initializeFactions();
     }
 
     private void initializeFactions() {
-        // Define the factions as per the PDF
         allFactions.add(new Faction(
             "nomads_peaceful",
             "Nômades Pacíficos",
@@ -56,7 +51,6 @@ public class FactionManager {
             "Indivíduos levados ao limite, que podem recorrer a medidas extremas para sobreviver.",
             FactionDisposition.GUARDED // Start guarded, can become hostile or even temporarily neutral/friendly
         ));
-        // Add more factions as needed
     }
 
     public List<Faction> getAllFactions() {
@@ -91,9 +85,6 @@ public class FactionManager {
         if (repLevel == FactionReputationLevel.ALLIED || repLevel == FactionReputationLevel.TRUSTED) {
             return FactionDisposition.FRIENDLY;
         }
-        // For NEUTRAL or ACCEPTED reputation, the faction's initial disposition plays a bigger role,
-        // though high acceptance might make a GUARDED faction more NEUTRAL in practice.
-        // This logic can be expanded.
-        return faction.getInitialDisposition();
+        return faction.getDisposition();
     }
 }
