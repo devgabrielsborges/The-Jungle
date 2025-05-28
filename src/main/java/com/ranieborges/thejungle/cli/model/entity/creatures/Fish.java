@@ -15,13 +15,10 @@ import java.util.List;
 @Getter
 public class Fish extends Creature {
 
-    private static final float FISH_MAX_HEALTH = 10f;
-    private static final float FISH_ATTACK_DAMAGE = 0f;
-    private static final float FISH_SPEED = 30f;
     private final FishType fishType;
 
     public Fish(FishType type) {
-        super(type.getDisplayName(), FISH_MAX_HEALTH, FISH_ATTACK_DAMAGE, FISH_SPEED, Hostility.PASSIVE);
+        super(type.getDisplayName(), 10f, 2f, 30f, Hostility.PASSIVE);
         this.fishType = type;
         if (type == FishType.PIRANHA) {
             setHostility(Hostility.HOSTILE);

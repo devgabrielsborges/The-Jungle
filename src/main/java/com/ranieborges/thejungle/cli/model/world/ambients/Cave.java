@@ -19,7 +19,7 @@ public class Cave extends Ambient {
     public Cave() {
         super("Dark Cave",
                 "A damp and dark cave system. The air is cold, and strange sounds echo from the depths.",
-                1.3f, // Exploration needs light, can be disorienting
+                1.3f,
                 "Cold and Damp"); // "Pouca luz"
     }
 
@@ -42,25 +42,20 @@ public class Cave extends Ambient {
 
         int outcome = random.nextInt(100);
         if (outcome < 30) { // Find Resource
-            // "Rochas e minérios raros."
-            // "Pequenos lagos subterrâneos (algumas vezes contaminados)."
-            // "Ossos e vestígios de exploradores antigos."
             String[] possibleFinds = {"Rare Minerals", "Cave Fungi (Edible?)", "Ancient Bones", "Underground Spring Water"};
             String found = possibleFinds[random.nextInt(possibleFinds.length)];
             exploreMsg += " Found " + found + ".";
             Message.displayOnScreen("In the dim light, you discover some " + found + "!");
-// Adicionar item ao inventário com base no que foi encontrado
             switch (found) {
-                case "Rare Minerals":
+                case "Rare Minerals" -> {
                     int mineralAmount = random.nextInt(2) + 1; // 1-2 unidades
                     for (int i = 0; i < mineralAmount; i++) {
                         Material minerals = new Material("Rare Minerals", "Valuable minerals found deep in the cave", 0.8f, MaterialType.METAL_ORE, 5);
                         character.getInventory().addItem(minerals);
                     }
                     Message.displayOnScreen("You collect " + mineralAmount + " piece" + (mineralAmount > 1 ? "s" : "") + " of rare minerals.");
-                    break;
-
-                case "Cave Fungi (Edible?)":
+                }
+                case "Cave Fungi (Edible?)" -> {
                     int fungiAmount = random.nextInt(3) + 1; // 1-3 unidades
                     float toxicityChance = 0.3f; // 30% de chance de ser tóxico
                     for (int i = 0; i < fungiAmount; i++) {
@@ -69,18 +64,16 @@ public class Cave extends Ambient {
                         character.getInventory().addItem(fungi);
                     }
                     Message.displayOnScreen("You collect " + fungiAmount + " strange mushroom" + (fungiAmount > 1 ? "s" : "") + " that might be edible.");
-                    break;
-
-                case "Ancient Bones":
+                }
+                case "Ancient Bones" -> {
                     int boneAmount = random.nextInt(2) + 1; // 1-2 unidades
                     for (int i = 0; i < boneAmount; i++) {
                         Material bones = new Material("Ancient Bones", "Old bones found in the cave, could be useful for crafting", 0.5f, MaterialType.BONE, 3);
                         character.getInventory().addItem(bones);
                     }
                     Message.displayOnScreen("You collect " + boneAmount + " ancient bone" + (boneAmount > 1 ? "s" : "") + ".");
-                    break;
-
-                case "Underground Spring Water":
+                }
+                case "Underground Spring Water" -> {
                     boolean isPure = random.nextFloat() > 0.4; // 60% de chance de ser pura
                     Food water;
                     if (isPure) {
@@ -92,15 +85,15 @@ public class Cave extends Ambient {
                         Message.displayOnScreen(TerminalStyler.warning("The water looks murky and might be contaminated."));
                     }
                     character.getInventory().addItem(water);
-                    break;
-            }        } else if (outcome < 60) { // Encounter Creature
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + found);
+            }
+        } else if (outcome < 60) { // Encounter Creature
             exploreMsg += " A chilling sound echoes from a nearby passage... a Cave Creature!";
             Message.displayOnScreen("You are not alone in these depths! A creature attacks!");
-// Instantiate cave creatures
             String[] possibleCreatures = {"Cave Spider", "Giant Bat", "Blind Worm", "Cave Troll"};
             String creatureType = possibleCreatures[random.nextInt(possibleCreatures.length)];
 
-// Create a creature based on type
             Creature caveCreature;
             switch (creatureType) {
                 case "Cave Spider":
@@ -188,14 +181,11 @@ public class Cave extends Ambient {
                     };
             }
 
-// Announce the encounter
             Message.displayOnScreen("Um " + caveCreature.getName() + " aparece na escuridão!");
             caveCreature.displayStatus();
 
-// The creature attacks the character
             caveCreature.attack(character);
 
-// Player loses sanity from the encounter
             character.changeSanity(-3);        } else if (outcome < 80) { // Minor Discovery: Hidden Tunnel or Chamber
             exploreMsg += " Discovered a narrow passage leading to an unexplored chamber.";
             Message.displayOnScreen("You find a narrow passage that seems to lead deeper into the cave.");
@@ -203,7 +193,6 @@ public class Cave extends Ambient {
             exploreMsg += " Discovered a narrow passage leading to an unexplored chamber.";
             Message.displayOnScreen("You find a narrow passage that seems to lead deeper into the cave.");
 
-            // Oferecer a opção de explorar a passagem
             Message.displayOnScreen("\nDo you want to explore this passage? (y/n)");
             Scanner scanner = new Scanner(System.in);
             String choice = scanner.nextLine().trim().toLowerCase();
@@ -215,39 +204,35 @@ public class Cave extends Ambient {
 
                 int secretFind = random.nextInt(100);
 
-                if (secretFind < 30) { // Tesouro especial
+                if (secretFind < 30) {
                     exploreMsg += " Found a hidden treasure in the secret chamber!";
                     Message.displayOnScreen(TerminalStyler.success("You discover an ancient cache hidden away from prying eyes!"));
 
-                    // Criar item especial com base na sorte
                     if (random.nextFloat() > 0.7f) { // 30% chance de item raro
                         Material rareGem = new Material("Luminous Crystal", "A rare gem that glows with inner light", 0.3f, MaterialType.STONE, 8);
                         character.getInventory().addItem(rareGem);
                         Message.displayOnScreen("You found a " + TerminalStyler.style("Luminous Crystal", TerminalStyler.BRIGHT_CYAN) + "!");
                     } else {
-                        // Item comum, mas valioso
                         Material oldRelic = new Material("Ancient Artifact", "A small statue made by previous inhabitants", 0.5f, MaterialType.STONE, 5);
                         character.getInventory().addItem(oldRelic);
                         Message.displayOnScreen("You found an " + TerminalStyler.style("Ancient Artifact", TerminalStyler.YELLOW) + "!");
                     }
 
-                } else { // Descoberta de água fresca
+                } else {
                     exploreMsg += " Found an untouched underground spring.";
                     Message.displayOnScreen(TerminalStyler.success("The chamber opens to reveal a small, pristine underground spring!"));
 
-                    // Criar água pura
                     Food purifiedWater = new Food("Crystal Clear Water", "Pure water from an untouched underground spring", 0.5f,
                         20, FoodType.OTHER, Integer.MAX_VALUE, 0.0f, 0.0f);
                     character.getInventory().addItem(purifiedWater);
 
-                    // Efeito positivo na sanidade por encontrar algo bonito
                     character.changeSanity(5);
                     Message.displayOnScreen("The serene beauty of the underground spring restores your composure. (+5 sanity)");
                 }
             } else {
                 Message.displayOnScreen("You decide not to risk the narrow passage and continue exploring the main cave.");
             }
-        } else { // Environmental challenge or nothing        } else { // Environmental challenge or nothing
+        } else {
             exploreMsg += " A section of the cave ceiling looks unstable.";
             Message.displayOnScreen("Loose rocks clatter nearby. The cave feels oppressive.");
             character.changeSanity(-2);

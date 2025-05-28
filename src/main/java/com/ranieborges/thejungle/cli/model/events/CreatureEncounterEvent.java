@@ -26,12 +26,6 @@ public class CreatureEncounterEvent extends Event {
         this.creatureClassName = creatureClassToSpawn.getName();
     }
 
-    /**
-     * Retrieves the Class object for the creature to be spawned.
-     * This method handles potential ClassNotFoundException.
-     * @return The Class object, or null if the class cannot be found.
-     */
-    @SuppressWarnings("unchecked")
     public Class<? extends Creature> getCreatureClass() {
         try {
             return (Class<? extends Creature>) Class.forName(creatureClassName);

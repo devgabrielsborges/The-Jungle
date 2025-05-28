@@ -21,7 +21,6 @@ public abstract class MainMenu implements Art {
         Message.displayOnScreen(TerminalStyler.style("\n--- Main Menu ---", TerminalStyler.BOLD, TerminalStyler.CYAN));
         Message.displayOnScreen(TerminalStyler.style("1. Start New Game", TerminalStyler.BRIGHT_GREEN));
         Message.displayOnScreen(TerminalStyler.style("2. Continue Last Game", TerminalStyler.BRIGHT_YELLOW)); // Changed from "Load Game"
-        // Removed manual "Save Game"
         Message.displayOnScreen(TerminalStyler.style("3. Exit", TerminalStyler.BRIGHT_RED)); // Adjusted number
     }
 }

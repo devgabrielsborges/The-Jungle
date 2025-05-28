@@ -14,12 +14,8 @@ import java.util.List;
 
 public class Wolf extends Creature {
 
-    private static final float WOLF_MAX_HEALTH = 70f;
-    private static final float WOLF_ATTACK_DAMAGE = 15f;
-    private static final float WOLF_SPEED = 60f;
-
     public Wolf() {
-        super("Wolf", WOLF_MAX_HEALTH, WOLF_ATTACK_DAMAGE, WOLF_SPEED, Hostility.HOSTILE);
+        super("Wolf", 70f, 15f, 60f, Hostility.HOSTILE);
     }
 
     @Override

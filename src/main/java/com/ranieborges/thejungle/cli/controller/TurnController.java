@@ -53,14 +53,12 @@ public class TurnController {
         }
     }
 
-    // executeTurn, executeInitialPhase methods remain largely the same, just ensure FactionManager is available if needed by them.
-
     public GameStatus executeTurn(int currentTurn) {
         TerminalUtils.clearScreen();
         Message.displayOnScreen(TerminalStyler.style("\n" + Art.THE_JUNGLE.substring(0, Art.THE_JUNGLE.indexOf('\n')) + "--- Turn " + currentTurn + " / " + VICTORY_TURN_THRESHOLD + " ---", TerminalStyler.BOLD));
 
         executeInitialPhase();
-        if (!checkSurvivalConditions()) return determineGameOverStatus();
+        if (checkSurvivalConditions()) return determineGameOverStatus();
 
         GameStatus actionStatus = executePlayerActionPhase();
         if (actionStatus != GameStatus.CONTINUE) {
@@ -69,13 +67,13 @@ public class TurnController {
             }
             return actionStatus;
         }
-        if (!checkSurvivalConditions()) return determineGameOverStatus();
+        if (checkSurvivalConditions()) return determineGameOverStatus();
 
         executeRandomEventPhase();
-        if (!checkSurvivalConditions()) return determineGameOverStatus();
+        if (checkSurvivalConditions()) return determineGameOverStatus();
 
         executeMaintenancePhase();
-        if (!checkSurvivalConditions()) return determineGameOverStatus();
+        if (checkSurvivalConditions()) return determineGameOverStatus();
 
         if (currentTurn >= VICTORY_TURN_THRESHOLD) {
             this.previousTurnSummary = playerCharacter.getName() + " has bravely survived for " + VICTORY_TURN_THRESHOLD + " turns against all odds!";
@@ -404,8 +402,6 @@ public class TurnController {
         if (eventOutcomeSummary != null && !eventOutcomeSummary.toLowerCase().contains("uneventful") && !eventOutcomeSummary.toLowerCase().contains("calm")) {
             this.previousTurnSummary += " " + eventOutcomeSummary;
         }
-        // Pause after event is handled by FactionInteractionEvent if it uses scanner,
-        // or by the "Press Enter to continue after the event..." in Event.execute() if it's a general event.
     }
 
     private void executeMaintenancePhase() {
@@ -452,9 +448,6 @@ public class TurnController {
             maintenanceSummary += spoiledCount + " food item(s) spoiled. ";
         }
 
-        if (ambientController != null) {
-            ambientController.updateAmbientResources();
-        }
         this.previousTurnSummary += " " + maintenanceSummary.trim();
         Message.displayOnScreen(TerminalStyler.info("Time passes..."));
         Message.displayWithDelay("", 1000);
@@ -464,13 +457,13 @@ public class TurnController {
 
     private boolean checkSurvivalConditions() {
         if (!playerCharacter.isAlive()) {
-            return false;
+            return true;
         }
         if (playerCharacter.getSanity() <= 0) {
             Message.displayOnScreen(TerminalStyler.error(playerCharacter.getName() + " has lost their grip on reality... The jungle claims another mind."));
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     private GameStatus determineGameOverStatus() {

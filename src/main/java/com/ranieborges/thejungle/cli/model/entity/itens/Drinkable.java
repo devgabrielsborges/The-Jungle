@@ -59,7 +59,7 @@ public class Drinkable extends Item {
     public boolean use(Character user) {
         System.out.println(user.getName() + " drinks " + getName() + ".");
         user.changeThirst(this.thirstRestored);
-        System.out.println(user.getName() + "'s thirst is now " + String.format("%.1f", user.getThirst()) + "/" + Character.CHARACTER_DEFAULT_MAX_STAT);
+        System.out.println(user.getName() + "'s thirst is now " + String.format("%.1f", user.getThirst()) + "/" + user.getCharacterDefaultMaxStat());
 
         if (this.purity == Purity.CONTAMINATED) {
             System.out.println("The " + getName() + " looks " + this.purity.getDisplayName().toLowerCase() + "...");

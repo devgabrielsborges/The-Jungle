@@ -15,10 +15,8 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class Inventory {
 
@@ -81,34 +79,13 @@ public class Inventory {
         }
     }
 
-    public Optional<Item> removeItem(Item itemInstance) {
+    public void removeItem(Item itemInstance) {
         if (itemInstance != null && this.items.remove(itemInstance)) {
             recalculateCurrentWeight();
             Message.displayOnScreen(TerminalStyler.info(itemInstance.getName() + " removed from inventory."));
-            return Optional.of(itemInstance);
         }
-        return Optional.empty();
     }
 
-
-    public Optional<Item> removeItemByName(String itemName) {
-        if (itemName == null || itemName.trim().isEmpty()) {
-            Message.displayOnScreen(TerminalStyler.warning("Item name cannot be null or empty for removal."));
-            return Optional.empty();
-        }
-        Iterator<Item> iterator = this.items.iterator();
-        while (iterator.hasNext()) {
-            Item currentItem = iterator.next();
-            if (currentItem.getName().equalsIgnoreCase(itemName)) {
-                iterator.remove();
-                recalculateCurrentWeight();
-                Message.displayOnScreen(TerminalStyler.info(currentItem.getName() + " removed from inventory."));
-                return Optional.of(currentItem);
-            }
-        }
-        Message.displayOnScreen(TerminalStyler.warning("Item '" + itemName + "' not found in inventory for removal."));
-        return Optional.empty();
-    }
 
     public Optional<Item> findItemByName(String itemName) {
         if (itemName == null || itemName.trim().isEmpty()) {
@@ -179,52 +156,15 @@ public class Inventory {
 
     public boolean hasToolType(ToolType toolType) {
         for (Item item : items) {
-            if (item instanceof Tool) {
-                Tool tool = (Tool) item;
-                if (tool.getToolType() == toolType && tool.getDurability() > 0) {
+            if (item instanceof Tool tool && tool.getToolType() == toolType && tool.getDurability() > 0) {
                     return true;
                 }
-            }
+
         }
         return false;
     }
 
-    public boolean removeItemsByMaterialType(MaterialType materialType, int quantityToRemove) {
-        int removedCount = 0;
-        Iterator<Item> iterator = items.iterator();
-        while (iterator.hasNext() && removedCount < quantityToRemove) {
-            Item item = iterator.next();
-            if (item instanceof Material && ((Material) item).getMaterialType() == materialType) {
-                iterator.remove();
-                removedCount++;
-            }
-        }
-        recalculateCurrentWeight();
-        return removedCount == quantityToRemove;
-    }
 
-    public boolean removeSpecificItemByName(String itemName, int quantityToRemove) {
-        int removedCount = 0;
-        Iterator<Item> iterator = items.iterator();
-        while (iterator.hasNext() && removedCount < quantityToRemove) {
-            Item item = iterator.next();
-            if (item.getName().equalsIgnoreCase(itemName)) {
-                iterator.remove();
-                removedCount++;
-            }
-        }
-        recalculateCurrentWeight();
-        return removedCount == quantityToRemove;
-    }
-
-    // --- New methods for Ammunition ---
-
-    /**
-     * Counts the total quantity of a specific AmmunitionType in the inventory.
-     * This sums up quantities from all stacks of that ammo type.
-     * @param ammoType The AmmunitionType to count.
-     * @return The total quantity of that ammunition.
-     */
     public int countAmmunitionByType(AmmunitionType ammoType) {
         int totalQuantity = 0;
         for (Item item : items) {
@@ -235,22 +175,14 @@ public class Inventory {
         return totalQuantity;
     }
 
-    /**
-     * Removes a specified quantity of a given AmmunitionType from the inventory.
-     * It will consume from stacks of that ammo type until the required quantity is removed
-     * or no more ammo of that type is found.
-     * @param ammoType The AmmunitionType to remove.
-     * @param quantityToRemove The number of units of this ammo type to remove.
-     * @return true if the full requested quantity was removed, false otherwise.
-     */
     public boolean removeAmmunitionByType(AmmunitionType ammoType, int quantityToRemove) {
         if (quantityToRemove <= 0) return true; // Nothing to remove
 
         int quantityActuallyRemoved = 0;
         List<Ammunition> ammoStacksOfType = items.stream()
                 .filter(item -> item instanceof Ammunition && ((Ammunition) item).getAmmunitionType() == ammoType)
-                .map(item -> (Ammunition) item)
-                .collect(Collectors.toList());
+                .map(Ammunition.class::cast)
+                .toList();
 
         for (Ammunition ammoStack : ammoStacksOfType) {
             if (quantityActuallyRemoved >= quantityToRemove) break;

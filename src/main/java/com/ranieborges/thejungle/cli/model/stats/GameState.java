@@ -14,19 +14,15 @@ public class GameState {
     private int turnCounter;
     private AmbientController ambientController;
     private EventManager eventManager;
-    private FactionManager factionManager; // Added FactionManager
-
-    public GameState() {
-        // GSON needs a no-arg constructor
-    }
+    private FactionManager factionManager;
 
     public GameState(Character playerCharacter, int turnCounter,
                      AmbientController ambientController, EventManager eventManager,
-                     FactionManager factionManager) { // Added FactionManager
+                     FactionManager factionManager) {
         this.playerCharacter = playerCharacter;
         this.turnCounter = turnCounter;
         this.ambientController = ambientController;
         this.eventManager = eventManager;
-        this.factionManager = factionManager; // Initialize FactionManager
+        this.factionManager = factionManager;
     }
 }

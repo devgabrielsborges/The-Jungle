@@ -23,17 +23,8 @@ public abstract class Creature {
     @Setter private float attackDamage;
     @Setter private float speed;
     @Setter private Hostility hostility;
-    protected static final Random random = new Random();
+    protected transient static final Random random = new Random();
 
-    /**
-     * Constructor for a Creature.
-     *
-     * @param name         The name or type of the creature (e.g., "Wolf", "Grizzly Bear").
-     * @param maxHealth    The maximum health of the creature.
-     * @param attackDamage The base attack damage of the creature.
-     * @param speed        The speed of the creature.
-     * @param hostility    The initial hostility level of the creature.
-     */
     public Creature(String name, float maxHealth, float attackDamage, float speed, Hostility hostility) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Creature name cannot be null or empty.");
@@ -55,10 +46,6 @@ public abstract class Creature {
         this.hostility = hostility;
     }
 
-    /**
-     * Sets the creature's current health, clamping it between 0 and maxHealth.
-     * @param health The new health value.
-     */
     public void setHealth(float health) {
         this.health = Math.max(0, Math.min(health, this.maxHealth));
         if (this.health == 0) {
@@ -67,45 +54,20 @@ public abstract class Creature {
         }
     }
 
-    /**
-     * Reduces the creature's health by a specified amount.
-     *
-     * @param amount The amount of damage to take.
-     */
     public void takeDamage(float amount) {
         if (amount < 0) return;
         Message.displayOnScreen(TerminalStyler.style(this.name + " takes " + String.format("%.1f", amount) + " damage.", TerminalStyler.RED));
         setHealth(this.health - amount);
     }
 
-    /**
-     * Abstract method defining how the creature attacks a character.
-     *
-     * @param target The character being attacked.
-     */
     public abstract void attack(Character target);
-
-    /**
-     * Abstract method defining the creature's behavior or action during its turn.
-     * This could involve moving, attacking, fleeing, or other special actions.
-     * @param player The player character, for context (e.g., to decide whether to attack or flee).
-     */
     public abstract void act(Character player);
-
-    /**
-     * Abstract method to determine what loot, if any, the creature drops upon death.
-     *
-     * @return A list of items dropped by the creature. Can be empty.
-     */
     public abstract List<Item> dropLoot();
 
     public boolean isAlive() {
         return this.health > 0;
     }
 
-    /**
-     * Displays the creature's current status.
-     */
     public void displayStatus() {
         Message.displayOnScreen(TerminalStyler.title("--- Creature: " + getName() + " ---"));
         Message.displayOnScreen(String.format("Health: %s%.1f%s/%.1f", (getHealth() <= getMaxHealth() * 0.25) ? TerminalStyler.BRIGHT_RED : TerminalStyler.GREEN, getHealth(), TerminalStyler.RESET, getMaxHealth()));

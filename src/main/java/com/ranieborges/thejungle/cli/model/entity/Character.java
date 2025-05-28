@@ -32,12 +32,12 @@ public abstract class Character {
     @Setter private Set<Trait> traits;
     @Setter private Ambient currentAmbient;
 
-    private Map<String, Integer> factionReputationPoints; // Key: Faction ID, Value: points
-    private Map<String, FactionReputationLevel> factionReputationLevels; // Key: Faction ID, Value: Level
+    private Map<String, Integer> factionReputationPoints;
+    private Map<String, FactionReputationLevel> factionReputationLevels;
 
 
-    public static final float CHARACTER_DEFAULT_MAX_HEALTH = 100f;
-    public static final float CHARACTER_DEFAULT_MAX_STAT = 100f;
+    protected final float characterDefaultMaxHealth = 100f;
+    protected final float characterDefaultMaxStat = 100f;
 
     public Character(
         String name,
@@ -64,12 +64,10 @@ public abstract class Character {
             this.currentAmbient = new Jungle();
         }
 
-        // Initialize faction reputation
         this.factionReputationPoints = new HashMap<>();
         this.factionReputationLevels = new HashMap<>();
     }
 
-    // --- Faction Reputation Methods ---
     public int getReputationPoints(Faction faction) {
         return factionReputationPoints.getOrDefault(faction.getId(), 0); // Default to 0 points (Neutral range)
     }
@@ -115,46 +113,38 @@ public abstract class Character {
 
 
     public void setHealth(float health) {
-        this.health = Math.max(0, Math.min(health, CHARACTER_DEFAULT_MAX_HEALTH));
+        this.health = Math.max(0, Math.min(health, characterDefaultMaxHealth));
         if (this.health == 0) {
             Message.displayOnScreen(TerminalStyler.error(this.name + " has run out of health and perished!"));
         }
     }
 
     public void setHunger(float hunger) {
-        this.hunger = Math.max(0, Math.min(hunger, CHARACTER_DEFAULT_MAX_STAT));
+        this.hunger = Math.max(0, Math.min(hunger, characterDefaultMaxStat));
         if (this.hunger == 0) {
             Message.displayOnScreen(TerminalStyler.warning(this.name + " is starving!"));
         }
     }
 
     public void setThirst(float thirst) {
-        this.thirst = Math.max(0, Math.min(thirst, CHARACTER_DEFAULT_MAX_STAT));
+        this.thirst = Math.max(0, Math.min(thirst, characterDefaultMaxStat));
         if (this.thirst == 0) {
             Message.displayOnScreen(TerminalStyler.warning(this.name + " is dying of thirst!"));
         }
     }
 
     public void setEnergy(float energy) {
-        this.energy = Math.max(0, Math.min(energy, CHARACTER_DEFAULT_MAX_STAT));
+        this.energy = Math.max(0, Math.min(energy, characterDefaultMaxStat));
         if (this.energy == 0) {
             Message.displayOnScreen(TerminalStyler.warning(this.name + " has no energy left!"));
         }
     }
 
     public void setSanity(float sanity) {
-        this.sanity = Math.max(0, Math.min(sanity, CHARACTER_DEFAULT_MAX_STAT));
+        this.sanity = Math.max(0, Math.min(sanity, characterDefaultMaxStat));
         if (this.sanity == 0) {
             Message.displayOnScreen(TerminalStyler.warning(this.name + " has lost all sanity! The world blurs..."));
         }
-    }
-
-    public float getCurrentInventoryWeight() {
-        return this.inventory.getCurrentWeight();
-    }
-
-    public float getMaxInventoryCapacity() {
-        return this.inventory.getMaxWeightCapacity();
     }
 
     public abstract void useSpecialAbility();
@@ -199,22 +189,22 @@ public abstract class Character {
     public void displayStatus() {
         Message.displayOnScreen(TerminalStyler.title("--- Character Status: " + getName() + " ---"));
 
-        String healthColor = (getHealth() <= CHARACTER_DEFAULT_MAX_HEALTH * 0.25) ? TerminalStyler.BRIGHT_RED :
-            (getHealth() <= CHARACTER_DEFAULT_MAX_HEALTH * 0.5) ? TerminalStyler.YELLOW : TerminalStyler.GREEN;
-        Message.displayOnScreen(String.format("Health: %s%.1f%s/%.1f", healthColor, getHealth(), TerminalStyler.RESET, CHARACTER_DEFAULT_MAX_HEALTH));
+        String healthColor = (getHealth() <= characterDefaultMaxHealth * 0.25) ? TerminalStyler.BRIGHT_RED :
+            (getHealth() <= characterDefaultMaxHealth * 0.5) ? TerminalStyler.YELLOW : TerminalStyler.GREEN;
+        Message.displayOnScreen(String.format("Health: %s%.1f%s/%.1f", healthColor, getHealth(), TerminalStyler.RESET, characterDefaultMaxHealth));
 
-        String hungerColor = (getHunger() <= CHARACTER_DEFAULT_MAX_STAT * 0.25) ? TerminalStyler.RED : TerminalStyler.YELLOW;
-        Message.displayOnScreen(String.format("Hunger: %s%.1f%s/%.1f", getHunger() > CHARACTER_DEFAULT_MAX_STAT * 0.25 ? TerminalStyler.WHITE : hungerColor, getHunger(), TerminalStyler.RESET, CHARACTER_DEFAULT_MAX_STAT));
+        String hungerColor = (getHunger() <= characterDefaultMaxStat * 0.25) ? TerminalStyler.RED : TerminalStyler.YELLOW;
+        Message.displayOnScreen(String.format("Hunger: %s%.1f%s/%.1f", getHunger() > characterDefaultMaxStat * 0.25 ? TerminalStyler.WHITE : hungerColor, getHunger(), TerminalStyler.RESET, characterDefaultMaxStat));
 
-        String thirstColor = (getThirst() <= CHARACTER_DEFAULT_MAX_STAT * 0.25) ? TerminalStyler.RED : TerminalStyler.YELLOW;
-        Message.displayOnScreen(String.format("Thirst: %s%.1f%s/%.1f", getThirst() > CHARACTER_DEFAULT_MAX_STAT * 0.25 ? TerminalStyler.WHITE : thirstColor, getThirst(), TerminalStyler.RESET, CHARACTER_DEFAULT_MAX_STAT));
+        String thirstColor = (getThirst() <= characterDefaultMaxStat * 0.25) ? TerminalStyler.RED : TerminalStyler.YELLOW;
+        Message.displayOnScreen(String.format("Thirst: %s%.1f%s/%.1f", getThirst() > characterDefaultMaxStat * 0.25 ? TerminalStyler.WHITE : thirstColor, getThirst(), TerminalStyler.RESET, characterDefaultMaxStat));
 
-        String energyColor = (getEnergy() <= CHARACTER_DEFAULT_MAX_STAT * 0.25) ? TerminalStyler.RED : TerminalStyler.CYAN;
-        Message.displayOnScreen(String.format("Energy: %s%.1f%s/%.1f", getEnergy() > CHARACTER_DEFAULT_MAX_STAT * 0.25 ? TerminalStyler.WHITE : energyColor, getEnergy(), TerminalStyler.RESET, CHARACTER_DEFAULT_MAX_STAT));
+        String energyColor = (getEnergy() <= characterDefaultMaxStat * 0.25) ? TerminalStyler.RED : TerminalStyler.CYAN;
+        Message.displayOnScreen(String.format("Energy: %s%.1f%s/%.1f", getEnergy() > characterDefaultMaxStat * 0.25 ? TerminalStyler.WHITE : energyColor, getEnergy(), TerminalStyler.RESET, characterDefaultMaxStat));
 
-        String sanityColor = (getSanity() <= CHARACTER_DEFAULT_MAX_STAT * 0.25) ? TerminalStyler.BRIGHT_RED :
-            (getSanity() <= CHARACTER_DEFAULT_MAX_STAT * 0.5) ? TerminalStyler.MAGENTA : TerminalStyler.WHITE;
-        Message.displayOnScreen(String.format("Sanity: %s%.1f%s/%.1f", sanityColor, getSanity(), TerminalStyler.RESET, CHARACTER_DEFAULT_MAX_STAT));
+        String sanityColor = (getSanity() <= characterDefaultMaxStat * 0.25) ? TerminalStyler.BRIGHT_RED :
+            (getSanity() <= characterDefaultMaxStat * 0.5) ? TerminalStyler.MAGENTA : TerminalStyler.WHITE;
+        Message.displayOnScreen(String.format("Sanity: %s%.1f%s/%.1f", sanityColor, getSanity(), TerminalStyler.RESET, characterDefaultMaxStat));
 
         Message.displayOnScreen(String.format("Attack Damage: %s%.1f%s", TerminalStyler.BRIGHT_BLACK, getAttackDamage(), TerminalStyler.RESET));
         Message.displayOnScreen(String.format("Speed: %s%.1f%s", TerminalStyler.BRIGHT_BLACK, getSpeed(), TerminalStyler.RESET));
