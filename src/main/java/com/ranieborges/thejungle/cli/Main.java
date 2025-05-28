@@ -20,15 +20,15 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Main {
-    private static transient Scanner scanner = new Scanner(System.in);
-    private static transient Random random = new Random();
+    private static Scanner scanner = new Scanner(System.in);
+    private static Random random = new Random();
 
     private static Character playerCharacter;
     @Getter
     private static int turnCounter = 1;
     private static AmbientController ambientController;
     private static EventManager eventManager;
-    private static FactionManager factionManager; // Added FactionManager field
+    private static FactionManager factionManager;
 
     private static SaveLoadService saveLoadService = new SaveLoadService();
 
@@ -43,19 +43,19 @@ public class Main {
             String choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1": // Start New Game
+                case "1":
                     TerminalUtils.clearScreen();
                     handleNewGame();
                     TerminalUtils.clearScreen();
                     MainMenu.displayInitialMenu();
                     break;
-                case "2": // Continue Last Game
+                case "2":
                     TerminalUtils.clearScreen();
                     continueGameSession();
                     TerminalUtils.clearScreen();
                     MainMenu.displayInitialMenu();
                     break;
-                case "3": // Exit
+                case "3":
                     TerminalUtils.clearScreen();
                     if (playerCharacter != null && playerCharacter.isAlive() && ambientController != null && eventManager != null && factionManager != null) {
                         Message.displayOnScreen("Saving progress before exiting...");
@@ -122,14 +122,14 @@ public class Main {
             turnCounter = 1;
             ambientController = new AmbientController(playerCharacter, scanner, random);
             eventManager = new EventManager(random, scanner);
-            factionManager = new FactionManager(); // Initialize FactionManager for new game
-            playerCharacter.initializeFactionReputations(factionManager.getAllFactions()); // Initialize reputations
+            factionManager = new FactionManager();
+            playerCharacter.initializeFactionReputations(factionManager.getAllFactions());
 
             TerminalUtils.clearScreen();
             Message.displayOnScreen("\nWelcome, " + playerCharacter.getName() + ", the " + playerCharacter.getClass().getSimpleName() + "!");
             Message.displayWithDelay("You find yourself in the " + (playerCharacter.getCurrentAmbient() != null ? playerCharacter.getCurrentAmbient().getName() : "an unknown land") + ".", 1500);
 
-        } else { // Load Game
+        } else {
             Message.displayCharByCharWithDelay("Loading game session from saved state...", 50);
             playerCharacter = loadedGameState.getPlayerCharacter();
             turnCounter = loadedGameState.getTurnCounter();
