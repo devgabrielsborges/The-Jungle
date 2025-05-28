@@ -5,47 +5,32 @@ import com.ranieborges.thejungle.cli.model.entity.utils.enums.Trait;
 
 import java.util.EnumSet;
 
-/**
- * Represents the Lumberjack character class in the game.
- * Lumberjacks are strong and excel at gathering wood.
- */
 public class Lumberjack extends Character {
-
-    private static final float LUMBERJACK_INITIAL_SANITY = 60f;
-    private static final float LUMBERJACK_ATTACK_DAMAGE = 35f;
-    private static final float LUMBERJACK_SPEED = 45f;
-    private static final float LUMBERJACK_MAX_CARRY_WEIGHT = 90f;
-    private static final float LUMBERJACK_ABILITY_COST = 25f;
-    private static final float LUMBERJACK_INITIAL_HEALTH = 80f;
 
     public Lumberjack(String name) {
         super(
                 name,
-                LUMBERJACK_INITIAL_HEALTH,
-                LUMBERJACK_INITIAL_SANITY,
-                LUMBERJACK_ATTACK_DAMAGE,
-                LUMBERJACK_SPEED,
-                LUMBERJACK_MAX_CARRY_WEIGHT,
+                80f,
+                60f,
+                35f,
+                45f,
+                90f,
                 EnumSet.of(Trait.STRONG, Trait.FIRE_MAKER, Trait.MECHANIC)
         );
     }
 
-    /**
-     * Uses the Lumberjack's special ability: "Timber!".
-     * Consumes energy to simulate gathering extra wood.
-     * (Actual item addition would require Inventory interaction)
-     */
     @Override
     public void useSpecialAbility() {
-        if (getEnergy() >= LUMBERJACK_ABILITY_COST) {
-            setEnergy(getEnergy() - LUMBERJACK_ABILITY_COST);
+        float lumberjackAbilityCost = 25f;
+        if (getEnergy() >= lumberjackAbilityCost) {
+            setEnergy(getEnergy() - lumberjackAbilityCost);
             System.out.println(getName() + " shouts 'Timber!' and expertly fells a tree.");
 
             System.out.println(getName() + " gathered a good amount of wood (conceptual).");
-            System.out.println(getName() + " consumed " + LUMBERJACK_ABILITY_COST + " energy. Energy left: " + String.format("%.1f", getEnergy()));
+            System.out.println(getName() + " consumed " + lumberjackAbilityCost + " energy. Energy left: " + String.format("%.1f", getEnergy()));
 
         } else {
-            System.out.println(getName() + " doesn't have enough energy to use 'Timber!'. Needs " + LUMBERJACK_ABILITY_COST + " energy.");
+            System.out.println(getName() + " doesn't have enough energy to use 'Timber!'. Needs " + lumberjackAbilityCost + " energy.");
         }
     }
 
