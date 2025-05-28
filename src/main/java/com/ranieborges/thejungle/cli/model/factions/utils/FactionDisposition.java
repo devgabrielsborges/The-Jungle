@@ -1,4 +1,4 @@
-package com.ranieborges.thejungle.cli.model.factions;
+package com.ranieborges.thejungle.cli.model.factions.utils;
 
 import lombok.Getter;
 
