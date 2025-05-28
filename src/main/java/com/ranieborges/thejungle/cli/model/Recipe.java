@@ -11,34 +11,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Represents a crafting recipe in the game.
- * Defines the required ingredients (materials and specific items),
- * the resulting item, and any conditions like required tools or traits.
- *
- * @param recipeName            e.g., "Craft Stone Axe", "Cook Rabbit Meat"
- * @param resultItemPrototype   A prototype of the item to be crafted
- * @param requiredMaterials     e.g., WOOD: 2, STONE: 1
- * @param requiredSpecificItems e.g., "Rope": 1, "Wolf Pelt": 1
- * @param toolRequired          e.g., ToolType.HAMMER (can be null if no tool needed)
- * @param traitsRequired        e.g., Trait.MECHANIC (can be empty if no specific traits needed)
- * @param energyCost            Energy consumed to perform the craft
- */
+
 public record Recipe(String recipeName, Item resultItemPrototype, Map<MaterialType, Integer> requiredMaterials,
                      Map<String, Integer> requiredSpecificItems, ToolType toolRequired, Set<Trait> traitsRequired,
                      int energyCost) {
-    /**
-     * Constructor for a crafting recipe.
-     *
-     * @param recipeName            A descriptive name for the recipe.
-     * @param resultItemPrototype   A prototype (instance) of the item that will be created.
-     *                              The crafting service will likely clone this or create a new instance based on it.
-     * @param requiredMaterials     A map of MaterialType to quantity needed. Can be empty.
-     * @param requiredSpecificItems A map of specific item names (String) to quantity needed. Can be empty.
-     * @param toolRequired          The ToolType required for crafting. Can be null.
-     * @param traitsRequired        A set of Traits the character must possess. Can be empty.
-     * @param energyCost            The amount of energy the character consumes to craft this item.
-     */
+
     public Recipe(String recipeName, Item resultItemPrototype,
                   Map<MaterialType, Integer> requiredMaterials,
                   Map<String, Integer> requiredSpecificItems,
@@ -58,13 +35,6 @@ public record Recipe(String recipeName, Item resultItemPrototype, Map<MaterialTy
         this.energyCost = Math.max(0, energyCost); // Energy cost cannot be negative
     }
 
-    /**
-     * Checks if the character has the necessary ingredients, tools, and traits to craft this recipe.
-     *
-     * @param inventory The character's inventory.
-     * @param character The character attempting to craft.
-     * @return true if the character can craft this recipe, false otherwise.
-     */
     public boolean canCraft(Inventory inventory, Character character) {
         if (character == null || inventory == null) {
             return false;
