@@ -110,15 +110,6 @@ public class Main {
 
     private static void runGameSession(GameState loadedGameState) throws IOException {
         random = new Random();
-        if (scanner == null || (System.in.available() == 0 && !scanner.hasNextLine()) ) {
-            try {
-                if (System.in.available() == 0 && !scanner.hasNextLine()) {
-                    scanner = new Scanner(System.in);
-                }
-            } catch (Exception e) {
-                scanner = new Scanner(System.in);
-            }
-        }
 
         if (loadedGameState == null) { // New Game
             Message.displayCharByCharWithDelay("Starting new game session...", 50);
