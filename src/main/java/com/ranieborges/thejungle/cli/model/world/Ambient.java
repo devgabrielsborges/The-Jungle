@@ -20,7 +20,7 @@ public abstract class Ambient {
     @Setter
     private String currentWeather;
 
-    private final Random random = new Random();
+    protected final Random random = new Random();
 
     public Ambient(String name, String description, float explorationDifficulty, String defaultWeather) {
         this.name = name;
