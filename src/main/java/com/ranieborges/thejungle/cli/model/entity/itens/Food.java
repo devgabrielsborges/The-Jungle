@@ -60,7 +60,7 @@ public class Food extends Item {
         if (isSpoiled()) {
             Message.displayOnScreen(TerminalStyler.warning("The " + getName() + " is spoiled! Eating it is risky..."));
             user.changeHunger(this.nutritionalValue / 3);
-            Message.displayOnScreen(user.getName() + "'s hunger is now " + String.format("%.1f", user.getHunger()) + "/" + Character.characterDefaultMaxStat);
+            Message.displayOnScreen(user.getName() + "'s hunger is now " + String.format("%.1f", user.getHunger()) + "/" + user.getCharacterDefaultMaxHealth());
             if (Math.random() < this.sicknessChanceOnSpoil) {
                 Message.displayOnScreen(TerminalStyler.error(user.getName() + " feels sick after eating the spoiled " + getName() + "!"));
                 user.changeHealth(-15);
@@ -69,7 +69,7 @@ public class Food extends Item {
         } else if (this.foodType == FoodType.MEAT_RAW && this.sicknessChanceWhenRaw > 0 && Math.random() < this.sicknessChanceWhenRaw) {
             Message.displayOnScreen(TerminalStyler.warning("Eating raw meat is risky..."));
             user.changeHunger(this.nutritionalValue);
-            Message.displayOnScreen(user.getName() + "'s hunger is now " + String.format("%.1f", user.getHunger()) + "/" + Character.characterDefaultMaxStat);
+            Message.displayOnScreen(user.getName() + "'s hunger is now " + String.format("%.1f", user.getHunger()) + "/" + user.getCharacterDefaultMaxHealth());
             Message.displayOnScreen(TerminalStyler.error(user.getName() + " gets sick from the raw meat!"));
             user.changeHealth(-10);
             user.changeSanity(-5);
@@ -86,7 +86,7 @@ public class Food extends Item {
         }
         else {
             user.changeHunger(this.nutritionalValue);
-            Message.displayOnScreen(user.getName() + "'s hunger is now " + String.format("%.1f", user.getHunger()) + "/" + Character.characterDefaultMaxStat);
+            Message.displayOnScreen(user.getName() + "'s hunger is now " + String.format("%.1f", user.getHunger()) + "/" + user.getCharacterDefaultMaxHealth());
         }
 
         return true;
