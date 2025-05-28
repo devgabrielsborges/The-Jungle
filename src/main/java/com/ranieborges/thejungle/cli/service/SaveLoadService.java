@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.ranieborges.thejungle.cli.gsonextras.RuntimeTypeAdapterFactory;
 import com.ranieborges.thejungle.cli.model.Event;
-import com.ranieborges.thejungle.cli.model.stats.GameState;
+import com.ranieborges.thejungle.cli.model.Faction; // Import base Faction class
 import com.ranieborges.thejungle.cli.model.entity.Character;
 import com.ranieborges.thejungle.cli.model.entity.Creature;
 import com.ranieborges.thejungle.cli.model.entity.Item;
@@ -12,6 +12,12 @@ import com.ranieborges.thejungle.cli.model.entity.characters.*;
 import com.ranieborges.thejungle.cli.model.entity.creatures.*;
 import com.ranieborges.thejungle.cli.model.entity.itens.*;
 import com.ranieborges.thejungle.cli.model.events.*;
+
+import com.ranieborges.thejungle.cli.model.factions.BrutalHunters;
+import com.ranieborges.thejungle.cli.model.factions.DesperateSurvivors;
+import com.ranieborges.thejungle.cli.model.factions.PeacefulNomads;
+import com.ranieborges.thejungle.cli.model.factions.ResourceMerchants;
+import com.ranieborges.thejungle.cli.model.stats.GameState;
 import com.ranieborges.thejungle.cli.model.world.Ambient;
 import com.ranieborges.thejungle.cli.model.world.ambients.*;
 
@@ -50,7 +56,7 @@ public class SaveLoadService {
             .registerSubtype(CreatureEncounterEvent.class)
             .registerSubtype(DiscoveryEvent.class)
             .registerSubtype(HealthEvent.class)
-            .registerSubtype(FactionInteractionEvent.class); // <-- Add FactionInteractionEvent
+            .registerSubtype(FactionInteractionEvent.class);
 
         RuntimeTypeAdapterFactory<Ambient> ambientAdapterFactory = RuntimeTypeAdapterFactory
             .of(Ambient.class, "ambientType")
@@ -74,8 +80,13 @@ public class SaveLoadService {
             .registerSubtype(Fish.class)
             .registerSubtype(Wolf.class);
 
-        // Faction is a concrete class, GSON should handle it directly if FactionManager is serialized.
-        // If Faction had subtypes, you'd add a factory for it.
+        // Add RuntimeTypeAdapterFactory for Faction subclasses
+        RuntimeTypeAdapterFactory<Faction> factionAdapterFactory = RuntimeTypeAdapterFactory
+            .of(Faction.class, "factionType") // "factionType" will be the discriminator field
+            .registerSubtype(PeacefulNomads.class) // Uses class simple name "PeacefulNomads" as label
+            .registerSubtype(ResourceMerchants.class)
+            .registerSubtype(BrutalHunters.class)
+            .registerSubtype(DesperateSurvivors.class);
 
         this.gson = new GsonBuilder()
             .setPrettyPrinting()
@@ -85,23 +96,22 @@ public class SaveLoadService {
             .registerTypeAdapterFactory(ambientAdapterFactory)
             .registerTypeAdapterFactory(characterAdapterFactory)
             .registerTypeAdapterFactory(creatureAdapterFactory)
+            .registerTypeAdapterFactory(factionAdapterFactory) // <-- Register Faction factory
             .registerTypeAdapter(Class.class, new ClassTypeAdapter())
             .enableComplexMapKeySerialization()
             .create();
 
         File savesDir = new File(SAVE_FILE_DIRECTORY);
-        if (!savesDir.exists()) {
-            if (!savesDir.mkdirs()) {
+        if (!savesDir.exists() && !savesDir.mkdirs()) {
                 System.err.println("Warning: Could not create saves directory at " + SAVE_FILE_DIRECTORY);
             }
-        }
+
     }
 
-    // saveGame, loadGame, autoSaveExists, deleteSaveGame, listSaveGames methods remain the same
-    public boolean saveGame(GameState gameState, String saveName) {
+    public void saveGame(GameState gameState, String saveName) {
         if (saveName == null || saveName.trim().isEmpty()) {
             System.out.println("Save name cannot be empty.");
-            return false;
+            return;
         }
         String sanitizedSaveName = saveName.replaceAll("[^a-zA-Z0-9_.-]", "_");
         String filePath = SAVE_FILE_DIRECTORY + sanitizedSaveName + SAVE_FILE_EXTENSION;
@@ -111,11 +121,9 @@ public class SaveLoadService {
             if (!saveName.equals(AUTOSAVE_FILENAME)) {
                 System.out.println("Game saved successfully as " + filePath);
             }
-            return true;
         } catch (Exception e) {
             System.err.println("An unexpected error occurred while saving game to " + filePath + ": " + e.getMessage());
             e.printStackTrace();
-            return false;
         }
     }
 
@@ -165,11 +173,4 @@ public class SaveLoadService {
         }
     }
 
-    public String[] listSaveGames() {
-        File savesDir = new File(SAVE_FILE_DIRECTORY);
-        if (savesDir.exists() && savesDir.isDirectory()) {
-            return savesDir.list((dir, name) -> name.toLowerCase().endsWith(SAVE_FILE_EXTENSION) && !name.equalsIgnoreCase(AUTOSAVE_FILENAME + SAVE_FILE_EXTENSION));
-        }
-        return new String[0];
-    }
 }
