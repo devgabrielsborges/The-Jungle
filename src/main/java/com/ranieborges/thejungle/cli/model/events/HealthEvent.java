@@ -61,7 +61,7 @@ public class HealthEvent extends Event {
             return ambient.getCurrentWeather().contains("Cold") || ambient.getCurrentWeather().contains("Blizzard") || ambient.getName().contains("Mountain");
         }
         if (this.afflictionType == AfflictionType.INFECTION) {
-            return player.getHealth() < Character.characterDefaultMaxHealth * 0.5; // Example: more likely if already wounded
+            return player.getHealth() < player.getCharacterDefaultMaxHealth() * 0.5; // Example: more likely if already wounded
         }
         return true;
     }
