@@ -23,21 +23,20 @@ import java.util.Scanner;
 @Getter
 public class DiscoveryEvent extends Event {
 
+    @Getter
     public enum DiscoveryType {
         ABANDONED_SHELTER("Abrigo Abandonado"),
         WATER_SOURCE("Fonte de Água"),
-        MYSTERIOUS_RUINS_DETAIL("Detalhe em Ruínas Misteriosas"), // More specific than just being in Ruins ambient
+        MYSTERIOUS_RUINS_DETAIL("Detalhe em Ruínas Misteriosas"),
         RARE_RESOURCE_NODE("Nódulo de Recurso Raro"),
         HIDDEN_CACHE("Esconderijo Secreto");
 
         private final String displayName;
         DiscoveryType(String displayName) { this.displayName = displayName; }
-        public String getDisplayName() { return displayName; }
     }
 
     private final DiscoveryType discoveryType;
-    // "Recursos encontrados" - could be a list of potential items or a direct item.
-    private final List<Item> itemsFound; // For simplicity, let's say this event can grant specific items.
+    private final List<Item> itemsFound;
 
     public DiscoveryEvent(String name, String description, double baseProbability,
                           DiscoveryType discoveryType, List<Item> itemsFound) {
@@ -179,9 +178,8 @@ public class DiscoveryEvent extends Event {
         if (this.discoveryType == DiscoveryType.MYSTERIOUS_RUINS_DETAIL && !(ambient.getName().contains("Ruins"))) {
             return false;
         }
-        // Water source more likely near Lake/River or in Jungle
         if (this.discoveryType == DiscoveryType.WATER_SOURCE && (ambient.getName().contains("Mountain") || ambient.getName().contains("Ruins"))) {
-            return random.nextDouble() < 0.1; // Less likely in these ambients
+            return random.nextDouble() < 0.1;
         }
         return true;
     }

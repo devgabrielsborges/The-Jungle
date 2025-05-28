@@ -15,12 +15,11 @@ import java.util.Scanner;
 
 public class FactionInteractionEvent extends Event {
 
-    private final String targetFactionId; // ID of the faction this event pertains to, if specific
-    // If null, a random faction might be chosen by FactionManager
+    private final String targetFactionId;
 
     public FactionInteractionEvent(String name, String description, double baseProbability, String targetFactionId) {
         super(name, description, baseProbability);
-        this.targetFactionId = targetFactionId; // Can be null for a generic faction interaction
+        this.targetFactionId = targetFactionId;
     }
 
     public FactionInteractionEvent(String name, String description, double baseProbability) {
@@ -61,7 +60,6 @@ public class FactionInteractionEvent extends Event {
         Message.displayOnScreen("Reputation: " + player.getReputationLevel(factionToInteract).getDisplayName() + " (" + player.getReputationPoints(factionToInteract) + " pts)");
 
 
-        // Example Interaction: Simple choice affecting reputation
         Message.displayOnScreen("\nWhat do you do?");
         Message.displayOnScreen("1. Offer a small gift (if you have a common material). [-1 Material, +Rep]");
         Message.displayOnScreen("2. Act cautiously and move on. [No change]");
@@ -72,13 +70,9 @@ public class FactionInteractionEvent extends Event {
 
         switch (choice) {
             case "1":
-                // Simplified: Check for any material. A real implementation would pick a specific item.
-                if (!player.getInventory().getItems().isEmpty()) { // Basic check if inventory has anything
-                    // For simplicity, let's assume any item can be a "small gift"
-                    // And we don't actually remove an item for this example event.
-                    // A real implementation would: player.getInventory().removeItemByName(...);
+                if (!player.getInventory().getItems().isEmpty()) {
                     Message.displayOnScreen("You offer a token of goodwill.");
-                    player.changeReputation(factionToInteract, 10); // Positive reputation change
+                    player.changeReputation(factionToInteract, 10);
                     outcomeSummary += " and offered them a small gift, improving relations.";
                 } else {
                     Message.displayOnScreen("You have nothing to offer as a gift.");
@@ -102,9 +96,4 @@ public class FactionInteractionEvent extends Event {
         return outcomeSummary;
     }
 
-    @Override
-    public boolean canOccur(Character player, Ambient ambient) {
-        // This event can occur anywhere for now, as long as factions exist.
-        return true;
-    }
 }

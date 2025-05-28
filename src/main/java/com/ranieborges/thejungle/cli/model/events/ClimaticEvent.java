@@ -73,9 +73,6 @@ public class ClimaticEvent extends Event {
             return false;
         }
 
-        if (this.climateType == ClimateType.HEAT_WAVE && ambient.getName().toLowerCase().contains("mountain") && ambient.getCurrentWeather().toLowerCase().contains("blizzard")) {
-            return false;
-        }
-        return true;
+        return this.climateType != ClimateType.HEAT_WAVE || !ambient.getName().toLowerCase().contains("mountain") || !ambient.getCurrentWeather().toLowerCase().contains("blizzard");
     }
 }
