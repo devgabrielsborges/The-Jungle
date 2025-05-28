@@ -53,7 +53,6 @@ public class Bear extends Creature {
             attack(player);
         } else if (getHostility() == Hostility.NEUTRAL) {
             System.out.println(getName() + " observes " + player.getName() + " warily.");
-            // Could become hostile if player gets too close or acts aggressively
         } else {
             System.out.println(getName() + " lumbers through the forest.");
         }

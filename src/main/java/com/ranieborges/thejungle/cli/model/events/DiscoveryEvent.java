@@ -3,7 +3,14 @@ package com.ranieborges.thejungle.cli.model.events;
 import com.ranieborges.thejungle.cli.controller.TurnController;
 import com.ranieborges.thejungle.cli.model.Event;
 import com.ranieborges.thejungle.cli.model.entity.Character;
+import com.ranieborges.thejungle.cli.model.entity.Creature;
 import com.ranieborges.thejungle.cli.model.entity.Item;
+import com.ranieborges.thejungle.cli.model.entity.creatures.Wolf;
+import com.ranieborges.thejungle.cli.model.entity.itens.Food;
+import com.ranieborges.thejungle.cli.model.entity.itens.Material;
+import com.ranieborges.thejungle.cli.model.entity.utils.enums.FoodType;
+import com.ranieborges.thejungle.cli.model.entity.utils.enums.Hostility;
+import com.ranieborges.thejungle.cli.model.entity.utils.enums.MaterialType;
 import com.ranieborges.thejungle.cli.model.world.Ambient;
 import com.ranieborges.thejungle.cli.view.Message;
 import com.ranieborges.thejungle.cli.view.utils.TerminalStyler;
@@ -11,6 +18,7 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 @Getter
 public class DiscoveryEvent extends Event {
@@ -62,28 +70,101 @@ public class DiscoveryEvent extends Event {
             }
         }
 
-        // Specific effects based on discovery type
+
         switch (discoveryType) {
             case ABANDONED_SHELTER:
                 Message.displayOnScreen("This shelter could offer temporary protection or contain more supplies.");
-                // Could change ambient, or offer a "rest here" option with bonuses.
-                // Could also have a chance of being occupied (triggering another event/encounter).
-                if (random.nextDouble() < 0.2) { // 20% chance it's occupied
+                if (random.nextDouble() < 0.2) {
                     Message.displayOnScreen(TerminalStyler.warning("But wait... you hear sounds from inside!"));
-                    // TODO: Trigger a CreatureEncounterEvent or NPC encounter
-                    outcomeSummary += " The shelter seemed occupied!";
+
+                    Message.displayOnScreen(TerminalStyler.warning("Ao entrar no abrigo, você percebe que não está sozinho!"));
+
+
+                    int encounterType = random.nextInt(100);
+                    if (encounterType < 60) {
+                        Message.displayOnScreen("Um sobrevivente assustado se esconde nos fundos do abrigo.");
+
+
+                        Creature survivor = new Creature("Sobrevivente Desnutrido", 40, 8, 10, Hostility.NEUTRAL) {
+                            @Override
+                            public void attack(Character target) {
+                                float damage = getAttackDamage() * (random.nextFloat() * 0.3f + 0.7f);
+                                target.changeHealth(-damage);
+                                Message.displayOnScreen(TerminalStyler.warning(getName() + " ataca " + target.getName() + " com uma faca improvisada!"));
+                            }
+
+                            @Override
+                            public void act(Character player) {
+                                if (isAlive() && getHealth() < getMaxHealth() * 0.3) {
+                                    setHostility(Hostility.FLEEING);
+                                    Message.displayOnScreen(getName() + " tenta fugir desesperadamente!");
+                                }
+                            }
+
+                            @Override
+                            public List<Item> dropLoot() {
+                                List<Item> loot = new ArrayList<>();
+                                if (random.nextFloat() < 0.7f) {
+                                    loot.add(new Food("Ração Velha", "Uma ração semi-estragada", 0.3f,
+                                        10f, FoodType.CANNED, 3, 0.2f, 0.0f));
+                                }
+                                return loot;
+                            }
+                        };
+
+
+                        Message.displayOnScreen("\nComo você deseja proceder?");
+                        Message.displayOnScreen("1. Oferecer ajuda ao sobrevivente");
+                        Message.displayOnScreen("2. Tentar intimidar e expulsar");
+                        Message.displayOnScreen("3. Atacar primeiro");
+
+                        Scanner scanner = new Scanner(System.in);
+                        String choice = scanner.nextLine().trim();
+
+                        if (choice.equals("1")) {
+                            Message.displayOnScreen(TerminalStyler.success("Você oferece comida e se aproxima com cuidado."));
+                            if (random.nextFloat() < 0.7f) {
+                                Message.displayOnScreen("O sobrevivente aceita sua ajuda e compartilha informações úteis.");
+                                player.changeSanity(5);
+                                player.getInventory().addItem(new Material("Mapa Rasgado", "Mostra locais próximos", 0.1f, MaterialType.OTHER, 1));
+                                outcomeSummary += " Você fez um aliado temporário.";
+                            } else {
+                                Message.displayOnScreen(TerminalStyler.warning("Era uma armadilha! O sobrevivente tenta te atacar!"));
+                                survivor.attack(player);
+                                outcomeSummary += " Você foi enganado pelo sobrevivente.";
+                            }
+                        } else if (choice.equals("2") || choice.equals("3")) {
+                            Message.displayOnScreen(TerminalStyler.error("Você assume uma postura agressiva."));
+                            survivor.setHostility(Hostility.HOSTILE);
+                            if (choice.equals("3")) {
+                                Message.displayOnScreen("Você ataca primeiro!");
+                                survivor.takeDamage(player.getAttackDamage());
+                            } else {
+                                survivor.attack(player);
+                            }
+                            player.changeSanity(-3);
+                            outcomeSummary += " Você entrou em conflito com o ocupante do abrigo.";
+                        }
+                    } else {
+                        Message.displayOnScreen(TerminalStyler.warning("Um lobo ferido está usando o abrigo como toca!"));
+                        Creature wolf = new Wolf();
+                        wolf.takeDamage(20);
+                        wolf.attack(player);
+                        player.changeSanity(-5);
+                        outcomeSummary += " Você confrontou um lobo ferido no abrigo.";
+                    }                outcomeSummary += " The shelter seemed occupied!";
                 }
                 break;
             case WATER_SOURCE:
                 Message.displayOnScreen("A clean source of water! You can drink or fill containers.");
-                // Player could interact to get Drinkable items.
-                player.changeThirst(30); // Immediate small thirst quench
+
+                player.changeThirst(30);
                 outcomeSummary += " Quenched some thirst at the source.";
                 break;
             case MYSTERIOUS_RUINS_DETAIL:
                 Message.displayOnScreen("You notice an unusual carving or artifact. It might be significant.");
-                player.changeSanity(5); // Intrigue or minor understanding
-                // Could give a clue or a unique item.
+                player.changeSanity(5);
+
                 outcomeSummary += " Found an intriguing detail.";
                 break;
             default:
@@ -94,7 +175,7 @@ public class DiscoveryEvent extends Event {
 
     @Override
     public boolean canOccur(Character player, Ambient ambient) {
-        // Example: Mysterious Ruins Detail only in Ruins ambient
+
         if (this.discoveryType == DiscoveryType.MYSTERIOUS_RUINS_DETAIL && !(ambient.getName().contains("Ruins"))) {
             return false;
         }

@@ -47,24 +47,18 @@ public class Survivor extends Character {
 
             switch (choice) {
                 case 0:
-                    // Assuming changeHunger exists in Character and positive values are beneficial
-                    // float oldHunger = getHunger();
-                    // changeHunger(STAT_BOOST_AMOUNT);
-                    setHunger(Math.min(getHunger() + STAT_BOOST_AMOUNT, 100f)); // Assuming 100f is max
+
+                    setHunger(Math.min(getHunger() + STAT_BOOST_AMOUNT, 100f));
                     System.out.println(getName() + " feels less hungry! Hunger is now " + String.format("%.1f", getHunger()));
                     break;
                 case 1:
-                    // Assuming changeThirst exists in Character
-                    // float oldThirst = getThirst();
-                    // changeThirst(STAT_BOOST_AMOUNT);
-                    setThirst(Math.min(getThirst() + STAT_BOOST_AMOUNT, 100f)); // Assuming 100f is max
+
+                    setThirst(Math.min(getThirst() + STAT_BOOST_AMOUNT, 100f));
                     System.out.println(getName() + " feels less thirsty! Thirst is now " + String.format("%.1f", getThirst()));
                     break;
                 case 2:
-                    // Assuming changeEnergy exists in Character
-                    // float oldEnergy = getEnergy(); // Energy was already reduced for ability cost
-                    // changeEnergy(STAT_BOOST_AMOUNT);
-                    setEnergy(Math.min(getEnergy() + STAT_BOOST_AMOUNT, 100f)); // Assuming 100f is max
+
+                    setEnergy(Math.min(getEnergy() + STAT_BOOST_AMOUNT, 100f));
                     System.out.println(getName() + " feels a surge of energy! Energy is now " + String.format("%.1f", getEnergy()));
                     break;
             }

@@ -14,11 +14,11 @@ import lombok.Getter;
 @Getter
 public class Food extends Item {
 
-    private final float nutritionalValue; // "Valor nutricional (pontos de fome restaurados)"
-    private final FoodType foodType;      // "Tipo (fruta, carne, enlatado, etc.)"
-    private int turnsUntilSpoiled;        // Feature: "Prazo de validade (alguns alimentos podem estragar)" - Implemented
-    private final float sicknessChanceOnSpoil; // Chance of sickness if eaten spoiled (0.0 to 1.0)
-    private final float sicknessChanceWhenRaw; // Chance of sickness if a 'raw' type item is eaten (e.g. MEAT_RAW)
+    private final float nutritionalValue;
+    private final FoodType foodType;
+    private int turnsUntilSpoiled;
+    private final float sicknessChanceOnSpoil;
+    private final float sicknessChanceWhenRaw;
 
     public Food(String name, String description, float weight, float nutritionalValue, FoodType foodType,
                 int turnsUntilSpoiled, float sicknessChanceOnSpoil, float sicknessChanceWhenRaw) {
@@ -37,7 +37,7 @@ public class Food extends Item {
         this.foodType = foodType;
         this.turnsUntilSpoiled = turnsUntilSpoiled;
         this.sicknessChanceOnSpoil = sicknessChanceOnSpoil;
-        // Only apply raw sickness chance if the food type is inherently risky when raw
+
         this.sicknessChanceWhenRaw = (foodType == FoodType.MEAT_RAW || foodType == FoodType.MUSHROOM /* Add other risky raw types here */) ? sicknessChanceWhenRaw : 0.0f;
     }
 
@@ -76,7 +76,7 @@ public class Food extends Item {
         } else if (this.foodType == FoodType.MUSHROOM && this.sicknessChanceWhenRaw > 0 && Math.random() < this.sicknessChanceWhenRaw) {
             Message.displayOnScreen(TerminalStyler.warning("This " + getName() + " tastes strange..."));
             user.changeHunger(this.nutritionalValue);
-            if (Math.random() < 0.7) { // Higher chance of negative effect for risky mushroom
+            if (Math.random() < 0.7) {
                 Message.displayOnScreen(TerminalStyler.error(user.getName() + " feels disoriented and nauseous!"));
                 user.changeSanity(-15);
                 user.changeHealth(-5);
@@ -89,7 +89,7 @@ public class Food extends Item {
             Message.displayOnScreen(user.getName() + "'s hunger is now " + String.format("%.1f", user.getHunger()) + "/" + Character.CHARACTER_DEFAULT_MAX_STAT);
         }
 
-        return true; // Food items are consumed
+        return true;
     }
 
     @Override

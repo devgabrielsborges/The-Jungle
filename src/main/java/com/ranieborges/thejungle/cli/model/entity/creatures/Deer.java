@@ -15,8 +15,8 @@ import java.util.List;
 public class Deer extends Creature {
 
     private static final float DEER_MAX_HEALTH = 50f;
-    private static final float DEER_ATTACK_DAMAGE = 0f; // Deer don't typically attack
-    private static final float DEER_SPEED = 75f; // Fast to flee
+    private static final float DEER_ATTACK_DAMAGE = 0f;
+    private static final float DEER_SPEED = 75f;
 
     public Deer() {
         super("Deer", DEER_MAX_HEALTH, DEER_ATTACK_DAMAGE, DEER_SPEED, Hostility.FLEEING);
@@ -32,7 +32,7 @@ public class Deer extends Creature {
     public void takeDamage(float amount) {
         super.takeDamage(amount);
         if (isAlive()) {
-            setHostility(Hostility.FLEEING); // Ensure it stays in fleeing mode if hit
+            setHostility(Hostility.FLEEING);
         }
     }
 
@@ -42,7 +42,6 @@ public class Deer extends Creature {
 
         if (getHostility() == Hostility.FLEEING) {
             System.out.println(getName() + " spots " + (player != null ? player.getName() : "something") + " and darts away!");
-            // Conceptual: Move away from player
         } else {
             System.out.println(getName() + " grazes peacefully.");
         }

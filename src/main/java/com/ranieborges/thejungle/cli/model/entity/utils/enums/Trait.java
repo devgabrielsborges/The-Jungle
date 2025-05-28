@@ -5,7 +5,7 @@ package com.ranieborges.thejungle.cli.model.entity.utils.enums;
  * These traits can provide advantages or define a character's specialization.
  */
 public enum Trait {
-    // Traits inspired by the PDF
+    // Traits Roteiro
     TRACKER("Rastreador", "Finds food and water more easily."),
     MECHANIC("Mecânico", "Can repair tools and craft new weapons more effectively."),
     MEDIC("Médico", "Can treat wounds more effectively, possibly without rare items."),

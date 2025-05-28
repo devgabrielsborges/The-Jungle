@@ -13,10 +13,10 @@ import lombok.Getter;
  */
 @Getter
 public class Medicine extends Item {
-    private final MedicineType medicineType; // "Tipo (bandagem, antibiótico, analgésico)"
-    private final MedicineEffect primaryEffect;  // "Efeito (cura ferimentos, alivia dor, trata infecções)"
-    private final float effectPotency;       // How strong the effect is (e.g., amount of health restored)
-    private final int doses;                 // How many uses the medicine has (if multi-dose)
+    private final MedicineType medicineType;
+    private final MedicineEffect primaryEffect;
+    private final float effectPotency;
+    private final int doses;
     private int remainingDoses;
 
     /**
@@ -32,7 +32,7 @@ public class Medicine extends Item {
      */
     public Medicine(String name, String description, float weight, MedicineType medicineType,
                     MedicineEffect primaryEffect, float effectPotency, int doses) {
-        super(name, description, weight); // Medicines are typically consumable, not durable like tools
+        super(name, description, weight);
         if (effectPotency < 0) {
             throw new IllegalArgumentException("Effect potency cannot be negative.");
         }
@@ -75,10 +75,10 @@ public class Medicine extends Item {
 
         if (this.remainingDoses > 0) {
             System.out.println(getName() + " has " + this.remainingDoses + "/" + this.doses + " doses remaining.");
-            return false; // Not fully consumed yet
+            return false;
         } else {
             System.out.println(getName() + " has been fully used.");
-            return true; // Fully consumed
+            return true;
         }
     }
 
@@ -94,7 +94,6 @@ public class Medicine extends Item {
                 System.out.println(user.getName() + " heals for " + this.effectPotency + " health. Current health: " + String.format("%.1f", user.getHealth()));
                 break;
             case CURE_INFECTION:
-                // This would interact with a status effect system on the Character
                 System.out.println(user.getName() + "'s infection is treated. (Conceptual: remove 'infected' status)");
                 // user.removeStatusEffect(StatusEffect.INFECTION);
                 break;
@@ -117,7 +116,7 @@ public class Medicine extends Item {
             case REDUCE_SICKNESS:
                 // Could improve a general "sick" status or slightly boost health/hunger if sickness was affecting them
                 System.out.println(user.getName() + " feels less sick.");
-                user.changeHealth(this.effectPotency / 2); // Example: minor health boost
+                user.changeHealth(this.effectPotency / 2);
                 break;
             case SOOTHE_BURNS:
             case STABILIZE_FRACTURE:

@@ -6,12 +6,12 @@ import lombok.Getter;
 public enum MedicineType {
     BANDAGE("Bandagem"),
     ANTIBIOTIC("Antibiótico"),
-    ANALGESIC("Analgésico"), // Painkiller
+    ANALGESIC("Analgésico"),
     ANTIDOTE("Antídoto"),
     HERBAL_SALVE("Pomada Herbal"),
-    SPLINT("Tala"), // For fractures
-    PURIFICATION_TABLET("Pastilha Purificadora"), // For water
-    STIMULANT("Estimulante"); // For energy or counteracting fatigue/drowsiness
+    SPLINT("Tala"),
+    PURIFICATION_TABLET("Pastilha Purificadora"),
+    STIMULANT("Estimulante");
 
     private final String displayName;
 

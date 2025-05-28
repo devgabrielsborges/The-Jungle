@@ -165,6 +165,8 @@ public class EventManager {
 
             if (random.nextDouble() < probability) {
                 String eventOutcome = event.execute(player, ambient, turnController);
+                Message.displayOnScreen("Press Enter to continue after the event...");
+                scanner.nextLine();
                 return eventOutcome;
             }
         }
