@@ -178,13 +178,6 @@ public class AmbientController {
         }
     }
 
-    public void updateAmbientResources() {
-        Ambient current = getCurrentAmbient();
-        if (current != null) {
-            current.updateResources();
-        }
-    }
-
     public void updateGlobalWeather() {
         if (this.random == null) {
             Message.displayOnScreen("Warning: Random not initialized in AmbientController. Skipping global weather update.");

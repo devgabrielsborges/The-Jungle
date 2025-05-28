@@ -9,10 +9,7 @@ import lombok.Getter;
 
 import java.util.Random;
 
-/**
- * Abstract base class for all random events in the game "Última Fronteira".
- * Corresponds to "Superclasse: Evento" from the PDF.
- */
+
 @Getter
 public abstract class Event {
 
@@ -37,14 +34,6 @@ public abstract class Event {
         this.baseProbability = baseProbability;
     }
 
-    /**
-     * Executes the event, applying its effects to the player and/or the environment.
-     *
-     * @param player         The player character affected by the event.
-     * @param ambient        The current ambient where the event occurs.
-     * @param turnController The TurnController, for events that need to trigger complex game actions like combat.
-     * @return A summary string of the event's outcome.
-     */
     public abstract String execute(Character player, Ambient ambient, TurnController turnController);
 
     public boolean canOccur(Character player, Ambient ambient) {

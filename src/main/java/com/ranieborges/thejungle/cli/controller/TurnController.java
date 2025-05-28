@@ -452,9 +452,6 @@ public class TurnController {
             maintenanceSummary += spoiledCount + " food item(s) spoiled. ";
         }
 
-        if (ambientController != null) {
-            ambientController.updateAmbientResources();
-        }
         this.previousTurnSummary += " " + maintenanceSummary.trim();
         Message.displayOnScreen(TerminalStyler.info("Time passes..."));
         Message.displayWithDelay("", 1000);
