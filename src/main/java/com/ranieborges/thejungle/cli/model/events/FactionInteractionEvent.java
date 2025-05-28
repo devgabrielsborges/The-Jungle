@@ -52,7 +52,7 @@ public class FactionInteractionEvent extends Event {
                 Message.displayOnScreen(TerminalStyler.info("No factions are known in these lands."));
                 return "The wilderness remains devoid of organized groups.";
             }
-            factionToInteract = allFactions.get(random.nextInt(allFactions.size()));
+            factionToInteract = allFactions.get(getRandom().nextInt(allFactions.size()));
         }
 
         Message.displayOnScreen("You encounter members of " + TerminalStyler.style(factionToInteract.getName(), TerminalStyler.CYAN) + ".");

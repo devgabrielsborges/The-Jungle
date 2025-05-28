@@ -43,7 +43,7 @@ public abstract class Item {
         }
     }
 
-    protected boolean decreaseDurability(int amount) {
+    public boolean decreaseDurability(int amount) {
         if (this.maxDurability > 0) {
             this.setDurability(this.durability - amount);
             if (this.durability == 0) {

@@ -36,8 +36,8 @@ public abstract class Character {
     private Map<String, FactionReputationLevel> factionReputationLevels;
 
 
-    protected final float characterDefaultMaxHealth = 100f;
-    protected final float characterDefaultMaxStat = 100f;
+    private final float characterDefaultMaxHealth = 100f;
+    private final float characterDefaultMaxStat = 100f;
 
     public Character(
         String name,

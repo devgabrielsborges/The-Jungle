@@ -73,13 +73,13 @@ public class DiscoveryEvent extends Event {
         switch (discoveryType) {
             case ABANDONED_SHELTER:
                 Message.displayOnScreen("This shelter could offer temporary protection or contain more supplies.");
-                if (random.nextDouble() < 0.2) {
+                if (getRandom().nextDouble() < 0.2) {
                     Message.displayOnScreen(TerminalStyler.warning("But wait... you hear sounds from inside!"));
 
                     Message.displayOnScreen(TerminalStyler.warning("Ao entrar no abrigo, você percebe que não está sozinho!"));
 
 
-                    int encounterType = random.nextInt(100);
+                    int encounterType = getRandom().nextInt(100);
                     if (encounterType < 60) {
                         Message.displayOnScreen("Um sobrevivente assustado se esconde nos fundos do abrigo.");
 
@@ -122,7 +122,7 @@ public class DiscoveryEvent extends Event {
 
                         if (choice.equals("1")) {
                             Message.displayOnScreen(TerminalStyler.success("Você oferece comida e se aproxima com cuidado."));
-                            if (random.nextFloat() < 0.7f) {
+                            if (getRandom().nextFloat() < 0.7f) {
                                 Message.displayOnScreen("O sobrevivente aceita sua ajuda e compartilha informações úteis.");
                                 player.changeSanity(5);
                                 player.getInventory().addItem(new Material("Mapa Rasgado", "Mostra locais próximos", 0.1f, MaterialType.OTHER, 1));
@@ -179,7 +179,7 @@ public class DiscoveryEvent extends Event {
             return false;
         }
         if (this.discoveryType == DiscoveryType.WATER_SOURCE && (ambient.getName().contains("Mountain") || ambient.getName().contains("Ruins"))) {
-            return random.nextDouble() < 0.1;
+            return getRandom().nextDouble() < 0.1;
         }
         return true;
     }

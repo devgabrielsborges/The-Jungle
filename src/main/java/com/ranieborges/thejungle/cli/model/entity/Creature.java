@@ -23,7 +23,7 @@ public abstract class Creature {
     @Setter private float attackDamage;
     @Setter private float speed;
     @Setter private Hostility hostility;
-    protected transient static final Random random = new Random();
+    public transient static final Random random = new Random();
 
     public Creature(String name, float maxHealth, float attackDamage, float speed, Hostility hostility) {
         if (name == null || name.trim().isEmpty()) {

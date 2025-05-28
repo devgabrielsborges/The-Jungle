@@ -17,7 +17,7 @@ public abstract class Event {
     private final String description;
     private final double baseProbability;
 
-    protected transient static final Random random = new Random();
+    private transient final Random random = new Random();
 
     public Event(String name, String description, double baseProbability) {
         if (name == null || name.trim().isEmpty()) {
@@ -40,7 +40,7 @@ public abstract class Event {
         return true;
     }
 
-    protected void announceEvent() {
+    public void announceEvent() {
         Message.displayOnScreen(TerminalStyler.style("\n--- EVENT: " + getName() + " ---", TerminalStyler.BRIGHT_YELLOW, TerminalStyler.BOLD));
         Message.displayCharByCharWithDelay(TerminalStyler.style(getDescription(), TerminalStyler.YELLOW), 50);
     }
