@@ -146,19 +146,25 @@ public class EventManager {
 
         for (Event event : possibleEventsThisTurn) {
             double probability = event.getBaseProbability();
-            if (ambientEventModifiers.containsKey(event.getName())) { // Check for specific event name modifier
+            if (ambientEventModifiers.containsKey(event.getName())) {
                 probability = ambientEventModifiers.get(event.getName());
-            } else { // Check for general event type modifiers if specific name not found
-                if (event instanceof ClimaticEvent && ambientEventModifiers.containsKey("ClimaticEventGeneral")) {
-                    probability *= ambientEventModifiers.get("ClimaticEventGeneral");
-                } else if (event instanceof CreatureEncounterEvent && ambientEventModifiers.containsKey("CreatureEncounterGeneral")) {
-                    probability *= ambientEventModifiers.get("CreatureEncounterGeneral");
-                } else if (event instanceof DiscoveryEvent && ambientEventModifiers.containsKey("DiscoveryEventGeneral")) {
-                    probability *= ambientEventModifiers.get("DiscoveryEventGeneral");
-                } else if (event instanceof HealthEvent && ambientEventModifiers.containsKey("HealthEventGeneral")) {
-                    probability *= ambientEventModifiers.get("HealthEventGeneral");
-                } else if (event instanceof FactionInteractionEvent && ambientEventModifiers.containsKey("FactionInteractionGeneral")) {
-                    probability *= ambientEventModifiers.get("FactionInteractionGeneral");
+            } else {
+                switch (event) {
+                    case ClimaticEvent climaticEvent when ambientEventModifiers.containsKey("ClimaticEventGeneral") ->
+                        probability *= ambientEventModifiers.get("ClimaticEventGeneral");
+                    case
+                        CreatureEncounterEvent creatureEncounterEvent when ambientEventModifiers.containsKey("CreatureEncounterGeneral") ->
+                        probability *= ambientEventModifiers.get("CreatureEncounterGeneral");
+                    case
+                        DiscoveryEvent discoveryEvent when ambientEventModifiers.containsKey("DiscoveryEventGeneral") ->
+                        probability *= ambientEventModifiers.get("DiscoveryEventGeneral");
+                    case HealthEvent healthEvent when ambientEventModifiers.containsKey("HealthEventGeneral") ->
+                        probability *= ambientEventModifiers.get("HealthEventGeneral");
+                    case
+                        FactionInteractionEvent factionInteractionEvent when ambientEventModifiers.containsKey("FactionInteractionGeneral") ->
+                        probability *= ambientEventModifiers.get("FactionInteractionGeneral");
+                    default -> {
+                    }
                 }
             }
 

@@ -13,8 +13,6 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class AmbientController {
-    // Setter for playerCharacter if GameState needs to set it during load before reinitialization
-    // Getter for playerCharacter, useful for reinitialization logic if needed by GameState or Main
     @Setter
     @Getter
     private Character playerCharacter;
@@ -64,9 +62,6 @@ public class AmbientController {
         }
     }
 
-    /**
-     * Initializes or re-initializes the world map with standard ambients.
-     */
     private void initializeWorldMap() {
         if (this.worldMap == null) {
             this.worldMap = new HashMap<>();
@@ -175,23 +170,6 @@ public class AmbientController {
             }
         } catch (NumberFormatException e) {
             Message.displayOnScreen("Invalid input for movement choice.");
-        }
-    }
-
-    public void updateGlobalWeather() {
-        if (this.random == null) {
-            Message.displayOnScreen("Warning: Random not initialized in AmbientController. Skipping global weather update.");
-            return;
-        }
-        if (worldMap == null || worldMap.isEmpty()) {
-            Message.displayOnScreen("Warning: World map not initialized. Skipping global weather update.");
-            return;
-        }
-        Message.displayOnScreen("The global weather patterns are shifting... (Conceptual)");
-        for (Ambient ambient : worldMap.values()) {
-            if (this.random.nextBoolean()) {
-                Message.displayOnScreen(ambient.changeWeather());
-            }
         }
     }
 
