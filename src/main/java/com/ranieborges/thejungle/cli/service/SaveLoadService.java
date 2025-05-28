@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.ranieborges.thejungle.cli.gsonextras.RuntimeTypeAdapterFactory;
 import com.ranieborges.thejungle.cli.model.Event;
-import com.ranieborges.thejungle.cli.model.Faction; // Import base Faction class
+import com.ranieborges.thejungle.cli.model.Faction;
 import com.ranieborges.thejungle.cli.model.entity.Character;
 import com.ranieborges.thejungle.cli.model.entity.Creature;
 import com.ranieborges.thejungle.cli.model.entity.Item;
@@ -80,10 +80,9 @@ public class SaveLoadService {
             .registerSubtype(Fish.class)
             .registerSubtype(Wolf.class);
 
-        // Add RuntimeTypeAdapterFactory for Faction subclasses
         RuntimeTypeAdapterFactory<Faction> factionAdapterFactory = RuntimeTypeAdapterFactory
-            .of(Faction.class, "factionType") // "factionType" will be the discriminator field
-            .registerSubtype(PeacefulNomads.class) // Uses class simple name "PeacefulNomads" as label
+            .of(Faction.class, "factionType")
+            .registerSubtype(PeacefulNomads.class)
             .registerSubtype(ResourceMerchants.class)
             .registerSubtype(BrutalHunters.class)
             .registerSubtype(DesperateSurvivors.class);
@@ -96,7 +95,7 @@ public class SaveLoadService {
             .registerTypeAdapterFactory(ambientAdapterFactory)
             .registerTypeAdapterFactory(characterAdapterFactory)
             .registerTypeAdapterFactory(creatureAdapterFactory)
-            .registerTypeAdapterFactory(factionAdapterFactory) // <-- Register Faction factory
+            .registerTypeAdapterFactory(factionAdapterFactory)
             .registerTypeAdapter(Class.class, new ClassTypeAdapter())
             .enableComplexMapKeySerialization()
             .create();

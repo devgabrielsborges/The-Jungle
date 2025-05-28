@@ -30,7 +30,6 @@ public class CraftingService {
     }
 
     private void initializeRecipes() {
-        // 1. Stone Axe
         Map<MaterialType, Integer> stoneAxeMaterials = new EnumMap<>(MaterialType.class);
         stoneAxeMaterials.put(MaterialType.WOOD, 1);
         stoneAxeMaterials.put(MaterialType.STONE, 1);
@@ -47,7 +46,6 @@ public class CraftingService {
                 10
         ));
 
-        // 2. Sharpened Spear
         Map<MaterialType, Integer> spearMaterials = new EnumMap<>(MaterialType.class);
         spearMaterials.put(MaterialType.WOOD, 1);
         spearMaterials.put(MaterialType.STONE, 1);
@@ -61,7 +59,6 @@ public class CraftingService {
                 15
         ));
 
-        // 3. Simple Bandage
         Map<MaterialType, Integer> bandageMaterials = new EnumMap<>(MaterialType.class);
         bandageMaterials.put(MaterialType.FIBER, 2);
         allRecipes.add(new Recipe(
@@ -74,7 +71,6 @@ public class CraftingService {
                 5
         ));
 
-        // 4. Basic Torch
         Map<MaterialType, Integer> torchMaterials = new EnumMap<>(MaterialType.class);
         torchMaterials.put(MaterialType.WOOD, 1);
         torchMaterials.put(MaterialType.FIBER, 1);
@@ -88,7 +84,6 @@ public class CraftingService {
                 5
         ));
 
-        // 5. Arrows (Example Ammunition Recipe)
         Map<MaterialType, Integer> arrowMaterials = new EnumMap<>(MaterialType.class);
         arrowMaterials.put(MaterialType.WOOD, 1);   // For arrow shafts
         arrowMaterials.put(MaterialType.STONE, 1);  // For arrowheads (small sharp stones)

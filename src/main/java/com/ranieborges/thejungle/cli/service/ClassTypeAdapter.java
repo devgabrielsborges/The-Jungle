@@ -1,4 +1,4 @@
-package com.ranieborges.thejungle.cli.service; // Or your preferred utility package
+package com.ranieborges.thejungle.cli.service;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
