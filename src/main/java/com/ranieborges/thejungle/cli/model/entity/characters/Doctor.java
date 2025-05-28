@@ -36,9 +36,9 @@ public class Doctor extends Character {
     public void useSpecialAbility() {
         if (getEnergy() >= DOCTOR_ABILITY_COST) {
             System.out.println(getName() + " uses their medical expertise to tend to their wounds.");
-            if (getHealth() < Character.CHARACTER_DEFAULT_MAX_HEALTH) {
+            if (getHealth() < Character.characterDefaultMaxHealth) {
                 float healthBefore = getHealth();
-                setHealth(Math.min(getHealth() + DOCTOR_HEAL_AMOUNT, Character.CHARACTER_DEFAULT_MAX_HEALTH));
+                setHealth(Math.min(getHealth() + DOCTOR_HEAL_AMOUNT, Character.characterDefaultMaxHealth));
 
                 System.out.println(getName() + " healed for " + (getHealth() - healthBefore) + " health. Current health: " + getHealth());
                 setEnergy(getEnergy() - DOCTOR_ABILITY_COST);
