@@ -8,7 +8,7 @@ public final class TerminalStyler {
     // Text Styles
     public static final String BOLD = "\u001B[1m";
     public static final String UNDERLINE = "\u001B[4m";
-    public static final String ITALIC = "\u001B[3m"; // Note: Italic is not supported by all terminals
+    public static final String ITALIC = "\u001B[3m";
 
     // Foreground Colors
     public static final String BLACK = "\u001B[30m";
@@ -21,7 +21,7 @@ public final class TerminalStyler {
     public static final String WHITE = "\u001B[37m";
 
     // Bright Foreground Colors
-    public static final String BRIGHT_BLACK = "\u001B[90m"; // Often gray
+    public static final String BRIGHT_BLACK = "\u001B[90m";
     public static final String BRIGHT_RED = "\u001B[91m";
     public static final String BRIGHT_GREEN = "\u001B[92m";
     public static final String BRIGHT_YELLOW = "\u001B[93m";
@@ -49,10 +49,6 @@ public final class TerminalStyler {
     public static final String BG_BRIGHT_MAGENTA = "\u001B[105m";
     public static final String BG_BRIGHT_CYAN = "\u001B[106m";
     public static final String BG_BRIGHT_WHITE = "\u001B[107m";
-
-    private TerminalStyler() {
-        // Private constructor to prevent instantiation
-    }
 
     /**
      * Applies a single style (color or text style) to a message.
@@ -90,7 +86,6 @@ public final class TerminalStyler {
         return sb.toString();
     }
 
-    // Convenience methods for common combinations
     public static String error(String message) {
         return style(message, BRIGHT_RED, BOLD);
     }

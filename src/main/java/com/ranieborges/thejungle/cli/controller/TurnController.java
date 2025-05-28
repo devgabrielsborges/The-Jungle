@@ -6,6 +6,7 @@ import com.ranieborges.thejungle.cli.model.entity.Character;
 import com.ranieborges.thejungle.cli.model.entity.Creature;
 import com.ranieborges.thejungle.cli.model.entity.Item;
 import com.ranieborges.thejungle.cli.model.entity.itens.Food;
+import com.ranieborges.thejungle.cli.model.Faction; // For displaying faction info
 import com.ranieborges.thejungle.cli.service.CraftingService;
 import com.ranieborges.thejungle.cli.view.Art;
 import com.ranieborges.thejungle.cli.view.Message;
@@ -25,14 +26,17 @@ public class TurnController {
     private final AmbientController ambientController;
     private final EventManager eventManager;
     private final CraftingService craftingService;
+    @Getter private final FactionManager factionManager; // Added FactionManager
     private String previousTurnSummary;
 
     private static final int VICTORY_TURN_THRESHOLD = 30;
 
     public TurnController(Character playerCharacter, Scanner scanner, Random random,
-                          AmbientController ambientController, EventManager eventManager) {
-        if (playerCharacter == null || scanner == null || random == null || ambientController == null || eventManager == null) {
-            throw new IllegalArgumentException("Character, Scanner, Random, AmbientController, and EventManager dependencies cannot be null.");
+                          AmbientController ambientController, EventManager eventManager,
+                          FactionManager factionManager) { // Added FactionManager
+        if (playerCharacter == null || scanner == null || random == null ||
+            ambientController == null || eventManager == null || factionManager == null) { // Check FactionManager
+            throw new IllegalArgumentException("All controller dependencies cannot be null.");
         }
         this.playerCharacter = playerCharacter;
         this.scanner = scanner;
@@ -40,6 +44,7 @@ public class TurnController {
         this.ambientController = ambientController;
         this.eventManager = eventManager;
         this.craftingService = new CraftingService();
+        this.factionManager = factionManager; // Initialize FactionManager
 
         if (playerCharacter.getCurrentAmbient() != null) {
             this.previousTurnSummary = "The adventure continues in the " + playerCharacter.getCurrentAmbient().getName() + ".";
@@ -48,10 +53,11 @@ public class TurnController {
         }
     }
 
+    // executeTurn, executeInitialPhase methods remain largely the same, just ensure FactionManager is available if needed by them.
+
     public GameStatus executeTurn(int currentTurn) {
         TerminalUtils.clearScreen();
         Message.displayOnScreen(TerminalStyler.style("\n" + Art.THE_JUNGLE.substring(0, Art.THE_JUNGLE.indexOf('\n')) + "--- Turn " + currentTurn + " / " + VICTORY_TURN_THRESHOLD + " ---", TerminalStyler.BOLD));
-
 
         executeInitialPhase();
         if (!checkSurvivalConditions()) return determineGameOverStatus();
@@ -71,7 +77,6 @@ public class TurnController {
         executeMaintenancePhase();
         if (!checkSurvivalConditions()) return determineGameOverStatus();
 
-        // Check for Victory Condition: Survival by Time
         if (currentTurn >= VICTORY_TURN_THRESHOLD) {
             this.previousTurnSummary = playerCharacter.getName() + " has bravely survived for " + VICTORY_TURN_THRESHOLD + " turns against all odds!";
             return GameStatus.OBJECTIVE_MET;
@@ -84,7 +89,7 @@ public class TurnController {
     private void executeInitialPhase() {
         Message.displayOnScreen(TerminalStyler.style("\n-- Fase de Início --", TerminalStyler.CYAN, TerminalStyler.BOLD));
         Message.displayOnScreen(TerminalStyler.style("\nSummary of Last Turn: " + previousTurnSummary, TerminalStyler.ITALIC, TerminalStyler.BRIGHT_BLACK));
-        playerCharacter.displayStatus();
+        playerCharacter.displayStatus(); // displayStatus in Character now shows faction reps
         com.ranieborges.thejungle.cli.model.world.Ambient currentAmbient = ambientController.getCurrentAmbient();
         if (currentAmbient != null) {
             Message.displayOnScreen("Current Location: " + TerminalStyler.style(currentAmbient.getName(), TerminalStyler.BLUE) + " - " + currentAmbient.getDescription());
@@ -95,6 +100,7 @@ public class TurnController {
         Message.displayWithDelay("", 1000);
     }
 
+
     private GameStatus executePlayerActionPhase() {
         Message.displayOnScreen(TerminalStyler.style("\n-- Fase de Ação --", TerminalStyler.YELLOW, TerminalStyler.BOLD));
         boolean actionTaken = false;
@@ -102,15 +108,16 @@ public class TurnController {
         com.ranieborges.thejungle.cli.model.world.Ambient currentAmbientForAction = ambientController.getCurrentAmbient();
 
         while (!actionTaken) {
-            var delay = 80;
+            var delay = 70; // Slightly faster
             Message.displayCharByCharWithDelay("Choose your action:", delay, TerminalStyler.YELLOW);
             Message.displayCharByCharWithDelay("1. Explore surroundings", delay, TerminalStyler.BRIGHT_WHITE);
-            Message.displayCharByCharWithDelay("2. Rest (Restore Energy)", delay, TerminalStyler.BRIGHT_WHITE);
+            Message.displayCharByCharWithDelay("2. Rest", delay, TerminalStyler.BRIGHT_WHITE);
             Message.displayCharByCharWithDelay("3. Use Special Ability", delay, TerminalStyler.BRIGHT_WHITE);
             Message.displayCharByCharWithDelay("4. View Inventory", delay, TerminalStyler.BRIGHT_WHITE);
-            Message.displayCharByCharWithDelay("5. Use Item from Inventory", delay, TerminalStyler.BRIGHT_WHITE);
+            Message.displayCharByCharWithDelay("5. Use Item", delay, TerminalStyler.BRIGHT_WHITE);
             Message.displayCharByCharWithDelay("6. Craft Item", delay, TerminalStyler.BRIGHT_WHITE);
-            Message.displayCharByCharWithDelay("7. Move to another area", delay, TerminalStyler.BRIGHT_WHITE);
+            Message.displayCharByCharWithDelay("7. View Faction Reputations", delay, TerminalStyler.BRIGHT_WHITE); // New
+            Message.displayCharByCharWithDelay("8. Move to another area", delay, TerminalStyler.BRIGHT_WHITE); // Adjusted
             Message.displayCharByCharWithDelay("0. Quit Game Session", delay, TerminalStyler.RED);
             Message.displayOnScreen("Enter action: ");
 
@@ -127,8 +134,7 @@ public class TurnController {
                 case "3":
                     TerminalUtils.clearScreen();
                     playerCharacter.useSpecialAbility();
-                    actionSummary = playerCharacter.getName() + " used their special ability in the " +
-                            (currentAmbientForAction != null ? currentAmbientForAction.getName() : "current area") + ".";
+                    actionSummary = playerCharacter.getName() + " used their special ability.";
                     Message.displayOnScreen("Press Enter to continue...");
                     scanner.nextLine();
                     actionTaken = true;
@@ -138,6 +144,7 @@ public class TurnController {
                     playerCharacter.getInventory().displayInventory();
                     Message.displayOnScreen("Press Enter to return to actions...");
                     scanner.nextLine();
+                    // Re-display context after viewing inventory
                     TerminalUtils.clearScreen();
                     Message.displayOnScreen(TerminalStyler.style("\n" + Art.THE_JUNGLE.substring(0, Art.THE_JUNGLE.indexOf('\n')) + "--- Turn " + Main.getTurnCounter() + " (Action Phase Continued) ---", TerminalStyler.BOLD));
                     executeInitialPhase();
@@ -153,7 +160,12 @@ public class TurnController {
                     actionSummary = handleCrafting();
                     actionTaken = true;
                     break;
-                case "7":
+                case "7": // View Faction Reputations
+                    TerminalUtils.clearScreen();
+                    actionSummary = viewFactionReputations();
+                    actionTaken = true;
+                    break;
+                case "8": // Move
                     TerminalUtils.clearScreen();
                     String previousAmbientName = currentAmbientForAction != null ? currentAmbientForAction.getName() : "Unknown";
                     ambientController.offerMovementChoice();
@@ -179,15 +191,41 @@ public class TurnController {
                     Message.displayOnScreen(TerminalStyler.error("Invalid action. Try again."));
                     actionSummary = playerCharacter.getName() + " was indecisive.";
             }
-            if (!playerCharacter.isAlive()) {
-                this.previousTurnSummary = playerCharacter.getName() + " met a grim fate during their action.";
-                return GameStatus.PLAYER_DEFEATED;
+            if (!playerCharacter.isAlive() || playerCharacter.getSanity() <=0) { // Check sanity here too
+                return determineGameOverStatus(); // This will set appropriate summary
             }
         }
         this.previousTurnSummary = actionSummary;
         Message.displayWithDelay("", 500);
         return GameStatus.CONTINUE;
     }
+
+    private String viewFactionReputations() {
+        Message.displayOnScreen(TerminalStyler.style("--- Faction Reputations ---", TerminalStyler.YELLOW, TerminalStyler.BOLD));
+        List<Faction> factions = factionManager.getAllFactions();
+        if (factions.isEmpty()) {
+            Message.displayOnScreen("There are no known factions in these lands.");
+        } else {
+            for (Faction faction : factions) {
+                Message.displayOnScreen(String.format("%s: %s (%d pts) - Overall: %s",
+                    TerminalStyler.style(faction.getName(), TerminalStyler.CYAN),
+                    playerCharacter.getReputationLevel(faction).getDisplayName(),
+                    playerCharacter.getReputationPoints(faction),
+                    TerminalStyler.style(factionManager.getEffectiveDisposition(faction, playerCharacter).getDisplayName(), TerminalStyler.YELLOW)
+                ));
+                Message.displayOnScreen("  " + TerminalStyler.style(faction.getDescription(), TerminalStyler.BRIGHT_BLACK));
+            }
+        }
+        Message.displayOnScreen("Press Enter to continue...");
+        scanner.nextLine();
+        return playerCharacter.getName() + " reviewed their standing with the local factions.";
+    }
+
+    // exploreCurrentAmbient, rest, useItemFromInventory, handleCrafting, initiateCombat,
+    // executeRandomEventPhase, executeMaintenancePhase, checkSurvivalConditions, determineGameOverStatus
+    // methods remain the same as in the previous version (with victory/defeat updates)
+    // Ensure they use this.factionManager if they need to interact with factions.
+    // For example, if defeating a "Brutal Hunter's Wolf" should decrease rep with "Caçadores Brutais".
 
     private String exploreCurrentAmbient() {
         TerminalUtils.clearScreen();
@@ -196,7 +234,7 @@ public class TurnController {
             Message.displayOnScreen(TerminalStyler.error("Cannot explore: Current ambient is unknown!"));
             return playerCharacter.getName() + " tried to explore but was disoriented.";
         }
-        String summary = current.explore(playerCharacter);
+        String summary = current.explore(playerCharacter); // explore might trigger faction events via EventManager
         Message.displayOnScreen("Press Enter to continue...");
         scanner.nextLine();
         return summary;
@@ -361,11 +399,13 @@ public class TurnController {
 
     private void executeRandomEventPhase() {
         Message.displayOnScreen(TerminalStyler.style("\n-- Fase de Evento Aleatório --", TerminalStyler.MAGENTA, TerminalStyler.BOLD));
-        String eventOutcomeSummary = eventManager.triggerRandomEvent(playerCharacter, ambientController.getCurrentAmbient(), this);
+        String eventOutcomeSummary = eventManager.triggerRandomEvent(playerCharacter, ambientController.getCurrentAmbient(), this); // Pass this TurnController
 
         if (eventOutcomeSummary != null && !eventOutcomeSummary.toLowerCase().contains("uneventful") && !eventOutcomeSummary.toLowerCase().contains("calm")) {
             this.previousTurnSummary += " " + eventOutcomeSummary;
         }
+        // Pause after event is handled by FactionInteractionEvent if it uses scanner,
+        // or by the "Press Enter to continue after the event..." in Event.execute() if it's a general event.
     }
 
     private void executeMaintenancePhase() {
@@ -377,18 +417,16 @@ public class TurnController {
         playerCharacter.changeThirst(-15);
         maintenanceSummary += "thirstier. ";
 
-        // Check for death by starvation/thirst (indirectly via health loss)
         if (playerCharacter.getHunger() <= 0) {
             Message.displayOnScreen(TerminalStyler.warning(playerCharacter.getName() + " is starving!"));
-            playerCharacter.changeHealth(-5); // Health loss due to starvation
+            playerCharacter.changeHealth(-5);
             maintenanceSummary += "Suffered from starvation. ";
         }
         if (playerCharacter.getThirst() <= 0) {
             Message.displayOnScreen(TerminalStyler.warning(playerCharacter.getName() + " is dying of thirst!"));
-            playerCharacter.changeHealth(-7); // Health loss due to dehydration
+            playerCharacter.changeHealth(-7);
             maintenanceSummary += "Suffered from dehydration. ";
         }
-        // Note: The actual "death" from these is when health hits 0, checked by checkSurvivalConditions()
 
         if (playerCharacter.getHunger() > 10 && playerCharacter.getThirst() > 10) {
             playerCharacter.changeEnergy(5);
@@ -424,25 +462,17 @@ public class TurnController {
         scanner.nextLine();
     }
 
-    /**
-     * Checks if the player is still able to continue the game.
-     * @return false if a game over condition is met, true otherwise.
-     */
     private boolean checkSurvivalConditions() {
-        if (!playerCharacter.isAlive()) { // Health is 0 or less
+        if (!playerCharacter.isAlive()) {
             return false;
         }
-        if (playerCharacter.getSanity() <= 0) { // Sanity is 0 or less
+        if (playerCharacter.getSanity() <= 0) {
             Message.displayOnScreen(TerminalStyler.error(playerCharacter.getName() + " has lost their grip on reality... The jungle claims another mind."));
             return false;
         }
         return true;
     }
 
-    /**
-     * Determines the specific GameStatus when checkSurvivalConditions returns false.
-     * @return The appropriate GameStatus for game over.
-     */
     private GameStatus determineGameOverStatus() {
         if (!playerCharacter.isAlive()) {
             this.previousTurnSummary = playerCharacter.getName() + " could not endure the hardships and perished.";

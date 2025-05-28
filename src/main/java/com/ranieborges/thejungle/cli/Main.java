@@ -2,6 +2,7 @@ package com.ranieborges.thejungle.cli;
 
 import com.ranieborges.thejungle.cli.controller.AmbientController;
 import com.ranieborges.thejungle.cli.controller.EventManager;
+import com.ranieborges.thejungle.cli.controller.FactionManager;
 import com.ranieborges.thejungle.cli.controller.TurnController;
 import com.ranieborges.thejungle.cli.controller.utils.GameStatus;
 import com.ranieborges.thejungle.cli.model.stats.GameState;
@@ -19,15 +20,17 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Main {
-    private static final Scanner scanner = new Scanner(System.in);
+    private static transient Scanner scanner = new Scanner(System.in);
+    private static transient Random random = new Random();
 
     private static Character playerCharacter;
     @Getter
     private static int turnCounter = 1;
     private static AmbientController ambientController;
     private static EventManager eventManager;
+    private static FactionManager factionManager; // Added FactionManager field
 
-    private static final SaveLoadService saveLoadService = new SaveLoadService();
+    private static SaveLoadService saveLoadService = new SaveLoadService();
 
     public static void main(String[] args) throws IOException {
         TerminalUtils.clearScreen();
@@ -54,9 +57,9 @@ public class Main {
                     break;
                 case "3": // Exit
                     TerminalUtils.clearScreen();
-                    if (playerCharacter != null && playerCharacter.isAlive() && ambientController != null && eventManager != null) {
+                    if (playerCharacter != null && playerCharacter.isAlive() && ambientController != null && eventManager != null && factionManager != null) {
                         Message.displayOnScreen("Saving progress before exiting...");
-                        GameState currentGameState = new GameState(playerCharacter, turnCounter, ambientController, eventManager);
+                        GameState currentGameState = new GameState(playerCharacter, turnCounter, ambientController, eventManager, factionManager);
                         saveLoadService.saveGame(currentGameState, SaveLoadService.AUTOSAVE_FILENAME);
                         Message.displayWithDelay("", 500);
                     }
@@ -106,9 +109,9 @@ public class Main {
     }
 
     private static void runGameSession(GameState loadedGameState) throws IOException {
-        Random random = new Random();
+        random = new Random();
 
-        if (loadedGameState == null) {
+        if (loadedGameState == null) { // New Game
             Message.displayCharByCharWithDelay("Starting new game session...", 50);
             playerCharacter = selectCharacter();
             if (playerCharacter == null) {
@@ -119,16 +122,20 @@ public class Main {
             turnCounter = 1;
             ambientController = new AmbientController(playerCharacter, scanner, random);
             eventManager = new EventManager(random, scanner);
+            factionManager = new FactionManager(); // Initialize FactionManager for new game
+            playerCharacter.initializeFactionReputations(factionManager.getAllFactions()); // Initialize reputations
 
+            TerminalUtils.clearScreen();
             Message.displayOnScreen("\nWelcome, " + playerCharacter.getName() + ", the " + playerCharacter.getClass().getSimpleName() + "!");
             Message.displayWithDelay("You find yourself in the " + (playerCharacter.getCurrentAmbient() != null ? playerCharacter.getCurrentAmbient().getName() : "an unknown land") + ".", 1500);
 
-        } else {
+        } else { // Load Game
             Message.displayCharByCharWithDelay("Loading game session from saved state...", 50);
             playerCharacter = loadedGameState.getPlayerCharacter();
             turnCounter = loadedGameState.getTurnCounter();
             ambientController = loadedGameState.getAmbientController();
             eventManager = loadedGameState.getEventManager();
+            factionManager = loadedGameState.getFactionManager(); // Load FactionManager
 
             if (ambientController != null) {
                 ambientController.setPlayerCharacter(playerCharacter);
@@ -143,28 +150,32 @@ public class Main {
                 Message.displayOnScreen(TerminalStyler.error("Critical Error: EventManager was null after loading. Attempting to re-initialize."));
                 eventManager = new EventManager(random, scanner);
             }
+            if (factionManager == null) { // If FactionManager wasn't in old save or failed to load
+                Message.displayOnScreen(TerminalStyler.warning("Warning: FactionManager not found in save or failed to load. Initializing new FactionManager."));
+                factionManager = new FactionManager();
+                playerCharacter.initializeFactionReputations(factionManager.getAllFactions()); // Re-init reputations
+            }
 
-            if (ambientController.getCurrentAmbient() != null) {
+            if (playerCharacter != null && ambientController != null && ambientController.getCurrentAmbient() != null) {
                 playerCharacter.setCurrentAmbient(ambientController.getCurrentAmbient());
-            } else if (playerCharacter != null && playerCharacter.getCurrentAmbient() != null) {
+            } else if (playerCharacter != null && ambientController != null && playerCharacter.getCurrentAmbient() != null) {
                 ambientController.setPlayerCharacter(playerCharacter);
                 ambientController.reinitializeTransientFields(scanner, random);
                 Message.displayOnScreen(TerminalStyler.warning("AmbientController's current ambient was re-synced from player data."));
             }
-
 
             TerminalUtils.clearScreen();
             Message.displayOnScreen("\nWelcome back, " + playerCharacter.getName() + "!");
             Message.displayWithDelay("Resuming your adventure in the " + (playerCharacter.getCurrentAmbient() != null ? playerCharacter.getCurrentAmbient().getName() : "a mysterious place") + ".", 1500);
         }
 
-        TurnController turnController = new TurnController(playerCharacter, scanner, random, ambientController, eventManager);
+        TurnController turnController = new TurnController(playerCharacter, scanner, random, ambientController, eventManager, factionManager); // Pass FactionManager
         GameStatus gameStatus = GameStatus.CONTINUE;
 
         while (gameStatus == GameStatus.CONTINUE) {
             gameStatus = turnController.executeTurn(turnCounter);
             if (gameStatus == GameStatus.CONTINUE) {
-                GameState currentGameState = new GameState(playerCharacter, turnCounter, ambientController, eventManager);
+                GameState currentGameState = new GameState(playerCharacter, turnCounter, ambientController, eventManager, factionManager); // Include FactionManager
                 saveLoadService.saveGame(currentGameState, SaveLoadService.AUTOSAVE_FILENAME);
                 turnCounter++;
             }
@@ -185,8 +196,8 @@ public class Main {
                 break;
             case PLAYER_QUIT:
                 Message.displayOnScreen(playerCharacter.getName() + " decided to leave the jungle for now.");
-                if (playerCharacter.isAlive()) {
-                    GameState currentGameState = new GameState(playerCharacter, turnCounter, ambientController, eventManager);
+                if (playerCharacter != null && playerCharacter.isAlive()) {
+                    GameState currentGameState = new GameState(playerCharacter, turnCounter, ambientController, eventManager, factionManager); // Include FactionManager
                     saveLoadService.saveGame(currentGameState, SaveLoadService.AUTOSAVE_FILENAME);
                     Message.displayOnScreen("Progress saved.");
                 }
@@ -206,10 +217,11 @@ public class Main {
         playerCharacter = null;
         ambientController = null;
         eventManager = null;
+        factionManager = null; // Reset FactionManager
     }
 
     private static Character selectCharacter() {
-        TerminalUtils.clearScreen(); // Clears for character class selection
+        TerminalUtils.clearScreen();
         Message.displayOnScreen("\nChoose your character class:");
         Message.displayOnScreen("1. Doctor");
         Message.displayOnScreen("2. Hunter");
@@ -227,8 +239,8 @@ public class Main {
                 return null;
             }
 
-            Character selectedCharacter;
-            String className;
+            Character selectedCharacter = null;
+            String className = "";
 
             switch(choice) {
                 case "1": className = "Doctor"; selectedCharacter = new Doctor(characterName); break;
@@ -238,7 +250,6 @@ public class Main {
                 default:
                     Message.displayOnScreen(TerminalStyler.error("Invalid character choice. Please try again."));
                     Message.displayWithDelay("", 1000);
-                    // Re-display options without an extra clear, as the screen is already set up.
                     Message.displayOnScreen("\nChoose your character class:");
                     Message.displayOnScreen("1. Doctor");
                     Message.displayOnScreen("2. Hunter");
@@ -248,11 +259,7 @@ public class Main {
                     continue;
             }
 
-            // TerminalUtils.clearScreen(); // <-- REMOVED THIS LINE
-            // The screen was cleared at the start of selectCharacter.
-            // No need to clear again just before asking for the name.
-            // This makes the transition smoother.
-            Message.displayOnScreen("\nYou chose: " + className); // Added newline for better spacing
+            Message.displayOnScreen("\nYou chose: " + className);
             Message.displayOnScreen("Enter your character's name (or press Enter for default '" + characterName + "'): ");
             String inputName = scanner.nextLine().trim();
             if (!inputName.isEmpty()) {
