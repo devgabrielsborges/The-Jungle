@@ -14,21 +14,18 @@ import java.util.List;
 
 public class Bear extends Creature {
 
-    private static final float BEAR_MAX_HEALTH = 150f;
-    private static final float BEAR_ATTACK_DAMAGE = 30f;
-    private static final float BEAR_SPEED = 40f;
     private boolean enraged = false;
 
     public Bear() {
-        super("Bear", BEAR_MAX_HEALTH, BEAR_ATTACK_DAMAGE, BEAR_SPEED, Hostility.NEUTRAL);
+        super("Bear", 150f, 30f, 40f, Hostility.NEUTRAL);
     }
 
     @Override
     public void takeDamage(float amount) {
         super.takeDamage(amount);
-        if (isAlive() && getHealth() < getMaxHealth() * 0.5 && !enraged) { // Enrage below 50% health
+        if (isAlive() && getHealth() < getMaxHealth() * 0.5 && !enraged) {
             System.out.println(getName() + " becomes enraged!");
-            setAttackDamage(getAttackDamage() * 1.5f); // Increase attack
+            setAttackDamage(getAttackDamage() * 1.5f);
             setHostility(Hostility.HOSTILE);
             enraged = true;
         }

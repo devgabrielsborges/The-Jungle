@@ -14,12 +14,8 @@ import java.util.List;
 
 public class Deer extends Creature {
 
-    private static final float DEER_MAX_HEALTH = 50f;
-    private static final float DEER_ATTACK_DAMAGE = 0f;
-    private static final float DEER_SPEED = 75f;
-
     public Deer() {
-        super("Deer", DEER_MAX_HEALTH, DEER_ATTACK_DAMAGE, DEER_SPEED, Hostility.FLEEING);
+        super("Deer", 50f, 10f, 75f, Hostility.FLEEING);
     }
 
     @Override
