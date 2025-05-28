@@ -17,7 +17,7 @@ public abstract class Event {
     private final String description;
     private final double baseProbability;
 
-    protected static final Random random = new Random();
+    protected transient static final Random random = new Random();
 
     public Event(String name, String description, double baseProbability) {
         if (name == null || name.trim().isEmpty()) {
