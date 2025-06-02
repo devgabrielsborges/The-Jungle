@@ -34,7 +34,6 @@ public class Mountain extends Ambient {
         if (outcome < 25) { // Find Resource
             exploreMsg += " Found some Iron Ore.";
             Message.displayOnScreen("You chip away at a rock face and find some Iron Ore!");
-            // Conceptual: character.getInventory().addItem(new Material("Iron Ore", ...));
         } else if (outcome < 40) { // Encounter Creature (less frequent but potentially tougher)
             exploreMsg += " A shadow passes overhead... a Mountain Eagle circles!";
             Message.displayOnScreen("A large Mountain Eagle circles above, watching you!");
@@ -77,21 +76,17 @@ public class Mountain extends Ambient {
                 }
             };
 
-// Anunciar o encontro
             Message.displayOnScreen("Uma " + eagle.getName() + " ataca das alturas!");
             eagle.displayStatus();
 
-// A águia ataca o personagem
             eagle.attack(character);
 
-// Perda de sanidade pelo encontro
             character.changeSanity(-2);        } else if (outcome < 60) { // Minor Discovery: Cave Entrance
             exploreMsg += " Discovered the entrance to a dark cave.";
             Message.displayOnScreen("You find the narrow entrance to a dark cave system.");
             exploreMsg += " Discovered the entrance to a dark cave.";
             Message.displayOnScreen("You find the narrow entrance to a dark cave system.");
 
-// Opção para entrar na caverna
             Message.displayOnScreen("\nDo you want to enter the cave? (yes/no)");
             Scanner scanner = new Scanner(System.in);
             String choice = scanner.nextLine().trim().toLowerCase();
@@ -99,21 +94,16 @@ public class Mountain extends Ambient {
             if (choice.startsWith("y")) {
                 Message.displayOnScreen(TerminalStyler.style("You venture into the darkness of the cave...", TerminalStyler.CYAN));
 
-                // Custo de energia para entrar na caverna
                 character.changeEnergy(-10);
 
-                // Mudança de ambiente
                 Cave caveAmbient = new Cave();
                 character.setCurrentAmbient(caveAmbient);
 
-                // Aviso de mudança de ambiente
                 Message.displayOnScreen(TerminalStyler.info("You are now in: " + caveAmbient.getName()));
 
-                // Efeito na sanidade - a escuridão pode ser perturbadora
                 character.changeSanity(-5);
                 Message.displayOnScreen("The oppressive darkness of the cave grates on your nerves. (-5 sanity)");
 
-                // Adicionar à mensagem de exploração
                 exploreMsg += " You decided to explore the cave.";
             } else {
                 Message.displayOnScreen("You decide not to enter the cave for now and continue exploring the mountain.");
@@ -128,15 +118,11 @@ public class Mountain extends Ambient {
 
     @Override
     public List<String> getAvailableResourceTypes() {
-        // "Minérios e pedras preciosas."
-        // "Água de degelo, mas precisa ser purificada."
-        // "Refúgios naturais em cavernas." (Discovery, not a collectible resource type)
         return Arrays.asList("Iron Ore", "Rough Gemstones", "Clean Snow (for water)");
     }
 
     @Override
     public List<Class<? extends Creature>> getTypicalCreatures() {
-        // Mountain Goat, Eagle, potentially tougher wolves or bears at higher altitudes
         return Arrays.asList(Wolf.class); // Placeholder, add MountainGoat, Eagle etc.
     }
 
@@ -153,13 +139,10 @@ public class Mountain extends Ambient {
 
     @Override
     public Map<String, Double> getEventProbabilities() {
-        // "Nevasca repentina, reduzindo drasticamente a temperatura."
-        // "Deslizamento de pedras, causando ferimentos."
-        // "Descoberta de uma caverna segura."
         Map<String, Double> eventProbs = new HashMap<>();
         eventProbs.put("SuddenBlizzard", 0.15);
         eventProbs.put("Rockslide", 0.10);
-        eventProbs.put("FindSafeCave", 0.10); // Discovery event
+        eventProbs.put("FindSafeCave", 0.10);
         eventProbs.put("HighAltitudeSickness", 0.05);
         return eventProbs;
     }

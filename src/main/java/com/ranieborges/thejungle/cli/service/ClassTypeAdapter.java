@@ -15,7 +15,7 @@ public class ClassTypeAdapter extends TypeAdapter<Class<?>> {
             out.nullValue();
             return;
         }
-        out.value(value.getName()); // Serialize as fully qualified class name
+        out.value(value.getName());
     }
 
     @Override

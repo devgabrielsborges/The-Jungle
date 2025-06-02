@@ -234,7 +234,4 @@ public class CraftingService {
         };
     }
 
-    public List<Recipe> getAllRecipes() {
-        return Collections.unmodifiableList(allRecipes);
-    }
 }

@@ -2,7 +2,7 @@ package com.ranieborges.thejungle.cli.view;
 
 import com.ranieborges.thejungle.cli.view.utils.TerminalStyler;
 
-public abstract class MainMenu implements Art {
+public abstract class MainMenu {
     public static void displayInitialMenu() {
         Message.displayWithDelay("");
         Message.displayCharByCharWithDelay(TerminalStyler.title("Welcome"), 100);

@@ -33,8 +33,6 @@ public class Inventory {
     private void recalculateCurrentWeight() {
         this.currentWeight = 0f;
         for (Item item : this.items) {
-            // If Ammunition's weight is dynamic based on quantity, this needs to be reflected.
-            // Assuming Item.getWeight() returns the current correct weight.
             this.currentWeight += item.getWeight();
         }
     }
@@ -45,15 +43,11 @@ public class Inventory {
             return false;
         }
 
-        // Handle stacking for Ammunition
         if (itemToAdd instanceof Ammunition newAmmo) {
             for (Item existingItem : items) {
                 if (existingItem instanceof Ammunition existingAmmo && existingAmmo.getAmmunitionType() == newAmmo.getAmmunitionType()) {
                     if (this.currentWeight + newAmmo.getWeight() <= this.maxWeightCapacity) { // Check if adding the new stack's weight is okay
                         existingAmmo.increaseQuantity(newAmmo.getQuantity());
-                        // Weight of existingAmmo stack needs to be updated if its getWeight() is not dynamic
-                        // For simplicity, assume Ammunition.getWeight() reflects its current quantity * unit weight
-                        // or that recalculateCurrentWeight() handles it.
                         recalculateCurrentWeight(); // Recalculate total inventory weight
                         Message.displayOnScreen(TerminalStyler.success("Added " + newAmmo.getQuantity() + " " + newAmmo.getName() + " to existing stack. Total: " + existingAmmo.getQuantity()));
                         return true;
@@ -65,7 +59,6 @@ public class Inventory {
             }
         }
 
-        // If not stackable or no existing stack, add as new item
         if (this.currentWeight + itemToAdd.getWeight() <= this.maxWeightCapacity) {
             this.items.add(itemToAdd);
             recalculateCurrentWeight();

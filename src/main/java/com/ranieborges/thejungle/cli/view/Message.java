@@ -3,7 +3,7 @@ package com.ranieborges.thejungle.cli.view;
 import lombok.NonNull;
 import com.ranieborges.thejungle.cli.view.utils.TerminalStyler;
 
-public abstract class Message implements Art{
+public abstract class Message {
     public static void displayOnScreen(@NonNull String message) {
         System.out.println(message);
     }

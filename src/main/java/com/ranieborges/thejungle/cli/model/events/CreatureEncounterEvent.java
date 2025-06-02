@@ -73,7 +73,7 @@ public class CreatureEncounterEvent extends Event {
         } catch (Exception e) {
             Message.displayOnScreen(TerminalStyler.error("Failed to spawn creature ("+ creatureClass.getSimpleName() +") for event: " + e.getMessage()));
             outcomeSummary = "Something stirred in the shadows, but then vanished.";
-            e.printStackTrace(); // For debugging
+            e.printStackTrace();
         }
 
         return outcomeSummary;

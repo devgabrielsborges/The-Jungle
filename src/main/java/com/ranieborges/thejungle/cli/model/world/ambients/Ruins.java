@@ -42,16 +42,18 @@ public class Ruins extends Ambient {
             Message.displayOnScreen("Sifting through the debris, you find some " + found + "!");
 
 
-            if (found.equals("Canned Food")) {
-                character.getInventory().addItem(new Food("Comida Enlatada", "Alimento preservado encontrado nas ruínas.", 0.5f, 40f, FoodType.CANNED, 50, 0.05f, 0.0f));
-            } else if (found.equals("Ancient Medicine")) {
-                character.getInventory().addItem(new Food("Medicina Antiga", "Um frasco com remédios antigos, ainda utilizáveis.", 0.3f, 5f, FoodType.OTHER, 20, 0.1f, 0.0f));
-            } else if (found.equals("Metal Scraps")) {
-                character.getInventory().addItem(new Material("Sucata Metálica", "Pedaços de metal que podem ser usados para criar ferramentas.", 0.7f, MaterialType.METAL_ORE, 8));
-            } else if (found.equals("Broken Tools")) {
-                character.getInventory().addItem(new Material("Ferramentas Quebradas", "Partes de ferramentas antigas que podem ser recicladas.", 0.6f, MaterialType.METAL_ORE, 5));
-            } else if (found.equals("Artifact")) {
-                character.getInventory().addItem(new Material("Artefato Antigo", "Um objeto misterioso de uma civilização perdida.", 0.4f, MaterialType.OTHER, 3));
+            switch (found) {
+                case "Canned Food" ->
+                    character.getInventory().addItem(new Food("Comida Enlatada", "Alimento preservado encontrado nas ruínas.", 0.5f, 40f, FoodType.CANNED, 50, 0.05f, 0.0f));
+                case "Ancient Medicine" ->
+                    character.getInventory().addItem(new Food("Medicina Antiga", "Um frasco com remédios antigos, ainda utilizáveis.", 0.3f, 5f, FoodType.OTHER, 20, 0.1f, 0.0f));
+                case "Metal Scraps" ->
+                    character.getInventory().addItem(new Material("Sucata Metálica", "Pedaços de metal que podem ser usados para criar ferramentas.", 0.7f, MaterialType.METAL_ORE, 8));
+                case "Broken Tools" ->
+                    character.getInventory().addItem(new Material("Ferramentas Quebradas", "Partes de ferramentas antigas que podem ser recicladas.", 0.6f, MaterialType.METAL_ORE, 5));
+                case "Artifact" ->
+                    character.getInventory().addItem(new Material("Artefato Antigo", "Um objeto misterioso de uma civilização perdida.", 0.4f, MaterialType.OTHER, 3));
+                default -> throw new IllegalStateException("Unexpected value: " + found);
             }
         } else if (outcome < 55) {
             exploreMsg += " A section of the floor creaks ominously... it might be a trap or something lurking below!";
@@ -99,7 +101,6 @@ public class Ruins extends Ambient {
 
                 ruinsCreature.attack(character);
 
-                // Sanity loss from the encounter
                 character.changeSanity(-3);
             } else if (creatureRoll < 70) { // 30% chance - Hostile Scavenger
                 creatureType = "Human Scavenger";
@@ -137,7 +138,6 @@ public class Ruins extends Ambient {
                     }
                 };
 
-                // Announce the encounter
                 if (isHostile) {
                     Message.displayOnScreen("A desperate " + ruinsCreature.getName() + " jumps out from behind debris, ready to attack!");
                 } else {
@@ -145,20 +145,16 @@ public class Ruins extends Ambient {
                 }
                 ruinsCreature.displayStatus();
 
-                // If hostile, the scavenger attacks the character
                 if (isHostile) {
                     ruinsCreature.attack(character);
                 }
 
-                // Sanity effect - lower impact than spider
                 character.changeSanity(-2);
             } else { // 30% chance - Trap
-                creatureType = "Trap";
                 Message.displayOnScreen(TerminalStyler.error("You trigger a hidden trap in the ruins!"));
 
                 int trapType = random.nextInt(3);
                 if (trapType == 0) {
-                    // Pit trap
                     Message.displayOnScreen("The floor gives way beneath you - it's a pit trap!");
                     float damage = 10 + random.nextInt(10);
                     character.changeHealth(-damage);
@@ -166,7 +162,6 @@ public class Ruins extends Ambient {
                     character.changeSanity(-5);
                     Message.displayOnScreen("The sudden fall leaves you disoriented and fearful. (-5 sanity)");
                 } else if (trapType == 1) {
-                    // Dart trap
                     Message.displayOnScreen("You hear a click, followed by a hissing sound - poison darts shoot from the walls!");
                     float damage = 5 + random.nextInt(10);
                     character.changeHealth(-damage);
@@ -174,7 +169,6 @@ public class Ruins extends Ambient {
                     character.changeSanity(-8);
                     Message.displayOnScreen("The poison makes your mind foggy and paranoid. (-8 sanity)");
                 } else {
-                    // Collapsing ceiling
                     Message.displayOnScreen("The ceiling above begins to crack and crumble!");
                     float damage = 15 + random.nextInt(10);
                     character.changeHealth(-damage);
@@ -207,8 +201,6 @@ public class Ruins extends Ambient {
 
     @Override
     public String changeWeather() {
-        // "Baixo risco climático: Normalmente oferecem abrigo contra o clima."
-        // So, weather changes might be less impactful or less frequent here.
         String oldWeather = getCurrentWeather();
         if (random.nextInt(5) == 0) { // Less frequent changes
             setCurrentWeather("Eerily Calm");
@@ -223,9 +215,6 @@ public class Ruins extends Ambient {
 
     @Override
     public Map<String, Double> getEventProbabilities() {
-        // "Encontrar um grupo de sobreviventes (podem ser aliados ou hostis)."
-        // "Armadilhas deixadas por antigos ocupantes."
-        // "Descoberta de uma passagem secreta para outra área."
         Map<String, Double> eventProbs = new HashMap<>();
         eventProbs.put("EncounterSurvivorsNPC", 0.10);
         eventProbs.put("TriggerTrap", 0.15);

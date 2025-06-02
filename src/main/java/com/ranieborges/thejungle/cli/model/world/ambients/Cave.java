@@ -20,7 +20,7 @@ public class Cave extends Ambient {
         super("Dark Cave",
                 "A damp and dark cave system. The air is cold, and strange sounds echo from the depths.",
                 1.3f,
-                "Cold and Damp"); // "Pouca luz"
+                "Cold and Damp");
     }
 
     @Override
@@ -41,7 +41,7 @@ public class Cave extends Ambient {
 
 
         int outcome = random.nextInt(100);
-        if (outcome < 30) { // Find Resource
+        if (outcome < 30) {
             String[] possibleFinds = {"Rare Minerals", "Cave Fungi (Edible?)", "Ancient Bones", "Underground Spring Water"};
             String found = possibleFinds[random.nextInt(possibleFinds.length)];
             exploreMsg += " Found " + found + ".";
@@ -247,23 +247,17 @@ public class Cave extends Ambient {
 
     @Override
     public List<Class<? extends Creature>> getTypicalCreatures() {
-        // "Presença de criaturas desconhecidas"
-        // return Arrays.asList(GiantBat.class, CaveSpider.class);
-        return List.of(); // Placeholder
+        return List.of();
     }
 
     @Override
     public String changeWeather() {
-        // Weather inside a cave is generally stable.
-        setCurrentWeather("Cold and Damp"); // Stays consistent
+        setCurrentWeather("Cold and Damp");
         return "The atmosphere inside the " + getName() + " remains " + getCurrentWeather() + ".";
     }
 
     @Override
     public Map<String, Double> getEventProbabilities() {
-        // "Encontro com uma criatura hostil."
-        // "Descoberta de um túnel oculto."
-        // "Desmoronamento parcial, bloqueando saídas."
         Map<String, Double> eventProbs = new HashMap<>();
         eventProbs.put("CaveCreatureEncounter", 0.20);
         eventProbs.put("FindHiddenTunnel", 0.15);

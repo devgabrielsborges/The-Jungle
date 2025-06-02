@@ -26,14 +26,14 @@ public class TurnController {
     private final AmbientController ambientController;
     private final EventManager eventManager;
     private final CraftingService craftingService;
-    @Getter private final FactionManager factionManager; // Added FactionManager
+    @Getter private final FactionManager factionManager;
     private String previousTurnSummary;
 
     private static final int VICTORY_TURN_THRESHOLD = 30;
 
     public TurnController(Character playerCharacter, Scanner scanner, Random random,
                           AmbientController ambientController, EventManager eventManager,
-                          FactionManager factionManager) { // Added FactionManager
+                          FactionManager factionManager) {
         if (playerCharacter == null || scanner == null || random == null ||
             ambientController == null || eventManager == null || factionManager == null) { // Check FactionManager
             throw new IllegalArgumentException("All controller dependencies cannot be null.");
@@ -44,7 +44,7 @@ public class TurnController {
         this.ambientController = ambientController;
         this.eventManager = eventManager;
         this.craftingService = new CraftingService();
-        this.factionManager = factionManager; // Initialize FactionManager
+        this.factionManager = factionManager;
 
         if (playerCharacter.getCurrentAmbient() != null) {
             this.previousTurnSummary = "The adventure continues in the " + playerCharacter.getCurrentAmbient().getName() + ".";
@@ -87,7 +87,7 @@ public class TurnController {
     private void executeInitialPhase() {
         Message.displayOnScreen(TerminalStyler.style("\n-- Fase de Início --", TerminalStyler.CYAN, TerminalStyler.BOLD));
         Message.displayOnScreen(TerminalStyler.style("\nSummary of Last Turn: " + previousTurnSummary, TerminalStyler.ITALIC, TerminalStyler.BRIGHT_BLACK));
-        playerCharacter.displayStatus(); // displayStatus in Character now shows faction reps
+        playerCharacter.displayStatus();
         com.ranieborges.thejungle.cli.model.world.Ambient currentAmbient = ambientController.getCurrentAmbient();
         if (currentAmbient != null) {
             Message.displayOnScreen("Current Location: " + TerminalStyler.style(currentAmbient.getName(), TerminalStyler.BLUE) + " - " + currentAmbient.getDescription());
@@ -106,7 +106,7 @@ public class TurnController {
         com.ranieborges.thejungle.cli.model.world.Ambient currentAmbientForAction = ambientController.getCurrentAmbient();
 
         while (!actionTaken) {
-            var delay = 70; // Slightly faster
+            var delay = 70;
             Message.displayCharByCharWithDelay("Choose your action:", delay, TerminalStyler.YELLOW);
             Message.displayCharByCharWithDelay("1. Explore surroundings", delay, TerminalStyler.BRIGHT_WHITE);
             Message.displayCharByCharWithDelay("2. Rest", delay, TerminalStyler.BRIGHT_WHITE);
@@ -142,7 +142,6 @@ public class TurnController {
                     playerCharacter.getInventory().displayInventory();
                     Message.displayOnScreen("Press Enter to return to actions...");
                     scanner.nextLine();
-                    // Re-display context after viewing inventory
                     TerminalUtils.clearScreen();
                     Message.displayOnScreen(TerminalStyler.style("\n" + Art.THE_JUNGLE.substring(0, Art.THE_JUNGLE.indexOf('\n')) + "--- Turn " + Main.getTurnCounter() + " (Action Phase Continued) ---", TerminalStyler.BOLD));
                     executeInitialPhase();
@@ -219,12 +218,6 @@ public class TurnController {
         return playerCharacter.getName() + " reviewed their standing with the local factions.";
     }
 
-    // exploreCurrentAmbient, rest, useItemFromInventory, handleCrafting, initiateCombat,
-    // executeRandomEventPhase, executeMaintenancePhase, checkSurvivalConditions, determineGameOverStatus
-    // methods remain the same as in the previous version (with victory/defeat updates)
-    // Ensure they use this.factionManager if they need to interact with factions.
-    // For example, if defeating a "Brutal Hunter's Wolf" should decrease rep with "Caçadores Brutais".
-
     private String exploreCurrentAmbient() {
         TerminalUtils.clearScreen();
         com.ranieborges.thejungle.cli.model.world.Ambient current = ambientController.getCurrentAmbient();
@@ -232,7 +225,7 @@ public class TurnController {
             Message.displayOnScreen(TerminalStyler.error("Cannot explore: Current ambient is unknown!"));
             return playerCharacter.getName() + " tried to explore but was disoriented.";
         }
-        String summary = current.explore(playerCharacter); // explore might trigger faction events via EventManager
+        String summary = current.explore(playerCharacter);
         Message.displayOnScreen("Press Enter to continue...");
         scanner.nextLine();
         return summary;

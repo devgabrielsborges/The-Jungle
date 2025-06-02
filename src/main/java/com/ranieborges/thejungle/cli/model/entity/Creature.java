@@ -50,7 +50,6 @@ public abstract class Creature {
         this.health = Math.max(0, Math.min(health, this.maxHealth));
         if (this.health == 0) {
             Message.displayOnScreen(TerminalStyler.error(this.name + " has been defeated!"));
-            // Death logic, like dropping loot, would be triggered here or by the game manager
         }
     }
 

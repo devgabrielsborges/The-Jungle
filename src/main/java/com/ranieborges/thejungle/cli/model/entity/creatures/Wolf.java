@@ -32,7 +32,6 @@ public class Wolf extends Creature {
     public void act(Character player) {
         if (!isAlive()) return;
 
-        // Simple AI: If hostile and player is alive, attack.
         if (getHostility() == Hostility.HOSTILE && player != null && player.getHealth() > 0) {
             System.out.println(getName() + " growls menacingly at " + player.getName() + ".");
             attack(player);

@@ -56,50 +56,40 @@ public class EventManager {
             this.availableEvents.clear();
         }
 
-        // === Climatic Events ===
         availableEvents.add(new ClimaticEvent("Sudden Blizzard", "A fierce blizzard suddenly engulfs the area, visibility drops to near zero!", 0.05, ClimateType.BLIZZARD, 3));
         availableEvents.add(new ClimaticEvent("Heavy Downpour", "Dark clouds gather and a heavy rain begins to fall, quickly soaking you.", 0.10, ClimateType.HEAVY_RAIN, 2));
         availableEvents.add(new ClimaticEvent("Scorching Heat Wave", "The sun beats down mercilessly, and the air becomes oppressively hot and still.", 0.07, ClimateType.HEAT_WAVE, 2));
         availableEvents.add(new ClimaticEvent("Thick Fog Rolls In", "A dense, disorienting fog quickly envelops the surroundings, reducing visibility.", 0.08, ClimateType.THICK_FOG, 1));
         availableEvents.add(new ClimaticEvent("Unseasonal Frost", "A biting frost settles unexpectedly, chilling you to the bone.", 0.04, ClimateType.THICK_FOG, 1)); // Re-using THICK_FOG as a generic "cold snap" type, or add new ClimateType
 
-        // === Creature Encounter Events ===
         availableEvents.add(new CreatureEncounterEvent("Wolf Pack Sighting", "The howls of a wolf pack echo nearby, they sound hungry and close.", 0.12, Wolf.class));
         availableEvents.add(new CreatureEncounterEvent("Lone Wolf Stalks", "You sense you're being followed... a lone, gaunt wolf emerges from the shadows!", 0.08, Wolf.class));
         availableEvents.add(new CreatureEncounterEvent("Bear Confrontation", "A massive bear, disturbed from its foraging, rears up and blocks your path!", 0.06, Bear.class));
         availableEvents.add(new CreatureEncounterEvent("Startled Deer", "A deer bolts from the undergrowth, nearly knocking you over.", 0.07, Deer.class)); // Deer are Fleeing
         availableEvents.add(new CreatureEncounterEvent("Aggressive Piranhas", "The water ahead churns... a school of piranhas with a taste for blood!", 0.05, Fish.class)); // Fish constructor handles piranha type
 
-        // === Discovery Events ===
-        // Abandoned Campsite (already exists)
         List<Item> shelterCache = new ArrayList<>();
         shelterCache.add(new Food("Canned Beans", "A can of preserved beans, surprisingly intact.", 0.5f, 40f, FoodType.CANNED));
         shelterCache.add(new Material("Tattered Tarp", "A piece of waterproof tarp, a bit worn but usable.", 0.3f, MaterialType.OTHER, 5));
         availableEvents.add(new DiscoveryEvent("Abandoned Campsite", "You stumble upon an old, hastily abandoned campsite. Some supplies might be left.", 0.10, DiscoveryEvent.DiscoveryType.ABANDONED_SHELTER, shelterCache));
 
-        // Clear Spring (already exists)
         availableEvents.add(new DiscoveryEvent("Clear Spring", "You discover a small, clear spring bubbling from mossy rocks. The water looks pure.", 0.08, DiscoveryEvent.DiscoveryType.WATER_SOURCE));
 
-        // Rare Mineral Vein (already exists)
         List<Item> rareNodeItems = new ArrayList<>();
         rareNodeItems.add(new Material("Shimmering Ore", "A vein of shimmering, unknown ore. Seems valuable.", 2.0f, MaterialType.METAL_ORE, 50));
         availableEvents.add(new DiscoveryEvent("Rare Mineral Vein", "You notice a peculiar glint in a rock formation, revealing a rare mineral deposit.", 0.04, DiscoveryEvent.DiscoveryType.RARE_RESOURCE_NODE, rareNodeItems));
 
-        // Hidden Stash (already exists)
         List<Item> hiddenStash = new ArrayList<>();
         hiddenStash.add(new Medicine("Old First-Aid Pouch", "A weathered pouch. Some medical supplies might still be good.", 0.7f, MedicineType.BANDAGE, MedicineEffect.HEAL_WOUNDS, 20f, 2));
         hiddenStash.add(new Tool("Rusty Knife", "A rusty but still sharp knife.", 0.3f, ToolType.KNIFE, 15, 0.7f, 4f));
         availableEvents.add(new DiscoveryEvent("Hidden Stash", "Tucked away beneath a loose stone, you find a small, hidden stash of supplies!", 0.06, DiscoveryEvent.DiscoveryType.HIDDEN_CACHE, hiddenStash));
 
-        // New Discovery Event: Ruined Shrine
         List<Item> shrineLoot = new ArrayList<>();
         shrineLoot.add(new Material("Ancient Tablet Fragment", "A piece of an old stone tablet with strange carvings.", 0.5f, MaterialType.STONE, 10)); // Could be a quest item or lore
         availableEvents.add(new DiscoveryEvent("Ruined Shrine Detail", "Amongst some ruins, you find a small, weathered shrine with an interesting artifact.", 0.05, DiscoveryEvent.DiscoveryType.MYSTERIOUS_RUINS_DETAIL, shrineLoot));
 
-        // New Discovery Event: Helpful Signpost
         availableEvents.add(new DiscoveryEvent("Weathered Signpost", "You find a barely legible signpost pointing towards what might be a landmark or different area.", 0.07, DiscoveryEvent.DiscoveryType.HIDDEN_CACHE, null)); // No items, just info
 
-        // === Health Events ===
         availableEvents.add(new HealthEvent("Twisted Ankle", "You misstep on uneven ground and twist your ankle painfully.", 0.07, AfflictionType.SPRAINED_ANKLE, -5f, -5f, -10f));
         availableEvents.add(new HealthEvent("Minor Laceration", "A sharp branch or rock scratches your arm, drawing blood.", 0.08, AfflictionType.MINOR_CUT, -10f, -2f, 0f));
         availableEvents.add(new HealthEvent("Sudden Fever", "You suddenly feel feverish, weak, and disoriented.", 0.04, AfflictionType.FEVER, -5f, -10f, -15f));
@@ -108,7 +98,6 @@ public class EventManager {
         availableEvents.add(new HealthEvent("Chilling Cold", "The cold seeps deep into your bones. You struggle to stay warm.", 0.06, AfflictionType.HYPOTHERMIA, -2f, -5f, -10f)); // Initial effects
         availableEvents.add(new HealthEvent("Sudden Dehydration", "An overwhelming thirst hits you, making you feel dizzy and weak.", 0.05, AfflictionType.DEHYDRATION_SPELL, 0f, -5f, -15f)); // Mainly affects thirst/energy/sanity
 
-        // === Faction Interaction Events ===
         availableEvents.add(new FactionInteractionEvent("Faction Sighting", "You spot a group in the distance that seems organized. They might have seen you too.", 0.15));
         availableEvents.add(new FactionInteractionEvent("Nomad Encounter", "You come across a temporary camp of what appear to be Peaceful Nomads.", 0.08, "nomads_peaceful"));
         availableEvents.add(new FactionInteractionEvent("Desperate Plea", "A small, haggard group of Desperate Survivors approaches, begging for food.", 0.07, "survivors_desperate"));

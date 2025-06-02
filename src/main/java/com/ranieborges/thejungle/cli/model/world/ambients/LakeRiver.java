@@ -42,55 +42,56 @@ public class LakeRiver extends Ambient {
         int outcome = random.nextInt(100);
 
         if (outcome < 40) { // 40% Find Resource (water, fish, reeds)
-            // "Peixes e algas comestíveis."
-            // "Água doce (algumas vezes contaminada)."
-            // "Vegetação ribeirinha útil para fabricação de cordas e armadilhas."
             String[] possibleFinds = {"Fresh Water Source", "Edible Algae", "Reeds for Crafting", "Small School of Fish"};
             String found = possibleFinds[random.nextInt(possibleFinds.length)];
             exploreMsg += " Found " + found + ".";
             Message.displayOnScreen("Near the water's edge, you spot some " + found + "!");
-            if (found.equals("Fresh Water Source")) {
-                character.getInventory().addItem(new Drinkable("Lake Water", "Water from the lake.", 0.1f, 30f, Purity.UNKNOWN, 0.1f));
-                Message.displayOnScreen("Você coletou água do lago para beber mais tarde.");
-            } else if (found.equals("Edible Algae")) {
-                Food algae = new Food("Algae", "Edible freshwater algae. Not tasty, but nutritious.", 0.2f,
-                    15f, FoodType.VEGETABLE, 2, 0.05f, 0.0f);
-                character.getInventory().addItem(algae);
-                Message.displayOnScreen("Você coletou algumas algas comestíveis.");
-            } else if (found.equals("Reeds for Crafting")) {
-                Material reeds = new Material("River Reeds", "Flexible plant stalks good for weaving and crafting.",
-                    0.3f, MaterialType.FIBER, 3);
-                character.getInventory().addItem(reeds);
-                Message.displayOnScreen("Você coletou juncos que podem ser úteis para criar cordas ou cestas.");
-            } else if (found.equals("Small School of Fish")) {
-                Message.displayOnScreen("Você avista um cardume de peixes! Tentar pescar? (y/n)");
-                Scanner scanner = new Scanner(System.in);
-                String choice = scanner.nextLine().trim().toLowerCase();
-
-                if (choice.startsWith("y")) {
-                    Message.displayOnScreen("Você improvisa uma vara de pesca com o que tem à mão...");
-                    character.changeEnergy(-5); // Fishing takes energy
-
-                    // Chance de sucesso baseada em fatores aleatórios
-                    int fishingSuccess = random.nextInt(100);
-
-                    if (fishingSuccess < 60) { // 60% chance de pegar um peixe
-                        Fish caught = new Fish();
-                        List<Item> fishLoot = caught.dropLoot();
-                        for (Item loot : fishLoot) {
-                            character.getInventory().addItem(loot);
-                        }
-                        Message.displayOnScreen(TerminalStyler.success("Você conseguiu pescar um " + caught.getName() + "!"));
-                    } else {
-                        Message.displayOnScreen("O peixe escapou! Talvez você precise de equipamento adequado para pescar.");
-                    }
-                } else {
-                    Message.displayOnScreen("Você decide não pescar agora.");
+            switch (found) {
+                case "Fresh Water Source" -> {
+                    character.getInventory().addItem(new Drinkable("Lake Water", "Water from the lake.", 0.1f, 30f, Purity.UNKNOWN, 0.1f));
+                    Message.displayOnScreen("Você coletou água do lago para beber mais tarde.");
                 }
-            }             if (found.equals("Fresh Water Source")) character.getInventory().addItem(new Drinkable("Lake Water", "Water from the lake.", 0.1f, 30f, Purity.UNKNOWN, 0.1f));
-        } else if (outcome < 60) { // 20% Encounter Creature
-            exploreMsg += " The water ripples suspiciously... a Water Creature!";
-            Message.displayOnScreen("Something stirs in the water!");
+                case "Edible Algae" -> {
+                    Food algae = new Food("Algae", "Edible freshwater algae. Not tasty, but nutritious.", 0.2f,
+                        15f, FoodType.VEGETABLE, 2, 0.05f, 0.0f);
+                    character.getInventory().addItem(algae);
+                    Message.displayOnScreen("Você coletou algumas algas comestíveis.");
+                }
+                case "Reeds for Crafting" -> {
+                    Material reeds = new Material("River Reeds", "Flexible plant stalks good for weaving and crafting.",
+                        0.3f, MaterialType.FIBER, 3);
+                    character.getInventory().addItem(reeds);
+                    Message.displayOnScreen("Você coletou juncos que podem ser úteis para criar cordas ou cestas.");
+                }
+                case "Small School of Fish" -> {
+                    Message.displayOnScreen("Você avista um cardume de peixes! Tentar pescar? (y/n)");
+                    Scanner scanner = new Scanner(System.in);
+                    String choice = scanner.nextLine().trim().toLowerCase();
+
+                    if (choice.startsWith("y")) {
+                        Message.displayOnScreen("Você improvisa uma vara de pesca com o que tem à mão...");
+                        character.changeEnergy(-5); // Fishing takes energy
+
+                        // Chance de sucesso baseada em fatores aleatórios
+                        int fishingSuccess = random.nextInt(100);
+
+                        if (fishingSuccess < 60) { // 60% chance de pegar um peixe
+                            Fish caught = new Fish();
+                            List<Item> fishLoot = caught.dropLoot();
+                            for (Item loot : fishLoot) {
+                                character.getInventory().addItem(loot);
+                            }
+                            Message.displayOnScreen(TerminalStyler.success("Você conseguiu pescar um " + caught.getName() + "!"));
+                        } else {
+                            Message.displayOnScreen("O peixe escapou! Talvez você precise de equipamento adequado para pescar.");
+                        }
+                    } else {
+                        Message.displayOnScreen("Você decide não pescar agora.");
+                    }
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + found);
+            }
+            if (found.equals("Fresh Water Source")) character.getInventory().addItem(new Drinkable("Lake Water", "Water from the lake.", 0.1f, 30f, Purity.UNKNOWN, 0.1f));
         } else if (outcome < 60) { // 20% Encounter Creature
             exploreMsg += " The water ripples suspiciously... a Water Creature!";
             Message.displayOnScreen("Something stirs in the water!");
@@ -100,7 +101,6 @@ public class LakeRiver extends Ambient {
             String creatureType;
 
             if (creatureRoll < 40) { // 40% chance - Piranha
-                creatureType = "Piranha";
                 waterCreature = new Fish(FishType.PIRANHA);
             } else if (creatureRoll < 70) { // 30% chance - Jacaré
                 creatureType = "Jacaré";

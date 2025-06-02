@@ -28,7 +28,7 @@ public class Main {
     private static int turnCounter = 1;
     private static AmbientController ambientController;
     private static EventManager eventManager;
-    private static FactionManager factionManager; // Added FactionManager field
+    private static FactionManager factionManager;
 
     private static SaveLoadService saveLoadService = new SaveLoadService();
 
@@ -239,8 +239,8 @@ public class Main {
                 return null;
             }
 
-            Character selectedCharacter = null;
-            String className = "";
+            Character selectedCharacter;
+            String className;
 
             switch(choice) {
                 case "1": className = "Doctor"; selectedCharacter = new Doctor(characterName); break;
